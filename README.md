@@ -1,0 +1,17 @@
+# k6-web
+
+## Overview
+
+k6-web is a web extension for [k6](https://k6.io/), a popular open-source load testing tool. This extension allows users
+to run k6 load tests directly from their web browsers, making it easier to test web applications without needing to set
+up a separate environment.
+
+## Features
+
+- **Browser Integration**: Run k6 scripts directly from your web browser.
+- **User-Friendly Interface**: Simple and intuitive UI for managing and executing load tests.
+- **Real-Time Results**: View test results in real-time within the browser.
+- **Script Management**: Easily create, edit, and manage k6 scripts.
+- **Customizable Load Profiles**: Define different load profiles to simulate various user behaviors.
+- **Export Results**: Export test results in various formats for further analysis.
+- **Open Source**: Fully open-source and community-driven.
