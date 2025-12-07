@@ -4,10 +4,11 @@ import path from 'path';
 import logger from '@shared/logger';
 import {SCRIPTS_DIR} from '@shared/configs';
 import {TestStatus} from '@domains/test/enums';
-import {saveTestResult} from '@domains/test/resultManager';
-import {TestInfo, TestMetadata, LogEntry, LogListener} from '@domains/test/types';
+import {FileSystemTestResultRepository, TestResultRepository} from '@domains/test/repositories';
+import {LogEntry, LogListener, TestInfo, TestMetadata} from '@domains/test/types';
 
 const runningTests = new Map<string, TestInfo>();
+let repository: TestResultRepository = new FileSystemTestResultRepository();
 
 export function runTest(script: string, metadata: TestMetadata = {}): string {
   const testId = `test-${Date.now()}-${Math.random().toString(36).substring(7)}`;
@@ -111,7 +112,7 @@ export function runTest(script: string, metadata: TestMetadata = {}): string {
     };
 
     // Save test result asynchronously
-    saveTestResult(testId, result).catch(err => {
+    repository.save(testId, result).catch(err => {
       logger.error(`Failed to save test result: ${(err as Error).message}`);
     });
 

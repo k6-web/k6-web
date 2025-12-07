@@ -6,14 +6,15 @@ import {
   getRunningTest,
   getAllRunningTests,
 } from '@domains/test/k6Runner';
-import {
-  getAllTestResultsSync,
-  getTestResultSync as getStoredTestResult,
-  deleteTestResultSync as deleteStoredTestResult,
-} from '@domains/test/resultManager';
+import {TestResultRepository, FileSystemTestResultRepository} from '@domains/test/repositories';
 import {NotFoundError, BadRequestError} from '@shared/errors';
 
 export class TestService {
+  private readonly repository: TestResultRepository;
+
+  constructor(repository: TestResultRepository = new FileSystemTestResultRepository()) {
+    this.repository = repository;
+  }
   createTest(script: string, metadata: TestMetadata): string {
     if (!script || script.trim().length === 0) {
       throw new BadRequestError('Script is required and cannot be empty');
@@ -28,7 +29,7 @@ export class TestService {
       return runningTest;
     }
 
-    const result = getStoredTestResult(testId);
+    const result = this.repository.findById(testId);
     if (result) {
       return result;
     }
@@ -52,7 +53,7 @@ export class TestService {
     }
 
     // Add completed tests
-    const fileResults = getAllTestResultsSync();
+    const fileResults = this.repository.findAll();
     for (const result of fileResults) {
       if (!runningTests.has(result.testId)) {
         tests.push({
@@ -113,7 +114,7 @@ export class TestService {
       throw new BadRequestError('Cannot delete result of running test');
     }
 
-    const success = deleteStoredTestResult(testId);
+    const success = this.repository.deleteById(testId);
     if (!success) {
       throw new NotFoundError('Test result not found');
     }
