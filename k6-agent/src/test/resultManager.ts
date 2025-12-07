@@ -1,17 +1,19 @@
-import fs from 'fs';
+import fs from 'fs/promises';
+import fsSync from 'fs';
 import path from 'path';
 import logger from '../commons/logger';
 import {RESULTS_DIR, MAX_RESULT_FILES} from '../commons/configs';
 import {TestResult} from './types';
 
-export function getAllTestResults(): TestResult[] {
+export async function getAllTestResults(): Promise<TestResult[]> {
   const results: TestResult[] = [];
   try {
-    const files = fs.readdirSync(RESULTS_DIR);
+    const files = await fs.readdir(RESULTS_DIR);
     for (const file of files) {
       if (file.endsWith('.json')) {
         const resultFile = path.join(RESULTS_DIR, file);
-        const result = JSON.parse(fs.readFileSync(resultFile, 'utf8')) as TestResult;
+        const content = await fs.readFile(resultFile, 'utf8');
+        const result = JSON.parse(content) as TestResult;
         results.push(result);
       }
     }
@@ -21,31 +23,47 @@ export function getAllTestResults(): TestResult[] {
   return results;
 }
 
-export function getTestResult(testId: string): TestResult | null {
+export async function getTestResult(testId: string): Promise<TestResult | null> {
   const resultFile = path.join(RESULTS_DIR, `${testId}.json`);
-  if (fs.existsSync(resultFile)) {
-    return JSON.parse(fs.readFileSync(resultFile, 'utf8')) as TestResult;
+  try {
+    const content = await fs.readFile(resultFile, 'utf8');
+    return JSON.parse(content) as TestResult;
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+      return null;
+    }
+    logger.error(`Failed to read test result: ${(err as Error).message}`);
+    return null;
   }
-  return null;
 }
 
-function cleanupOldResults(): void {
+async function cleanupOldResults(): Promise<void> {
   try {
-    const files = fs.readdirSync(RESULTS_DIR)
-      .filter(file => file.endsWith('.json'))
-      .map(file => ({
-        name: file,
-        path: path.join(RESULTS_DIR, file),
-        mtime: fs.statSync(path.join(RESULTS_DIR, file)).mtime.getTime(),
-      }))
-      .sort((a, b) => b.mtime - a.mtime);
+    const files = await fs.readdir(RESULTS_DIR);
+    const fileStats = await Promise.all(
+      files
+        .filter(file => file.endsWith('.json'))
+        .map(async (file) => {
+          const filePath = path.join(RESULTS_DIR, file);
+          const stats = await fs.stat(filePath);
+          return {
+            name: file,
+            path: filePath,
+            mtime: stats.mtime.getTime(),
+          };
+        })
+    );
 
-    if (files.length > MAX_RESULT_FILES) {
-      const filesToDelete = files.slice(MAX_RESULT_FILES);
-      for (const file of filesToDelete) {
-        fs.unlinkSync(file.path);
-        logger.info(`Deleted old result file: ${file.name}`);
-      }
+    const sortedFiles = fileStats.sort((a, b) => b.mtime - a.mtime);
+
+    if (sortedFiles.length > MAX_RESULT_FILES) {
+      const filesToDelete = sortedFiles.slice(MAX_RESULT_FILES);
+      await Promise.all(
+        filesToDelete.map(async (file) => {
+          await fs.unlink(file.path);
+          logger.info(`Deleted old result file: ${file.name}`);
+        })
+      );
       logger.info(`Cleaned up ${filesToDelete.length} old result file(s)`);
     }
   } catch (err) {
@@ -53,17 +71,69 @@ function cleanupOldResults(): void {
   }
 }
 
-export function saveTestResult(testId: string, result: TestResult): void {
+export async function saveTestResult(testId: string, result: TestResult): Promise<void> {
   const resultFile = path.join(RESULTS_DIR, `${testId}.json`);
-  fs.writeFileSync(resultFile, JSON.stringify(result, null, 2));
-  cleanupOldResults();
+  await fs.writeFile(resultFile, JSON.stringify(result, null, 2));
+  await cleanupOldResults();
 }
 
-export function deleteTestResult(testId: string): boolean {
+export async function deleteTestResult(testId: string): Promise<boolean> {
   const resultFile = path.join(RESULTS_DIR, `${testId}.json`);
-  if (fs.existsSync(resultFile)) {
-    fs.unlinkSync(resultFile);
+  try {
+    await fs.unlink(resultFile);
     return true;
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+      return false;
+    }
+    logger.error(`Failed to delete test result: ${(err as Error).message}`);
+    return false;
   }
-  return false;
+}
+
+// Synchronous version for getAllTestResults (for compatibility with current sync service)
+export function getAllTestResultsSync(): TestResult[] {
+  const results: TestResult[] = [];
+  try {
+    const files = fsSync.readdirSync(RESULTS_DIR);
+    for (const file of files) {
+      if (file.endsWith('.json')) {
+        const resultFile = path.join(RESULTS_DIR, file);
+        const content = fsSync.readFileSync(resultFile, 'utf8');
+        const result = JSON.parse(content) as TestResult;
+        results.push(result);
+      }
+    }
+  } catch (err) {
+    logger.error(`Failed to read test results: ${(err as Error).message}`);
+  }
+  return results;
+}
+
+export function getTestResultSync(testId: string): TestResult | null {
+  const resultFile = path.join(RESULTS_DIR, `${testId}.json`);
+  try {
+    const content = fsSync.readFileSync(resultFile, 'utf8');
+    return JSON.parse(content) as TestResult;
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+      return null;
+    }
+    logger.error(`Failed to read test result: ${(err as Error).message}`);
+    return null;
+  }
+}
+
+export function deleteTestResultSync(testId: string): boolean {
+  const resultFile = path.join(RESULTS_DIR, `${testId}.json`);
+  try {
+    fsSync.unlinkSync(resultFile);
+    return true;
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+      return false;
+    }
+    logger.error(`Failed to delete test result: ${(err as Error).message}`);
+    return false;
+  }
 }

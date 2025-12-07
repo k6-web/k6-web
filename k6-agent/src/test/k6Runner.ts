@@ -14,9 +14,25 @@ export function runTest(script: string, metadata: TestMetadata = {}): string {
   const scriptPath = path.join(SCRIPTS_DIR, `k6-script-${testId}.js`);
   const summaryPath = path.join(SCRIPTS_DIR, `k6-summary-${testId}.json`);
 
-  fs.writeFileSync(scriptPath, script);
+  try {
+    fs.writeFileSync(scriptPath, script);
+  } catch (err) {
+    logger.error(`Failed to write script file: ${(err as Error).message}`);
+    throw new Error(`Failed to create test script: ${(err as Error).message}`);
+  }
 
-  const k6Process = spawn('k6', ['run', '--summary-export', summaryPath, scriptPath]);
+  let k6Process;
+  try {
+    k6Process = spawn('k6', ['run', '--summary-export', summaryPath, scriptPath]);
+  } catch (err) {
+    logger.error(`Failed to spawn k6 process: ${(err as Error).message}`);
+    try {
+      fs.unlinkSync(scriptPath);
+    } catch (cleanupErr) {
+      logger.error(`Failed to cleanup script file: ${(cleanupErr as Error).message}`);
+    }
+    throw new Error(`Failed to start k6 process: ${(err as Error).message}`);
+  }
 
   const testInfo: TestInfo = {
     testId,
@@ -94,7 +110,10 @@ export function runTest(script: string, metadata: TestMetadata = {}): string {
       summary,
     };
 
-    saveTestResult(testId, result);
+    // Save test result asynchronously
+    saveTestResult(testId, result).catch(err => {
+      logger.error(`Failed to save test result: ${(err as Error).message}`);
+    });
 
     const logEntry: LogEntry = {
       type: 'system',
