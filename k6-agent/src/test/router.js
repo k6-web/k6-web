@@ -1,4 +1,7 @@
 const express = require('express');
+const asyncHandler = require('../commons/asyncHandler');
+const {NotFoundError, BadRequestError, InternalServerError} = require('../commons/errors');
+const {testSchemas, querySchemas, validateBody, validateQuery} = require('../commons/validation');
 const {getAllTestResults, getTestResult, deleteTestResult} = require('./resultManager');
 const {
   getAllRunningTests,
@@ -10,35 +13,23 @@ const {
 
 const router = express.Router();
 
-router.post('/', (req, res) => {
+router.post('/', validateBody(testSchemas.runTest), asyncHandler(async (req, res) => {
   const script = req.body.script;
   const metadata = {
     name: req.body.name,
     config: req.body.config
   };
 
-  if (!script) {
-    return res.status(400).json({
-      error: 'Invalid request. Please provide a k6 script in the request body.'
-    });
-  }
+  const testId = runTest(script, metadata);
+  res.json({testId: testId});
+}));
 
-  try {
-    const testId = runTest(script, metadata);
-    res.json({testId: testId});
-  } catch (err) {
-    res.status(500).json({
-      error: `Failed to start test: ${err.message}`
-    });
-  }
-});
-
-router.get('/:testId/stream', (req, res) => {
+router.get('/:testId/stream', asyncHandler(async (req, res) => {
   const testId = req.params.testId;
 
   const test = getRunningTest(testId);
   if (!test) {
-    return res.status(404).json({error: 'Test not found or not running'});
+    throw new NotFoundError('Test not found or not running');
   }
 
   res.setHeader('Content-Type', 'text/event-stream');
@@ -58,33 +49,27 @@ router.get('/:testId/stream', (req, res) => {
   req.on('close', () => {
     removeLogListener(testId, logListener);
   });
-});
+}));
 
-router.put('/:testId/stop', (req, res) => {
+router.put('/:testId/stop', asyncHandler(async (req, res) => {
   const testId = req.params.testId;
 
   if (!getRunningTest(testId)) {
-    return res.status(404).json({
-      error: 'Test not found or not running'
-    });
+    throw new NotFoundError('Test not found or not running');
   }
 
-  try {
-    const success = stopTest(testId);
+  const success = stopTest(testId);
 
-    if (success) {
-      res.json({status: 'ok'});
-    } else {
-      res.status(500).json({error: 'Failed to stop test'});
-    }
-  } catch (err) {
-    res.status(500).json({error: `Failed to stop test: ${err.message}`});
+  if (!success) {
+    throw new InternalServerError('Failed to stop test');
   }
-});
 
-router.get('/', (req, res) => {
-  const limit = parseInt(req.query.limit || '100');
-  const cursor = req.query.cursor ? parseInt(req.query.cursor) : null;
+  res.json({status: 'ok'});
+}));
+
+router.get('/', validateQuery(querySchemas.pagination), asyncHandler(async (req, res) => {
+  const limit = req.query.limit || 100;
+  const cursor = req.query.cursor || null;
 
   const tests = [];
   const runningTests = getAllRunningTests();
@@ -136,9 +121,9 @@ router.get('/', (req, res) => {
       hasMore
     }
   });
-});
+}));
 
-router.get('/:testId', (req, res) => {
+router.get('/:testId', asyncHandler(async (req, res) => {
   const testId = req.params.testId;
 
   const runningTest = getRunningTest(testId);
@@ -157,54 +142,24 @@ router.get('/:testId', (req, res) => {
     return res.json(result);
   }
 
-  res.status(404).json({error: 'Test not found'});
-});
+  throw new NotFoundError('Test not found');
+}));
 
-router.get('/:testId', (req, res) => {
-  const testId = req.params.testId;
-
-  const runningTest = getRunningTest(testId);
-  if (runningTest) {
-    return res.json({
-      testId,
-      status: runningTest.status,
-      startTime: runningTest.startTime,
-      script: runningTest.script,
-      name: runningTest.name
-    });
-  }
-
-  const result = getTestResult(testId);
-  if (result) {
-    return res.json(result);
-  }
-
-  res.status(404).json({error: 'Test not found'});
-});
-
-router.delete('/:testId', (req, res) => {
+router.delete('/:testId', asyncHandler(async (req, res) => {
   const testId = req.params.testId;
 
   if (getRunningTest(testId)) {
-    return res.status(400).json({
-      error: 'Cannot delete result of running test'
-    });
+    throw new BadRequestError('Cannot delete result of running test');
   }
 
-  try {
-    const success = deleteTestResult(testId);
+  const success = deleteTestResult(testId);
 
-    if (success) {
-      res.json({status: 'ok'});
-    } else {
-      res.status(404).json({error: 'Result not found'});
-    }
-  } catch (err) {
-    res.status(500).json({
-      error: `Failed to delete result: ${err.message}`
-    });
+  if (!success) {
+    throw new NotFoundError('Result not found');
   }
-});
+
+  res.json({status: 'ok'});
+}));
 
 module.exports = router;
 
