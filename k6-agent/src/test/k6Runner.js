@@ -1,6 +1,7 @@
 const {spawn} = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const logger = require('../commons/logger');
 const {SCRIPTS_DIR} = require('../commons/configs');
 const {TestStatus} = require('./enums');
 const {saveTestResult} = require('./resultManager');
@@ -76,7 +77,7 @@ function runTest(script, metadata = {}) {
         summary = JSON.parse(summaryContent);
       }
     } catch (err) {
-      console.error(`Failed to read summary JSON: ${err.message}`);
+      logger.error(`Failed to read summary JSON: ${err.message}`);
     }
 
     const result = {
@@ -106,7 +107,7 @@ function runTest(script, metadata = {}) {
     try {
       fs.unlinkSync(scriptPath);
     } catch (err) {
-      console.error(`Failed to delete script file: ${err.message}`);
+      logger.error(`Failed to delete script file: ${err.message}`);
     }
 
     try {
@@ -114,7 +115,7 @@ function runTest(script, metadata = {}) {
         fs.unlinkSync(testInfo.summaryPath);
       }
     } catch (err) {
-      console.error(`Failed to delete summary file: ${err.message}`);
+      logger.error(`Failed to delete summary file: ${err.message}`);
     }
 
     runningTests.delete(testId);
@@ -157,7 +158,7 @@ function stopAllTests() {
       test.status = TestStatus.STOPPED;
       stoppedTests.push(testId);
     } catch (err) {
-      console.error(`Failed to stop test ${testId}: ${err.message}`);
+      logger.error(`Failed to stop test ${testId}: ${err.message}`);
     }
   }
 

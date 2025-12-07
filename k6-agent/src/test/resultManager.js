@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const logger = require('../commons/logger');
 const {RESULTS_DIR, MAX_RESULT_FILES} = require('../commons/configs');
 
 function getAllTestResults() {
@@ -14,7 +15,7 @@ function getAllTestResults() {
       }
     }
   } catch (err) {
-    console.error(`Failed to read test results: ${err.message}`);
+    logger.error(`Failed to read test results: ${err.message}`);
   }
   return results;
 }
@@ -42,12 +43,12 @@ function cleanupOldResults() {
       const filesToDelete = files.slice(MAX_RESULT_FILES);
       for (const file of filesToDelete) {
         fs.unlinkSync(file.path);
-        console.log(`Deleted old result file: ${file.name}`);
+        logger.info(`Deleted old result file: ${file.name}`);
       }
-      console.log(`Cleaned up ${filesToDelete.length} old result file(s)`);
+      logger.info(`Cleaned up ${filesToDelete.length} old result file(s)`);
     }
   } catch (err) {
-    console.error(`Failed to cleanup old results: ${err.message}`);
+    logger.error(`Failed to cleanup old results: ${err.message}`);
   }
 }
 
