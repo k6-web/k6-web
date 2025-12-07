@@ -1,0 +1,51 @@
+#root {
+  min-height: 100vh;
+  width: 100%;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.card {
+  background-color: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1rem;
+}
+
+.card:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.status-running {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.status-completed {
+  background-color: #22c55e;
+  color: white;
+}
+
+.status-failed {
+  background-color: #ef4444;
+  color: white;
+}
+
+.status-stopped {
+  background-color: #6b7280;
+  color: white;
+}
