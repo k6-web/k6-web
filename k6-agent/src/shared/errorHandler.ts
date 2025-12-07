@@ -1,6 +1,6 @@
 import {Request, Response, NextFunction} from 'express';
-import logger from './logger';
-import {AppError} from './errors';
+import logger from '@shared/logger';
+import {AppError} from '@shared/errors';
 
 interface ValidationError extends Error {
   details?: unknown;

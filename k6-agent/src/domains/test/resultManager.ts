@@ -1,41 +1,9 @@
 import fs from 'fs/promises';
 import fsSync from 'fs';
 import path from 'path';
-import logger from '../../shared/logger';
-import {RESULTS_DIR, MAX_RESULT_FILES} from '../../shared/configs';
-import {TestResult} from './types';
-
-export async function getAllTestResults(): Promise<TestResult[]> {
-  const results: TestResult[] = [];
-  try {
-    const files = await fs.readdir(RESULTS_DIR);
-    for (const file of files) {
-      if (file.endsWith('.json')) {
-        const resultFile = path.join(RESULTS_DIR, file);
-        const content = await fs.readFile(resultFile, 'utf8');
-        const result = JSON.parse(content) as TestResult;
-        results.push(result);
-      }
-    }
-  } catch (err) {
-    logger.error(`Failed to read test results: ${(err as Error).message}`);
-  }
-  return results;
-}
-
-export async function getTestResult(testId: string): Promise<TestResult | null> {
-  const resultFile = path.join(RESULTS_DIR, `${testId}.json`);
-  try {
-    const content = await fs.readFile(resultFile, 'utf8');
-    return JSON.parse(content) as TestResult;
-  } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
-      return null;
-    }
-    logger.error(`Failed to read test result: ${(err as Error).message}`);
-    return null;
-  }
-}
+import logger from '@shared/logger';
+import {RESULTS_DIR, MAX_RESULT_FILES} from '@shared/configs';
+import {TestResult} from '@domains/test/types';
 
 async function cleanupOldResults(): Promise<void> {
   try {
@@ -77,21 +45,6 @@ export async function saveTestResult(testId: string, result: TestResult): Promis
   await cleanupOldResults();
 }
 
-export async function deleteTestResult(testId: string): Promise<boolean> {
-  const resultFile = path.join(RESULTS_DIR, `${testId}.json`);
-  try {
-    await fs.unlink(resultFile);
-    return true;
-  } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
-      return false;
-    }
-    logger.error(`Failed to delete test result: ${(err as Error).message}`);
-    return false;
-  }
-}
-
-// Synchronous version for getAllTestResults (for compatibility with current sync service)
 export function getAllTestResultsSync(): TestResult[] {
   const results: TestResult[] = [];
   try {

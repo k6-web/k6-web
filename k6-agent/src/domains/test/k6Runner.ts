@@ -1,11 +1,11 @@
 import {spawn} from 'child_process';
 import fs from 'fs';
 import path from 'path';
-import logger from '../../shared/logger';
-import {SCRIPTS_DIR} from '../../shared/configs';
-import {TestStatus} from './enums';
-import {saveTestResult} from './resultManager';
-import {TestInfo, TestMetadata, LogEntry, LogListener} from './types';
+import logger from '@shared/logger';
+import {SCRIPTS_DIR} from '@shared/configs';
+import {TestStatus} from '@domains/test/enums';
+import {saveTestResult} from '@domains/test/resultManager';
+import {TestInfo, TestMetadata, LogEntry, LogListener} from '@domains/test/types';
 
 const runningTests = new Map<string, TestInfo>();
 

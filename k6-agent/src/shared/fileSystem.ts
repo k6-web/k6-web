@@ -1,5 +1,5 @@
 import fs from 'fs';
-import {RESULTS_DIR, SCRIPTS_DIR} from './configs';
+import {RESULTS_DIR, SCRIPTS_DIR} from '@shared/configs';
 
 export function initializeDirectories(): void {
   if (!fs.existsSync(RESULTS_DIR)) {

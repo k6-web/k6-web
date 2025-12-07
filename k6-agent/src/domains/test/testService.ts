@@ -1,36 +1,17 @@
-import {TestMetadata, TestResult, TestInfo} from './types';
-import {TestStatus} from './enums';
+import {TestMetadata, TestResult, TestInfo} from '@domains/test/types';
+import {TestListResponse, TestResponse} from '@domains/test/response';
 import {
   runTest as runK6Test,
   stopTest as stopK6Test,
   getRunningTest,
   getAllRunningTests,
-} from './k6Runner';
+} from '@domains/test/k6Runner';
 import {
   getAllTestResultsSync,
   getTestResultSync as getStoredTestResult,
   deleteTestResultSync as deleteStoredTestResult,
-} from './resultManager';
-import {NotFoundError, BadRequestError} from '../../shared/errors';
-
-export interface TestListItem {
-  testId: string;
-  status: TestStatus;
-  startTime: number;
-  endTime?: number;
-  exitCode?: number | null;
-  script?: string;
-  name?: string;
-  summary?: unknown;
-}
-
-export interface PaginatedTestList {
-  tests: TestListItem[];
-  pagination: {
-    nextCursor: number | null;
-    hasMore: boolean;
-  };
-}
+} from '@domains/test/resultManager';
+import {NotFoundError, BadRequestError} from '@shared/errors';
 
 export class TestService {
   createTest(script: string, metadata: TestMetadata): string {
@@ -55,8 +36,8 @@ export class TestService {
     throw new NotFoundError('Test not found');
   }
 
-  getAllTests(limit: number = 100, cursor: number | null = null): PaginatedTestList {
-    const tests: TestListItem[] = [];
+  getAllTests(limit: number = 100, cursor: number | null = null): TestListResponse {
+    const tests: TestResponse[] = [];
     const runningTests = getAllRunningTests();
 
     // Add running tests

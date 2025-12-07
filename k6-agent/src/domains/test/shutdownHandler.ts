@@ -1,5 +1,5 @@
-import logger from '../../shared/logger';
-import {stopAllTests} from './k6Runner';
+import logger from '@shared/logger';
+import {stopAllTests} from '@domains/test/k6Runner';
 
 export function setupGracefulShutdown(): void {
   process.on('SIGTERM', () => {

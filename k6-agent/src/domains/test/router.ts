@@ -1,16 +1,19 @@
 import express from 'express';
-import {asyncHandler} from '../../shared/asyncHandler';
-import {bodySchemas, querySchemas, validateBody, validateQuery} from '../../shared/validation';
-import {addLogListener, getRunningTest, removeLogListener} from './k6Runner';
-import {LogEntry} from './types';
-import {testService} from './testService';
+import {asyncHandler} from '@shared/asyncHandler';
+import {bodySchemas, querySchemas, validateBody, validateQuery} from '@shared/validation';
+import {addLogListener, getRunningTest, removeLogListener} from '@domains/test/k6Runner';
+import {LogEntry} from '@domains/test/types';
+import {CreateTestRequest, PaginationRequest} from '@domains/test/request';
+import {RunTestResponse, StatusResponse} from '@domains/test/response';
+import {testService} from '@domains/test/testService';
 
 const router = express.Router();
 
 router.post('/', validateBody(bodySchemas.createTest), asyncHandler(async (req, res) => {
-  const {script, name, config} = req.body;
+  const {script, name, config} = req.body as CreateTestRequest;
   const testId = testService.createTest(script, {name, config});
-  res.json({testId});
+  const response: RunTestResponse = {testId};
+  res.json(response);
 }));
 
 router.get('/:testId/stream', (req, res) => {
@@ -69,12 +72,14 @@ router.get('/:testId/stream', (req, res) => {
 router.put('/:testId/stop', asyncHandler(async (req, res) => {
   const testId = req.params.testId;
   testService.stopTest(testId);
-  res.json({status: 'ok'});
+  const response: StatusResponse = {status: 'ok'};
+  res.json(response);
 }));
 
 router.get('/', validateQuery(querySchemas.pagination), asyncHandler(async (req, res) => {
-  const limit = typeof req.query.limit === 'number' ? req.query.limit : 100;
-  const cursor = typeof req.query.cursor === 'number' ? req.query.cursor : null;
+  const query = req.query as unknown as PaginationRequest;
+  const limit = query.limit ?? 100;
+  const cursor = query.cursor ?? null;
 
   const result = testService.getAllTests(limit, cursor);
   res.json(result);
@@ -89,7 +94,8 @@ router.get('/:testId', asyncHandler(async (req, res) => {
 router.delete('/:testId', asyncHandler(async (req, res) => {
   const testId = req.params.testId;
   testService.deleteTest(testId);
-  res.json({status: 'ok'});
+  const response: StatusResponse = {status: 'ok'};
+  res.json(response);
 }));
 
 export default router;

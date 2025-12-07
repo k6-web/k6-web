@@ -1,11 +1,8 @@
 import {ChildProcess} from 'child_process';
-import {TestStatus} from './enums';
+import {TestStatus} from '@domains/test/enums';
+import {K6TestConfig} from '@domains/test/models';
 
-export interface K6TestConfig {
-  vus?: number;
-  duration?: string;
-  iterations?: number;
-}
+// Internal domain types (not exposed via API)
 
 export interface TestMetadata {
   name?: string;
@@ -45,16 +42,5 @@ export interface TestResult {
   script: string;
   name?: string;
   config?: K6TestConfig;
-  summary: TestSummary;
-}
-
-export interface TestSummary {
-  testId: string;
-  status: TestStatus;
-  startTime: number;
-  endTime?: number;
-  exitCode?: number | null;
-  script?: string;
-  name?: string;
-  summary?: unknown;
+  summary: unknown;
 }
