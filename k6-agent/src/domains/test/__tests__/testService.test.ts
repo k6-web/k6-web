@@ -1,7 +1,7 @@
 import {describe, it, expect, jest, beforeEach} from '@jest/globals';
 import {TestService} from '../testService';
 import {NotFoundError, BadRequestError} from '@shared/errors';
-import {TestStatus} from '../enums';
+import {TestStatus} from '../models/enums';
 import {TestResultRepository} from '../repositories';
 
 // Mock dependencies

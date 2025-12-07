@@ -1,5 +1,5 @@
-import {TestMetadata, TestResult, TestInfo} from '@domains/test/types';
-import {TestListResponse, TestResponse} from '@domains/test/response';
+import {TestMetadata, TestResult, TestInfo} from '@domains/test/models/types';
+import {TestListResponse, TestResponse} from '@domains/test/dto/response';
 import {
   runTest as runK6Test,
   stopTest as stopK6Test,

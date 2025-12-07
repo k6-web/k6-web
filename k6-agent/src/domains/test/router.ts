@@ -2,9 +2,9 @@ import express from 'express';
 import {asyncHandler} from '@shared/asyncHandler';
 import {bodySchemas, querySchemas, validateBody, validateQuery} from '@shared/validation';
 import {addLogListener, getRunningTest, removeLogListener} from '@domains/test/k6Runner';
-import {LogEntry} from '@domains/test/types';
-import {CreateTestRequest, PaginationRequest} from '@domains/test/request';
-import {RunTestResponse, StatusResponse} from '@domains/test/response';
+import {LogEntry} from '@domains/test/models/types';
+import {CreateTestRequest, PaginationRequest} from '@domains/test/dto/request';
+import {RunTestResponse, StatusResponse} from '@domains/test/dto/response';
 import {testService} from '@domains/test/testService';
 
 const router = express.Router();

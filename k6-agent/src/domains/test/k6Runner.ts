@@ -3,9 +3,9 @@ import fs from 'fs';
 import path from 'path';
 import logger from '@shared/logger';
 import {SCRIPTS_DIR} from '@shared/configs';
-import {TestStatus} from '@domains/test/enums';
+import {TestStatus} from '@domains/test/models/enums';
 import {FileSystemTestResultRepository, TestResultRepository} from '@domains/test/repositories';
-import {LogEntry, LogListener, TestInfo, TestMetadata} from '@domains/test/types';
+import {LogEntry, LogListener, TestInfo, TestMetadata} from '@domains/test/models/types';
 
 const runningTests = new Map<string, TestInfo>();
 let repository: TestResultRepository = new FileSystemTestResultRepository();

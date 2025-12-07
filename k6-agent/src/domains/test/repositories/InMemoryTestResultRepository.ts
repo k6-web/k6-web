@@ -1,4 +1,4 @@
-import {TestResult} from '@domains/test/types';
+import {TestResult} from '@domains/test/models/types';
 import {TestResultRepository} from './TestResultRepository';
 
 /**

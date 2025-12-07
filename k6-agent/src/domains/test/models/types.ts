@@ -1,6 +1,6 @@
 import {ChildProcess} from 'child_process';
-import {TestStatus} from '@domains/test/enums';
-import {K6TestConfig} from '@domains/test/models';
+import {TestStatus} from '@domains/test/models/enums';
+import {K6TestConfig} from '@domains/test/models/models';
 
 // Internal domain types (not exposed via API)
 

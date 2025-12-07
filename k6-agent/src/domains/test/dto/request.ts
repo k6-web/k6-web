@@ -1,4 +1,4 @@
-import {K6TestConfig} from '@domains/test/models';
+import {K6TestConfig} from '@domains/test/models/models';
 
 export interface CreateTestRequest {
   script: string;

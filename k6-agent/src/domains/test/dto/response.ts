@@ -1,4 +1,4 @@
-import {TestStatus} from '@domains/test/enums';
+import {TestStatus} from '@domains/test/models/enums';
 
 export interface RunTestResponse {
   testId: string;

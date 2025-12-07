@@ -5,8 +5,8 @@ import {
   getTestResultSync,
   deleteTestResultSync,
 } from '../resultManager';
-import {TestStatus} from '../enums';
-import {TestResult} from '../types';
+import {TestStatus} from '../models/enums';
+import {TestResult} from '../models/types';
 
 // Mock dependencies
 jest.mock('fs/promises');

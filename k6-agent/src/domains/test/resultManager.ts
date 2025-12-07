@@ -3,7 +3,7 @@ import fsSync from 'fs';
 import path from 'path';
 import logger from '@shared/logger';
 import {RESULTS_DIR, MAX_RESULT_FILES} from '@shared/configs';
-import {TestResult} from '@domains/test/types';
+import {TestResult} from '@domains/test/models/types';
 
 async function cleanupOldResults(): Promise<void> {
   try {
