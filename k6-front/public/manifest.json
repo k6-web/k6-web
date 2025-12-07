@@ -1,0 +1,16 @@
+{
+  "name": "K6 Web",
+  "short_name": "K6",
+  "description": "K6 Load Testing Web Interface",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "theme_color": "#7d64ff",
+  "background_color": "#ffffff",
+  "display": "standalone"
+}
+
