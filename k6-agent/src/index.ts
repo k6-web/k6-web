@@ -2,13 +2,13 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
-import logger from './commons/logger';
-import {notFoundHandler, errorHandler} from './commons/errorHandler';
-import {PORT, K6_BASE_PATH, RESULTS_DIR, SCRIPTS_DIR, MAX_RESULT_FILES} from './commons/configs';
-import {initializeDirectories} from './commons/fileSystem';
-import {setupGracefulShutdown} from './test/shutdownHandler';
-import healthRouter from './health/router';
-import testRouter from './test/router';
+import logger from './shared/logger';
+import {notFoundHandler, errorHandler} from './shared/errorHandler';
+import {PORT, K6_BASE_PATH, RESULTS_DIR, SCRIPTS_DIR, MAX_RESULT_FILES} from './shared/configs';
+import {initializeDirectories} from './shared/fileSystem';
+import {setupGracefulShutdown} from './domains/test/shutdownHandler';
+import healthRouter from './domains/health/router';
+import testRouter from './domains/test/router';
 
 const app = express();
 

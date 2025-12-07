@@ -11,7 +11,7 @@ import {
   getTestResultSync as getStoredTestResult,
   deleteTestResultSync as deleteStoredTestResult,
 } from './resultManager';
-import {NotFoundError, BadRequestError} from '../commons/errors';
+import {NotFoundError, BadRequestError} from '../../shared/errors';
 
 export interface TestListItem {
   testId: string;

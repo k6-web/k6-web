@@ -1,8 +1,8 @@
 import {spawn} from 'child_process';
 import fs from 'fs';
 import path from 'path';
-import logger from '../commons/logger';
-import {SCRIPTS_DIR} from '../commons/configs';
+import logger from '../../shared/logger';
+import {SCRIPTS_DIR} from '../../shared/configs';
 import {TestStatus} from './enums';
 import {saveTestResult} from './resultManager';
 import {TestInfo, TestMetadata, LogEntry, LogListener} from './types';

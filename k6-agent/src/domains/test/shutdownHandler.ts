@@ -1,4 +1,4 @@
-import logger from '../commons/logger';
+import logger from '../../shared/logger';
 import {stopAllTests} from './k6Runner';
 
 export function setupGracefulShutdown(): void {

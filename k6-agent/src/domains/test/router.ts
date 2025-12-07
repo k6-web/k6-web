@@ -1,6 +1,6 @@
 import express from 'express';
-import {asyncHandler} from '../commons/asyncHandler';
-import {bodySchemas, querySchemas, validateBody, validateQuery} from '../commons/validation';
+import {asyncHandler} from '../../shared/asyncHandler';
+import {bodySchemas, querySchemas, validateBody, validateQuery} from '../../shared/validation';
 import {addLogListener, getRunningTest, removeLogListener} from './k6Runner';
 import {LogEntry} from './types';
 import {testService} from './testService';

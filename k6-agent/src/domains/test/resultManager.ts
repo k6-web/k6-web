@@ -1,8 +1,8 @@
 import fs from 'fs/promises';
 import fsSync from 'fs';
 import path from 'path';
-import logger from '../commons/logger';
-import {RESULTS_DIR, MAX_RESULT_FILES} from '../commons/configs';
+import logger from '../../shared/logger';
+import {RESULTS_DIR, MAX_RESULT_FILES} from '../../shared/configs';
 import {TestResult} from './types';
 
 export async function getAllTestResults(): Promise<TestResult[]> {

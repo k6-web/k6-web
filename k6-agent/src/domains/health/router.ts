@@ -1,5 +1,5 @@
 import express from 'express';
-import {asyncHandler} from '../commons/asyncHandler';
+import {asyncHandler} from '../../shared/asyncHandler';
 
 const router = express.Router();
 
