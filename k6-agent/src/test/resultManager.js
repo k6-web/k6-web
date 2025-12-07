@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const {RESULTS_DIR, MAX_RESULT_FILES} = require('../commons/constants');
+const {RESULTS_DIR, MAX_RESULT_FILES} = require('../commons/configs');
 
 function getAllTestResults() {
   const results = [];

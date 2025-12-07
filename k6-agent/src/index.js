@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const {PORT, K6_BASE_PATH, RESULTS_DIR, SCRIPTS_DIR, MAX_RESULT_FILES} = require('./commons/constants');
+const {PORT, K6_BASE_PATH, RESULTS_DIR, SCRIPTS_DIR, MAX_RESULT_FILES} = require('./commons/configs');
 const {initializeDirectories} = require('./commons/utils/fileSystem');
 const {setupGracefulShutdown} = require('./test/shutdownHandler');
 

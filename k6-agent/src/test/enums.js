@@ -8,4 +8,3 @@ const TestStatus = {
 module.exports = {
   TestStatus
 };
-

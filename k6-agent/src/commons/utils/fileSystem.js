@@ -1,5 +1,5 @@
 const fs = require('fs');
-const {RESULTS_DIR, SCRIPTS_DIR} = require('../constants');
+const {RESULTS_DIR, SCRIPTS_DIR} = require('../configs');
 
 function initializeDirectories() {
   if (!fs.existsSync(RESULTS_DIR)) {

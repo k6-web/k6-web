@@ -1,8 +1,8 @@
 const {spawn} = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const {SCRIPTS_DIR} = require('../commons/constants');
-const {TestStatus} = require('../commons/enums');
+const {SCRIPTS_DIR} = require('../commons/configs');
+const {TestStatus} = require('./enums');
 const {saveTestResult} = require('./resultManager');
 
 const runningTests = new Map();
