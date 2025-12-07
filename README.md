@@ -15,3 +15,30 @@ up a separate environment.
 - **Customizable Load Profiles**: Define different load profiles to simulate various user behaviors.
 - **Export Results**: Export test results in various formats for further analysis.
 - **Open Source**: Fully open-source and community-driven.
+
+## Installation
+
+- TBD
+
+## Preview
+
+### Home
+
+<img src="docs/home.png">
+
+### New Test
+
+<img src="docs/new_test.png">
+
+### Test Histories
+
+<img src="docs/tests.png">
+
+### Test Result (Live)
+
+<img src="docs/test_live.png">
+
+### Test Result
+
+<img src="docs/test.png">
+
