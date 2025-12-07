@@ -30,13 +30,9 @@ up a separate environment.
 
 <img src="docs/new_test.png">
 
-### Test Histories
+### Running Test (Live)
 
-<img src="docs/tests.png">
-
-### Test Result (Live)
-
-<img src="docs/test_live.png">
+<img src="docs/test_running.png">
 
 ### Test Result
 

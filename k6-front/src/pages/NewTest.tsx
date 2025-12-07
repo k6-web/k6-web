@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { k6Api } from '../services/api';
-import type { HttpTestConfig, TestResult } from '../types';
-import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
+import {useEffect, useState} from 'react';
+import {useNavigate} from 'react-router-dom';
+import {k6Api} from '../apis/testApi.ts';
+import type {K6TestConfig} from '../types/k6.ts';
+import {Light as SyntaxHighlighter} from 'react-syntax-highlighter';
 import javascript from 'react-syntax-highlighter/dist/esm/languages/hljs/javascript';
 import Editor from 'react-simple-code-editor';
 import Prism from 'prismjs';
@@ -12,14 +12,13 @@ import * as acorn from 'acorn';
 
 SyntaxHighlighter.registerLanguage('javascript', javascript);
 
-
 export const NewTest = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [syntaxError, setSyntaxError] = useState<string | null>(null);
 
-  const [httpConfig, setHttpConfig] = useState<HttpTestConfig>({
+  const [httpConfig, setHttpConfig] = useState<K6TestConfig>({
     url: '',
     method: 'GET',
     headers: {},
@@ -31,10 +30,7 @@ export const NewTest = () => {
   });
 
   const [showRecentTests, setShowRecentTests] = useState(false);
-  const [recentTests, setRecentTests] = useState<TestResult[]>([]);
-  const [loadingRecentTests, setLoadingRecentTests] = useState(false);
   const [isDynamicScript, setIsDynamicScript] = useState(false); // Dynamic script detection
-  const [expandedScripts, setExpandedScripts] = useState<Set<string>>(new Set());
 
   const [headerKey, setHeaderKey] = useState('');
   const [headerValue, setHeaderValue] = useState('');
@@ -51,7 +47,7 @@ export const options = {
 export default function () {
   const res = http.get('https://test.k6.io');
   check(res, {
-    'status is 200': (r) => r.status === 200,
+    'status is 2xx': (r) => r.status >= 200 && r.status < 300
   });
 }
 `);
@@ -105,7 +101,7 @@ export default function () {
     setError(null);
 
     try {
-      const result = await k6Api.runScript(script, {
+      const result = await k6Api.runTest(script, {
         name: httpConfig.name,
         config: httpConfig
       });
@@ -121,7 +117,7 @@ export default function () {
     if (headerKey && headerValue) {
       setHttpConfig({
         ...httpConfig,
-        headers: { ...httpConfig.headers, [headerKey]: headerValue }
+        headers: {...httpConfig.headers, [headerKey]: headerValue}
       });
       setHeaderKey('');
       setHeaderValue('');
@@ -129,8 +125,8 @@ export default function () {
   };
 
   const removeHeader = (key: string) => {
-    const { [key]: _, ...rest } = httpConfig.headers || {};
-    setHttpConfig({ ...httpConfig, headers: rest });
+    const {[key]: _, ...rest} = httpConfig.headers || {};
+    setHttpConfig({...httpConfig, headers: rest});
   };
 
   const validateScript = (code: string) => {
@@ -141,8 +137,8 @@ export default function () {
       });
       setSyntaxError(null);
       return true;
-    } catch (err: any) {
-      const errorMessage = err.message || 'Syntax error';
+    } catch (err) {
+      const errorMessage = 'Syntax error';
       const lineMatch = /\((\d+):(\d+)\)/.exec(errorMessage);
       if (lineMatch) {
         const line = lineMatch[1];
@@ -155,8 +151,8 @@ export default function () {
     }
   };
 
-  const httpConfigToScript = (config: HttpTestConfig): string => {
-    const { url, method, headers, body, vusers, duration, rampUp } = config;
+  const httpConfigToScript = (config: K6TestConfig): string => {
+    const {url, method, headers, body, vusers, duration, rampUp} = config;
 
     let scriptCode = `import http from 'k6/http';
 import { check } from 'k6';
@@ -221,8 +217,7 @@ export default function () {
 
     scriptCode += `
   check(res, {
-    'status is 2xx': (r) => r.status >= 200 && r.status < 300,
-    'response time < 500ms': (r) => r.timings.duration < 500,
+    'status is 2xx': (r) => r.status >= 200 && r.status < 300
   });
 }
 `;
@@ -260,7 +255,7 @@ export default function () {
 
       const methodMatch = /http\.(get|post|put|patch|delete|head|options)\s*\(/i.exec(scriptCode);
       if (methodMatch) {
-        const newConfig: Partial<HttpTestConfig> = {
+        const newConfig: Partial<K6TestConfig> = {
           method: methodMatch[1].toUpperCase()
         };
 
@@ -271,7 +266,7 @@ export default function () {
           const urlVarMatch = /const\s+url\s*=\s*[`'"]([^`'"]+)[`'"]/.exec(scriptCode);
           if (urlVarMatch) {
             const urlTemplate = urlVarMatch[1];
-            const baseUrlMatch = /(https?:\/\/[^$`'"\/?\s]+)/.exec(urlTemplate);
+            const baseUrlMatch = /(https?:\/\/[^$`'"/?\s]+)/.exec(urlTemplate);
             if (baseUrlMatch) {
               newConfig.url = baseUrlMatch[1];
             } else {
@@ -319,6 +314,7 @@ export default function () {
               newConfig.headers = headers;
             }
           } catch (e) {
+            console.warn('Failed to parse headers from script:', e);
           }
         }
 
@@ -350,69 +346,6 @@ export default function () {
     }
   };
 
-  const loadRecentTests = async () => {
-    setLoadingRecentTests(true);
-    try {
-      const response = await k6Api.getTests(null, 10);
-      const completedTests = response.tests.filter(t => t.status !== 'running');
-
-      const testsWithResults = await Promise.all(
-        completedTests.slice(0, 10).map(async (test) => {
-          try {
-            return await k6Api.getTestResult(test.testId);
-          } catch (err) {
-            return null;
-          }
-        })
-      );
-
-      setRecentTests(testsWithResults.filter(t => t !== null) as TestResult[]);
-      setShowRecentTests(true);
-    } catch (err) {
-      console.error('Failed to load recent tests:', err);
-      alert('Failed to load recent tests.');
-    } finally {
-      setLoadingRecentTests(false);
-    }
-  };
-
-  const toggleScriptExpand = (testId: string, event: React.MouseEvent) => {
-    event.stopPropagation(); // Prevent parent div click event
-    const newExpanded = new Set(expandedScripts);
-
-    if (newExpanded.has(testId)) {
-      newExpanded.delete(testId);
-    } else {
-      newExpanded.add(testId);
-    }
-
-    setExpandedScripts(newExpanded);
-  };
-
-  const copyScriptFromTest = (testResult: TestResult) => {
-    setScript(testResult.script);
-
-    if (testResult.config) {
-      setHttpConfig({
-        url: testResult.config.url || '',
-        method: testResult.config.method || 'GET',
-        headers: testResult.config.headers || {},
-        body: testResult.config.body || '',
-        vusers: testResult.config.vusers || 1,
-        duration: testResult.config.duration || 10,
-        rampUp: testResult.config.rampUp || 0,
-        name: testResult.config.name || ''
-      });
-      const isDynamic = scriptToHttpConfig(testResult.script);
-      setIsDynamicScript(isDynamic);
-    } else {
-      scriptToHttpConfig(testResult.script);
-    }
-
-    setShowRecentTests(false);
-  };
-
-
   return (
     <div>
       <div style={{
@@ -423,25 +356,7 @@ export default function () {
         flexWrap: 'wrap',
         gap: '1rem'
       }}>
-        <h1 style={{ margin: 0, fontSize: 'clamp(1.5rem, 5vw, 2rem)' }}>Create New Test</h1>
-        <button
-          type="button"
-          onClick={loadRecentTests}
-          disabled={loadingRecentTests}
-          style={{
-            padding: '0.75rem 1.5rem',
-            backgroundColor: '#8b5cf6',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: loadingRecentTests ? 'not-allowed' : 'pointer',
-            fontWeight: 'bold',
-            opacity: loadingRecentTests ? 0.6 : 1,
-            fontSize: 'clamp(0.875rem, 2vw, 1rem)'
-          }}
-        >
-          {loadingRecentTests ? 'Loading...' : '📋 Copy Recent Script'}
-        </button>
+        <h1 style={{margin: 0, fontSize: 'clamp(1.5rem, 5vw, 2rem)'}}>Create New Test</h1>
       </div>
 
       <form onSubmit={handleSubmit}>
@@ -469,7 +384,7 @@ export default function () {
             borderRadius: '8px',
             boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
           }}>
-            <h2 style={{ marginTop: 0, marginBottom: '1rem' }}>HTTP Test Configuration</h2>
+            <h2 style={{marginTop: 0, marginBottom: '1rem'}}>HTTP Test Configuration</h2>
 
             {isDynamicScript ? (
               <div style={{
@@ -499,8 +414,8 @@ export default function () {
               </div>
             )}
 
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+            <div style={{marginBottom: '1rem'}}>
+              <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
                 Test Name (Optional)
               </label>
               <input
@@ -508,7 +423,7 @@ export default function () {
                 value={httpConfig.name}
                 onChange={(e) => {
                   const value = e.target.value.slice(0, 50); // Max 50 characters limit
-                  setHttpConfig({ ...httpConfig, name: value });
+                  setHttpConfig({...httpConfig, name: value});
                 }}
                 placeholder="e.g., API Performance Test"
                 maxLength={50}
@@ -520,13 +435,13 @@ export default function () {
                   fontSize: '1rem'
                 }}
               />
-              <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
+              <div style={{fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem'}}>
                 {httpConfig.name?.length || 0}/50 characters
               </div>
             </div>
 
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+            <div style={{marginBottom: '1rem'}}>
+              <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
                 URL *
               </label>
               <input
@@ -535,9 +450,9 @@ export default function () {
                 value={httpConfig.url}
                 disabled={isDynamicScript}
                 onChange={(e) => {
-                  setHttpConfig({ ...httpConfig, url: e.target.value });
+                  setHttpConfig({...httpConfig, url: e.target.value});
                   if (httpConfig.url || e.target.value) {
-                    const generatedScript = httpConfigToScript({ ...httpConfig, url: e.target.value });
+                    const generatedScript = httpConfigToScript({...httpConfig, url: e.target.value});
                     setScript(generatedScript);
                   }
                 }}
@@ -555,16 +470,16 @@ export default function () {
               />
             </div>
 
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+            <div style={{marginBottom: '1rem'}}>
+              <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
                 Method
               </label>
               <select
                 value={httpConfig.method}
                 disabled={isDynamicScript}
                 onChange={(e) => {
-                  setHttpConfig({ ...httpConfig, method: e.target.value });
-                  const generatedScript = httpConfigToScript({ ...httpConfig, method: e.target.value });
+                  setHttpConfig({...httpConfig, method: e.target.value});
+                  const generatedScript = httpConfigToScript({...httpConfig, method: e.target.value});
                   setScript(generatedScript);
                 }}
                 style={{
@@ -588,11 +503,11 @@ export default function () {
               </select>
             </div>
 
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+            <div style={{marginBottom: '1rem'}}>
+              <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
                 Headers
               </label>
-              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+              <div style={{display: 'flex', gap: '0.5rem', marginBottom: '0.5rem'}}>
                 <input
                   type="text"
                   placeholder="Header name"
@@ -631,8 +546,8 @@ export default function () {
                   onClick={() => {
                     addHeader();
                     if (headerKey && headerValue) {
-                      const newHeaders = { ...httpConfig.headers, [headerKey]: headerValue };
-                      const generatedScript = httpConfigToScript({ ...httpConfig, headers: newHeaders });
+                      const newHeaders = {...httpConfig.headers, [headerKey]: headerValue};
+                      const generatedScript = httpConfigToScript({...httpConfig, headers: newHeaders});
                       setScript(generatedScript);
                     }
                   }}
@@ -649,7 +564,7 @@ export default function () {
                 </button>
               </div>
               {httpConfig.headers && Object.keys(httpConfig.headers).length > 0 && (
-                <div style={{ marginTop: '0.5rem' }}>
+                <div style={{marginTop: '0.5rem'}}>
                   {Object.entries(httpConfig.headers).map(([key, value]) => (
                     <div
                       key={key}
@@ -663,7 +578,7 @@ export default function () {
                         marginBottom: '0.25rem'
                       }}
                     >
-                      <span style={{ fontSize: '0.875rem' }}>
+                      <span style={{fontSize: '0.875rem'}}>
                         <strong>{key}:</strong> {value}
                       </span>
                       <button
@@ -671,8 +586,8 @@ export default function () {
                         disabled={isDynamicScript}
                         onClick={() => {
                           removeHeader(key);
-                          const { [key]: _, ...rest } = httpConfig.headers || {};
-                          const generatedScript = httpConfigToScript({ ...httpConfig, headers: rest });
+                          const {[key]: _, ...rest} = httpConfig.headers || {};
+                          const generatedScript = httpConfigToScript({...httpConfig, headers: rest});
                           setScript(generatedScript);
                         }}
                         style={{
@@ -694,16 +609,16 @@ export default function () {
             </div>
 
             {['POST', 'PUT', 'PATCH'].includes(httpConfig.method) && (
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+              <div style={{marginBottom: '1rem'}}>
+                <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
                   Request Body
                 </label>
                 <textarea
                   value={httpConfig.body as string}
                   disabled={isDynamicScript}
                   onChange={(e) => {
-                    setHttpConfig({ ...httpConfig, body: e.target.value });
-                    const generatedScript = httpConfigToScript({ ...httpConfig, body: e.target.value });
+                    setHttpConfig({...httpConfig, body: e.target.value});
+                    const generatedScript = httpConfigToScript({...httpConfig, body: e.target.value});
                     setScript(generatedScript);
                   }}
                   placeholder='{"key": "value"}'
@@ -723,9 +638,13 @@ export default function () {
               </div>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '1rem' }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))',
+              gap: '1rem'
+            }}>
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
                   Virtual Users *
                 </label>
                 <input
@@ -735,8 +654,11 @@ export default function () {
                   value={httpConfig.vusers}
                   disabled={isDynamicScript}
                   onChange={(e) => {
-                    setHttpConfig({ ...httpConfig, vusers: Number.parseInt(e.target.value) });
-                    const generatedScript = httpConfigToScript({ ...httpConfig, vusers: Number.parseInt(e.target.value) });
+                    setHttpConfig({...httpConfig, vusers: Number.parseInt(e.target.value)});
+                    const generatedScript = httpConfigToScript({
+                      ...httpConfig,
+                      vusers: Number.parseInt(e.target.value)
+                    });
                     setScript(generatedScript);
                   }}
                   style={{
@@ -751,7 +673,7 @@ export default function () {
                 />
               </div>
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
                   Duration (seconds) *
                 </label>
                 <input
@@ -761,8 +683,11 @@ export default function () {
                   value={httpConfig.duration}
                   disabled={isDynamicScript}
                   onChange={(e) => {
-                    setHttpConfig({ ...httpConfig, duration: Number.parseInt(e.target.value) });
-                    const generatedScript = httpConfigToScript({ ...httpConfig, duration: Number.parseInt(e.target.value) });
+                    setHttpConfig({...httpConfig, duration: Number.parseInt(e.target.value)});
+                    const generatedScript = httpConfigToScript({
+                      ...httpConfig,
+                      duration: Number.parseInt(e.target.value)
+                    });
                     setScript(generatedScript);
                   }}
                   style={{
@@ -777,7 +702,7 @@ export default function () {
                 />
               </div>
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
                   Ramp-up (seconds)
                 </label>
                 <input
@@ -786,8 +711,11 @@ export default function () {
                   value={httpConfig.rampUp}
                   disabled={isDynamicScript}
                   onChange={(e) => {
-                    setHttpConfig({ ...httpConfig, rampUp: Number.parseInt(e.target.value) });
-                    const generatedScript = httpConfigToScript({ ...httpConfig, rampUp: Number.parseInt(e.target.value) });
+                    setHttpConfig({...httpConfig, rampUp: Number.parseInt(e.target.value)});
+                    const generatedScript = httpConfigToScript({
+                      ...httpConfig,
+                      rampUp: Number.parseInt(e.target.value)
+                    });
                     setScript(generatedScript);
                   }}
                   style={{
@@ -813,10 +741,10 @@ export default function () {
             display: 'flex',
             flexDirection: 'column'
           }}>
-            <h2 style={{ marginTop: 0, marginBottom: '1.5rem' }}>Custom k6 Script</h2>
+            <h2 style={{marginTop: 0, marginBottom: '1.5rem'}}>Custom k6 Script</h2>
 
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+            <div style={{flex: 1, display: 'flex', flexDirection: 'column'}}>
+              <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
                 k6 Script *
               </label>
               <div style={{
@@ -863,15 +791,16 @@ export default function () {
                   alignItems: 'flex-start',
                   gap: '0.5rem'
                 }}>
-                  <span style={{ flexShrink: 0 }}>⚠️</span>
+                  <span style={{flexShrink: 0}}>⚠️</span>
                   <div>
                     <strong>Syntax Error:</strong> {syntaxError}
                   </div>
                 </div>
               )}
 
-              <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: '#6b7280' }}>
-                💡 Tip: Changing HTTP settings will automatically generate the script, and modifying the script will automatically extract HTTP settings.
+              <div style={{marginTop: '0.5rem', fontSize: '0.75rem', color: '#6b7280'}}>
+                💡 Tip: Changing HTTP settings will automatically generate the script, and modifying the script will
+                automatically extract HTTP settings.
               </div>
             </div>
           </div>
@@ -904,7 +833,7 @@ export default function () {
           >
             {loading ? '🚀 Starting Test...' : '🚀 Start Load Test'}
           </button>
-          <div style={{ marginTop: '0.75rem', fontSize: 'clamp(0.75rem, 2vw, 0.875rem)', color: '#6b7280' }}>
+          <div style={{marginTop: '0.75rem', fontSize: 'clamp(0.75rem, 2vw, 0.875rem)', color: '#6b7280'}}>
             Run load test with the configured script above
           </div>
         </div>
@@ -934,8 +863,9 @@ export default function () {
             overflow: 'auto',
             boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ margin: 0 }}>Recent Test Scripts</h2>
+            <div
+              style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem'}}>
+              <h2 style={{margin: 0}}>Recent Test Scripts</h2>
               <button
                 onClick={() => setShowRecentTests(false)}
                 style={{
@@ -950,152 +880,6 @@ export default function () {
                 ✕ Close
               </button>
             </div>
-
-            {recentTests.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
-                No recent tests found.
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {recentTests.map((test) => {
-                  const isExpanded = expandedScripts.has(test.testId);
-
-                  return (
-                    <div
-                      key={test.testId}
-                      style={{
-                        border: '1px solid #e5e7eb',
-                        borderRadius: '8px',
-                        padding: '1rem',
-                        transition: 'all 0.2s',
-                        backgroundColor: 'white'
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.5rem' }}>
-                        <div>
-                          <div style={{ fontWeight: 'bold', fontSize: '1rem', marginBottom: '0.25rem' }}>
-                            {test.name || test.testId}
-                          </div>
-                          <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
-                            {new Date(test.startTime).toLocaleString()}
-                          </div>
-                        </div>
-                        <div style={{
-                          padding: '0.25rem 0.75rem',
-                          backgroundColor: test.status === 'completed' ? '#dcfce7' : '#fee2e2',
-                          color: test.status === 'completed' ? '#166534' : '#991b1b',
-                          borderRadius: '4px',
-                          fontSize: '0.75rem',
-                          fontWeight: 'bold'
-                        }}>
-                          {test.status.toUpperCase()}
-                        </div>
-                      </div>
-
-                      {test.config && (
-                        <div style={{
-                          fontSize: '0.875rem',
-                          color: '#6b7280',
-                          marginBottom: '0.5rem',
-                          display: 'flex',
-                          gap: '1rem',
-                          flexWrap: 'wrap'
-                        }}>
-                          <span>📍 {test.config.method} {test.config.url}</span>
-                          <span>👥 {test.config.vusers} VUs</span>
-                          <span>⏱️ {test.config.duration}s</span>
-                        </div>
-                      )}
-
-                      <div style={{ marginTop: '0.75rem' }}>
-                        <button
-                          onClick={(e) => toggleScriptExpand(test.testId, e)}
-                          style={{
-                            padding: '0.5rem 1rem',
-                            backgroundColor: '#6b7280',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            fontSize: '0.875rem',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            marginBottom: '0.5rem'
-                          }}
-                        >
-                          {isExpanded ? '▼' : '▶'} Script
-                        </button>
-
-                        {isExpanded ? (
-                          <div style={{
-                            marginTop: '0.5rem',
-                            marginBottom: '0.75rem'
-                          }}>
-                            <SyntaxHighlighter
-                              language="javascript"
-                              customStyle={{
-                                borderRadius: '4px',
-                                fontSize: '0.75rem',
-                                margin: 0,
-                                backgroundColor: '#f6f8fa',
-                                maxHeight: '300px',
-                                overflow: 'auto'
-                              }}
-                              showLineNumbers={true}
-                            >
-                              {test.script}
-                            </SyntaxHighlighter>
-                          </div>
-                        ) : (
-                          <div style={{
-                            padding: '0.5rem',
-                            backgroundColor: '#f3f4f6',
-                            borderRadius: '4px',
-                            fontSize: '0.75rem',
-                            fontFamily: 'monospace',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            color: '#374151',
-                            marginBottom: '0.75rem'
-                          }}>
-                            {test.script.substring(0, 100)}...
-                          </div>
-                        )}
-                      </div>
-
-                      <div style={{
-                        marginTop: '0.75rem',
-                        textAlign: 'right'
-                      }}>
-                        <button
-                          onClick={() => copyScriptFromTest(test)}
-                          style={{
-                            padding: '0.5rem 1.5rem',
-                            backgroundColor: '#8b5cf6',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            fontSize: '0.875rem',
-                            cursor: 'pointer',
-                            fontWeight: 'bold'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = '#7c3aed';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = '#8b5cf6';
-                          }}
-                        >
-                          📋 Copy Script
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
           </div>
         </div>
       )}

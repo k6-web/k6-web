@@ -1,27 +1,12 @@
-export type TestStatus = 'running' | 'completed' | 'failed' | 'stopped';
-
-export interface TestInfo {
-  testId: string;
-  status: TestStatus;
-  startTime: number;
-  endTime?: number;
-  script?: string;
-  exitCode?: number;
-  name?: string;
-  summary?: K6Summary;
-}
-
-export interface TestResult {
-  testId: string;
-  status: TestStatus;
-  startTime: number;
-  endTime: number;
+export interface K6TestConfig {
+  url: string;
+  method: string;
+  headers?: Record<string, string>;
+  body?: string | object;
+  vusers: number;
   duration: number;
-  exitCode: number;
-  script: string;
-  config?: HttpTestConfig;
+  rampUp?: number;
   name?: string;
-  summary?: K6Summary;
 }
 
 export interface K6Summary {
@@ -87,50 +72,4 @@ export interface K6Check {
   id: string;
   passes: number;
   fails: number;
-}
-
-export interface HttpTestConfig {
-  url: string;
-  method: string;
-  headers?: Record<string, string>;
-  body?: string | object;
-  vusers: number;
-  duration: number;
-  rampUp?: number;
-  name?: string;
-}
-
-export interface RunTestResponse {
-  testId: string;
-  status: TestStatus;
-  message: string;
-  streamUrl: string;
-  statusUrl: string;
-  stopUrl: string;
-  config?: HttpTestConfig;
-  name?: string;
-}
-
-export interface LogEntry {
-  type: 'stdout' | 'stderr' | 'system' | 'error';
-  timestamp: number;
-  message: string;
-}
-
-export interface HealthResponse {
-  status: string;
-  message: string;
-  runningTests: number;
-  totalTests: number;
-}
-
-export interface TestListResponse {
-  count: number;
-  tests: TestInfo[];
-  pagination: {
-    limit: number;
-    cursor: number | null;
-    nextCursor: number | null;
-    hasMore: boolean;
-  };
 }

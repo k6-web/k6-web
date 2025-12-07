@@ -1,11 +1,12 @@
 import {useEffect, useRef, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
-import {k6Api} from '../services/api';
-import type {LogEntry, TestInfo, TestResult} from '../types';
+import {k6Api} from '../apis/testApi.ts';
+import type {Test} from '../types/test.ts';
+import type {LogEntry} from '../types/log.ts';
 import {CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
-import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
+import {Light as SyntaxHighlighter} from 'react-syntax-highlighter';
 import javascript from 'react-syntax-highlighter/dist/esm/languages/hljs/javascript';
-import { github } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import {github} from 'react-syntax-highlighter/dist/esm/styles/hljs';
 
 SyntaxHighlighter.registerLanguage('javascript', javascript);
 
@@ -82,10 +83,9 @@ function parseK6TimeSeriesData(rawOutput: string) {
 }
 
 export const TestDetail = () => {
-  const { testId } = useParams<{ testId: string }>();
+  const {testId} = useParams<{ testId: string }>();
   const navigate = useNavigate();
-  const [testInfo, setTestInfo] = useState<TestInfo | null>(null);
-  const [testResult, setTestResult] = useState<TestResult | null>(null);
+  const [testInfo, setTestInfo] = useState<Test | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -100,7 +100,7 @@ export const TestDetail = () => {
 
   useEffect(() => {
     if (testInfo?.status === 'running' && logsEndRef.current && autoScroll) {
-      logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      logsEndRef.current.scrollIntoView({behavior: 'smooth'});
     }
   }, [logs, testInfo?.status, autoScroll]);
 
@@ -118,8 +118,8 @@ export const TestDetail = () => {
       }
     };
 
-    container.addEventListener('wheel', handleUserScroll, { passive: true });
-    container.addEventListener('touchmove', handleUserScroll, { passive: true });
+    container.addEventListener('wheel', handleUserScroll, {passive: true});
+    container.addEventListener('touchmove', handleUserScroll, {passive: true});
     container.addEventListener('keydown', handleKeyDown);
 
     return () => {
@@ -131,21 +131,21 @@ export const TestDetail = () => {
 
   const scrollToTop = () => {
     if (logsContainerRef.current) {
-      logsContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      logsContainerRef.current.scrollTo({top: 0, behavior: 'smooth'});
       setAutoScroll(false);
     }
   };
 
   const scrollToBottom = () => {
     if (logsEndRef.current) {
-      logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      logsEndRef.current.scrollIntoView({behavior: 'smooth'});
     }
   };
 
   const toggleAutoScroll = () => {
     setAutoScroll(prev => !prev);
     if (!autoScroll && logsEndRef.current) {
-      logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      logsEndRef.current.scrollIntoView({behavior: 'smooth'});
     }
   };
 
@@ -159,8 +159,8 @@ export const TestDetail = () => {
         setTestInfo(info);
 
         if (info.status !== 'running') {
-          const result = await k6Api.getTestResult(testId);
-          setTestResult(result);
+          const result = await k6Api.getTest(testId);
+          setTestInfo(result);
         }
 
         setError(null);
@@ -183,7 +183,7 @@ export const TestDetail = () => {
     if (!testId || !testInfo || testInfo.status !== 'running') return;
 
     let accumulatedOutput = '';
-    const eventSource = new EventSource(k6Api.getStreamUrl(testId));
+    const eventSource = new EventSource(k6Api.getTestLogStreamUrl(testId));
 
     eventSource.onmessage = (event) => {
       const log: LogEntry = JSON.parse(event.data);
@@ -230,24 +230,20 @@ export const TestDetail = () => {
     if (!testId || !confirm('Are you sure you want to delete this test result?')) return;
 
     try {
-      await k6Api.deleteTestResult(testId);
-      navigate('/tests');
+      await k6Api.deleteTest(testId);
+      navigate('/');
     } catch (err) {
       alert('Failed to delete test: ' + (err instanceof Error ? err.message : 'Unknown error'));
     }
   };
 
   const handleRerun = () => {
-    if (!testResult && !testInfo) return;
+    if (!testInfo) return;
 
-    const scriptToRerun = testResult?.script || testInfo?.script;
-    const config = testResult?.config;
+    const scriptToRerun = testInfo?.script;
 
     if (scriptToRerun) {
       sessionStorage.setItem('rerunScript', scriptToRerun);
-      if (config) {
-        sessionStorage.setItem('rerunConfig', JSON.stringify(config));
-      }
       navigate('/new-test');
     } else {
       alert('No script available to re-run');
@@ -264,7 +260,7 @@ export const TestDetail = () => {
   };
 
   if (loading) return <div>Loading...</div>;
-  if (error) return <div style={{ color: 'red' }}>Error: {error}</div>;
+  if (error) return <div style={{color: 'red'}}>Error: {error}</div>;
   if (!testInfo) return <div>Test not found</div>;
 
   return (
@@ -278,16 +274,21 @@ export const TestDetail = () => {
         gap: '1rem'
       }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: 'clamp(1.25rem, 4vw, 1.875rem)' }}>
-            {testResult?.name || testInfo.name || `Test: ${testId}`}
+          <h1 style={{margin: 0, fontSize: 'clamp(1.25rem, 4vw, 1.875rem)'}}>
+            {testInfo.name || `Test: ${testId}`}
           </h1>
-          {(testResult?.name || testInfo.name) && (
-            <p style={{ color: '#9ca3af', margin: '0.25rem 0 0 0', fontSize: 'clamp(0.625rem, 2vw, 0.75rem)', wordBreak: 'break-all' }}>
+          {(testInfo.name) && (
+            <p style={{
+              color: '#9ca3af',
+              margin: '0.25rem 0 0 0',
+              fontSize: 'clamp(0.625rem, 2vw, 0.75rem)',
+              wordBreak: 'break-all'
+            }}>
               ID: {testId}
             </p>
           )}
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <div style={{display: 'flex', gap: '0.5rem', flexWrap: 'wrap'}}>
           {testInfo.status === 'running' && (
             <button
               onClick={handleStop}
@@ -364,16 +365,16 @@ export const TestDetail = () => {
         marginBottom: '1.5rem',
         boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
       }}>
-        <h2 style={{ marginTop: 0 }}>Test Information</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+        <h2 style={{marginTop: 0}}>Test Information</h2>
+        <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem'}}>
           <div>
-            <div style={{ fontSize: '0.875rem', color: '#666' }}>Status</div>
+            <div style={{fontSize: '0.875rem', color: '#666'}}>Status</div>
             <div style={{
               fontSize: '1.25rem',
               fontWeight: 'bold',
               color: testInfo.status === 'running' ? '#3b82f6' :
-                     testInfo.status === 'completed' ? '#22c55e' :
-                     testInfo.status === 'failed' ? '#ef4444' : '#6b7280'
+                testInfo.status === 'completed' ? '#22c55e' :
+                  testInfo.status === 'failed' ? '#ef4444' : '#6b7280'
             }}>
               {testInfo.status.toUpperCase()}
             </div>
@@ -381,8 +382,8 @@ export const TestDetail = () => {
 
           {testInfo.status === 'running' && progress > 0 && (
             <div>
-              <div style={{ fontSize: '0.875rem', color: '#666' }}>Progress</div>
-              <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#3b82f6' }}>
+              <div style={{fontSize: '0.875rem', color: '#666'}}>Progress</div>
+              <div style={{fontSize: '1.25rem', fontWeight: 'bold', color: '#3b82f6'}}>
                 {progress}%
               </div>
               <div style={{
@@ -398,39 +399,33 @@ export const TestDetail = () => {
                   height: '100%',
                   backgroundColor: '#3b82f6',
                   transition: 'width 0.3s ease'
-                }} />
+                }}/>
               </div>
             </div>
           )}
 
           {testInfo.status === 'running' && errorCount > 0 && (
             <div>
-              <div style={{ fontSize: '0.875rem', color: '#666' }}>Errors</div>
-              <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#ef4444' }}>
+              <div style={{fontSize: '0.875rem', color: '#666'}}>Errors</div>
+              <div style={{fontSize: '1.25rem', fontWeight: 'bold', color: '#ef4444'}}>
                 {errorCount}
               </div>
             </div>
           )}
 
           <div>
-            <div style={{ fontSize: '0.875rem', color: '#666' }}>Start Time</div>
-            <div style={{ fontSize: '1rem' }}>{new Date(testInfo.startTime).toLocaleString()}</div>
+            <div style={{fontSize: '0.875rem', color: '#666'}}>Start Time</div>
+            <div style={{fontSize: '1rem'}}>{new Date(testInfo.startTime).toLocaleString()}</div>
           </div>
-          {testResult && (
+          {testInfo?.endTime && (
             <>
               <div>
-                <div style={{ fontSize: '0.875rem', color: '#666' }}>End Time</div>
-                <div style={{ fontSize: '1rem' }}>{new Date(testResult.endTime).toLocaleString()}</div>
+                <div style={{fontSize: '0.875rem', color: '#666'}}>End Time</div>
+                <div style={{fontSize: '1rem'}}>{new Date(testInfo.endTime).toLocaleString()}</div>
               </div>
               <div>
-                <div style={{ fontSize: '0.875rem', color: '#666' }}>Duration</div>
-                <div style={{ fontSize: '1rem' }}>{(testResult.duration / 1000).toFixed(2)}s</div>
-              </div>
-              <div>
-                <div style={{ fontSize: '0.875rem', color: '#666' }}>Exit Code</div>
-                <div style={{ fontSize: '1rem', fontWeight: 'bold', color: testResult.exitCode === 0 ? '#22c55e' : '#ef4444' }}>
-                  {testResult.exitCode}
-                </div>
+                <div style={{fontSize: '0.875rem', color: '#666'}}>Duration</div>
+                <div style={{fontSize: '1rem'}}>{((testInfo.endTime - testInfo.startTime) / 1000).toFixed(2)}s</div>
               </div>
             </>
           )}
@@ -438,22 +433,14 @@ export const TestDetail = () => {
       </div>
 
       {testInfo.script && (
-        <details style={{
+        <div style={{
           backgroundColor: 'white',
           padding: '1.5rem',
           borderRadius: '8px',
           marginBottom: '1.5rem',
           boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
         }}>
-          <summary style={{
-            cursor: 'pointer',
-            fontWeight: '600',
-            fontSize: '1.125rem',
-            userSelect: 'none',
-            marginBottom: '1rem'
-          }}>
-            Script
-          </summary>
+          <h2 style={{marginTop: 0, marginBottom: '1rem'}}>Script</h2>
           <SyntaxHighlighter
             language="javascript"
             style={github}
@@ -467,7 +454,7 @@ export const TestDetail = () => {
           >
             {testInfo.script}
           </SyntaxHighlighter>
-        </details>
+        </div>
       )}
 
       {/* Performance Over Time - 실시간만 표시 */}
@@ -484,7 +471,7 @@ export const TestDetail = () => {
             marginBottom: '1.5rem',
             boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
           }}>
-            <h2 style={{ marginTop: 0, marginBottom: '1.5rem' }}>
+            <h2 style={{marginTop: 0, marginBottom: '1.5rem'}}>
               Performance Over Time
               {testInfo.status === 'running' && (
                 <span style={{
@@ -499,30 +486,30 @@ export const TestDetail = () => {
             </h2>
 
             {/* VU 그래프 */}
-            <div style={{ marginBottom: '2rem' }}>
-              <h3 style={{ fontSize: '1rem', color: '#666', marginBottom: '1rem' }}>Virtual Users (VUs)</h3>
+            <div style={{marginBottom: '2rem'}}>
+              <h3 style={{fontSize: '1rem', color: '#666', marginBottom: '1rem'}}>Virtual Users (VUs)</h3>
               <ResponsiveContainer width="100%" height={250}>
-                <LineChart data={timeSeriesData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
+                <LineChart data={timeSeriesData} margin={{top: 5, right: 30, left: 20, bottom: 5}}>
+                  <CartesianGrid strokeDasharray="3 3"/>
                   <XAxis
                     dataKey="time"
-                    label={{ value: 'Time (seconds)', position: 'insideBottomRight', offset: -10 }}
+                    label={{value: 'Time (seconds)', position: 'insideBottomRight', offset: -10}}
                   />
                   <YAxis
-                    label={{ value: 'VUs', angle: -90, position: 'insideLeft' }}
+                    label={{value: 'VUs', angle: -90, position: 'insideLeft'}}
                   />
                   <Tooltip
                     formatter={(value: number) => [value, 'VUs']}
                     labelFormatter={(label) => `Time: ${label}s`}
                   />
-                  <Legend />
+                  <Legend/>
                   <Line
                     type="monotone"
                     dataKey="vus"
                     stroke="#8884d8"
                     strokeWidth={2}
                     name="Virtual Users"
-                    dot={{ r: 3 }}
+                    dot={{r: 3}}
                     isAnimationActive={false}
                   />
                 </LineChart>
@@ -531,29 +518,29 @@ export const TestDetail = () => {
 
             {/* TPS 그래프 */}
             <div>
-              <h3 style={{ fontSize: '1rem', color: '#666', marginBottom: '1rem' }}>Transactions Per Second (TPS)</h3>
+              <h3 style={{fontSize: '1rem', color: '#666', marginBottom: '1rem'}}>Transactions Per Second (TPS)</h3>
               <ResponsiveContainer width="100%" height={250}>
-                <LineChart data={timeSeriesData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
+                <LineChart data={timeSeriesData} margin={{top: 5, right: 30, left: 20, bottom: 5}}>
+                  <CartesianGrid strokeDasharray="3 3"/>
                   <XAxis
                     dataKey="time"
-                    label={{ value: 'Time (seconds)', position: 'insideBottomRight', offset: -10 }}
+                    label={{value: 'Time (seconds)', position: 'insideBottomRight', offset: -10}}
                   />
                   <YAxis
-                    label={{ value: 'TPS', angle: -90, position: 'insideLeft' }}
+                    label={{value: 'TPS', angle: -90, position: 'insideLeft'}}
                   />
                   <Tooltip
                     formatter={(value: number) => [value, 'TPS']}
                     labelFormatter={(label) => `Time: ${label}s`}
                   />
-                  <Legend />
+                  <Legend/>
                   <Line
                     type="monotone"
                     dataKey="tps"
                     stroke="#82ca9d"
                     strokeWidth={2}
                     name="Transactions/sec"
-                    dot={{ r: 3 }}
+                    dot={{r: 3}}
                     isAnimationActive={false}
                   />
                 </LineChart>
@@ -571,9 +558,9 @@ export const TestDetail = () => {
           marginBottom: '1.5rem',
           boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h2 style={{ margin: 0 }}>Live Logs</h2>
-            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem'}}>
+            <h2 style={{margin: 0}}>Live Logs</h2>
+            <div style={{display: 'flex', gap: '0.5rem', alignItems: 'center'}}>
               {/* 로그 필터 버튼 */}
               {(['all', 'stdout', 'stderr', 'error', 'system'] as const).map(filter => (
                 <button
@@ -595,7 +582,7 @@ export const TestDetail = () => {
                 </button>
               ))}
 
-              <div style={{ width: '1px', height: '20px', backgroundColor: '#d1d5db', margin: '0 0.25rem' }} />
+              <div style={{width: '1px', height: '20px', backgroundColor: '#d1d5db', margin: '0 0.25rem'}}/>
 
               {/* 스크롤 제어 버튼 */}
               <button
@@ -656,31 +643,31 @@ export const TestDetail = () => {
           <div
             ref={logsContainerRef}
             style={{
-            backgroundColor: '#1e1e1e',
-            color: '#d4d4d4',
-            padding: '1rem',
-            borderRadius: '4px',
-            maxHeight: '400px',
-            overflow: 'auto',
-            fontSize: '0.875rem',
-            fontFamily: 'monospace'
-          }}>
+              backgroundColor: '#1e1e1e',
+              color: '#d4d4d4',
+              padding: '1rem',
+              borderRadius: '4px',
+              maxHeight: '400px',
+              overflow: 'auto',
+              fontSize: '0.875rem',
+              fontFamily: 'monospace'
+            }}>
             {logs
               .filter(log => logFilter === 'all' || log.type === logFilter)
               .map((log, index) => (
                 <div key={index} style={{
                   color: log.type === 'stderr' || log.type === 'error' ? '#f87171' :
-                         log.type === 'system' ? '#60a5fa' : '#d4d4d4'
+                    log.type === 'system' ? '#60a5fa' : '#d4d4d4'
                 }}>
                   [{new Date(log.timestamp).toLocaleTimeString()}] {log.message}
                 </div>
               ))}
-            <div ref={logsEndRef} />
+            <div ref={logsEndRef}/>
           </div>
         </div>
       )}
 
-      {testResult?.summary && (
+      {testInfo?.summary && (
         <>
           {/* 주요 메트릭 카드 */}
           <div style={{
@@ -697,14 +684,14 @@ export const TestDetail = () => {
               boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
               borderLeft: '4px solid #3b82f6'
             }}>
-              <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '0.5rem' }}>
+              <div style={{fontSize: '0.875rem', color: '#666', marginBottom: '0.5rem'}}>
                 TPS (Transactions Per Second)
               </div>
-              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#3b82f6' }}>
-                {testResult.summary.metrics.http_reqs?.rate ? Math.round(testResult.summary.metrics.http_reqs.rate) : 'N/A'}
+              <div style={{fontSize: '2rem', fontWeight: 'bold', color: '#3b82f6'}}>
+                {testInfo.summary.metrics.http_reqs?.rate ? Math.round(testInfo.summary.metrics.http_reqs.rate) : 'N/A'}
               </div>
-              <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '0.25rem' }}>
-                Total Requests: {testResult.summary.metrics.http_reqs?.count || 'N/A'}
+              <div style={{fontSize: '0.75rem', color: '#999', marginTop: '0.25rem'}}>
+                Total Requests: {testInfo.summary.metrics.http_reqs?.count || 'N/A'}
               </div>
             </div>
 
@@ -716,26 +703,26 @@ export const TestDetail = () => {
               boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
               borderLeft: '4px solid #8b5cf6'
             }}>
-              <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '0.5rem' }}>
+              <div style={{fontSize: '0.875rem', color: '#666', marginBottom: '0.5rem'}}>
                 Response Time (Latency)
               </div>
-              <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+              <div style={{display: 'flex', gap: '1rem', marginTop: '0.5rem'}}>
                 <div>
-                  <div style={{ fontSize: '0.75rem', color: '#999' }}>Avg</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#8b5cf6' }}>
-                    {formatDuration(testResult.summary.metrics.http_req_duration?.avg)}
+                  <div style={{fontSize: '0.75rem', color: '#999'}}>Avg</div>
+                  <div style={{fontSize: '1.25rem', fontWeight: 'bold', color: '#8b5cf6'}}>
+                    {formatDuration(testInfo.summary.metrics.http_req_duration?.avg)}
                   </div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '0.75rem', color: '#999' }}>P90</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#8b5cf6' }}>
-                    {formatDuration(testResult.summary.metrics.http_req_duration?.['p(90)'])}
+                  <div style={{fontSize: '0.75rem', color: '#999'}}>P90</div>
+                  <div style={{fontSize: '1.25rem', fontWeight: 'bold', color: '#8b5cf6'}}>
+                    {formatDuration(testInfo.summary.metrics.http_req_duration?.['p(90)'])}
                   </div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '0.75rem', color: '#999' }}>P95</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#8b5cf6' }}>
-                    {formatDuration(testResult.summary.metrics.http_req_duration?.['p(95)'])}
+                  <div style={{fontSize: '0.75rem', color: '#999'}}>P95</div>
+                  <div style={{fontSize: '1.25rem', fontWeight: 'bold', color: '#8b5cf6'}}>
+                    {formatDuration(testInfo.summary.metrics.http_req_duration?.['p(95)'])}
                   </div>
                 </div>
               </div>
@@ -743,7 +730,7 @@ export const TestDetail = () => {
 
             {/* 성공/실패 카드 */}
             {(() => {
-              const checks = testResult.summary.metrics.checks;
+              const checks = testInfo.summary.metrics.checks;
               const passRate = checks ? checks.value * 100 : 0;
               const failRate = 100 - passRate;
               const totalChecks = checks ? (checks.passes + checks.fails) : 0;
@@ -758,25 +745,25 @@ export const TestDetail = () => {
                   boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                   borderLeft: `4px solid ${failedChecks > 0 ? '#ef4444' : '#22c55e'}`
                 }}>
-                  <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '0.5rem' }}>
+                  <div style={{fontSize: '0.875rem', color: '#666', marginBottom: '0.5rem'}}>
                     Success / Failure
                   </div>
-                  <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+                  <div style={{display: 'flex', gap: '1.5rem', alignItems: 'center'}}>
                     <div>
-                      <div style={{ fontSize: '0.75rem', color: '#22c55e' }}>✓ Succeeded</div>
-                      <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#22c55e' }}>
+                      <div style={{fontSize: '0.75rem', color: '#22c55e'}}>✓ Succeeded</div>
+                      <div style={{fontSize: '1.5rem', fontWeight: 'bold', color: '#22c55e'}}>
                         {passRate.toFixed(1)}%
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: '#999' }}>
+                      <div style={{fontSize: '0.75rem', color: '#999'}}>
                         {passedChecks} / {totalChecks}
                       </div>
                     </div>
                     <div>
-                      <div style={{ fontSize: '0.75rem', color: '#ef4444' }}>✗ Failed</div>
-                      <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#ef4444' }}>
+                      <div style={{fontSize: '0.75rem', color: '#ef4444'}}>✗ Failed</div>
+                      <div style={{fontSize: '1.5rem', fontWeight: 'bold', color: '#ef4444'}}>
                         {failRate.toFixed(1)}%
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: '#999' }}>
+                      <div style={{fontSize: '0.75rem', color: '#999'}}>
                         {failedChecks} / {totalChecks}
                       </div>
                     </div>
@@ -793,20 +780,20 @@ export const TestDetail = () => {
               boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
               borderLeft: '4px solid #f59e0b'
             }}>
-              <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '0.5rem' }}>
+              <div style={{fontSize: '0.875rem', color: '#666', marginBottom: '0.5rem'}}>
                 Network Bandwidth
               </div>
-              <div style={{ marginTop: '0.5rem' }}>
-                <div style={{ marginBottom: '0.75rem' }}>
-                  <div style={{ fontSize: '0.75rem', color: '#999' }}>↓ Received</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#f59e0b' }}>
-                    {formatBytes(testResult.summary.metrics.data_received?.count)}
+              <div style={{marginTop: '0.5rem'}}>
+                <div style={{marginBottom: '0.75rem'}}>
+                  <div style={{fontSize: '0.75rem', color: '#999'}}>↓ Received</div>
+                  <div style={{fontSize: '1.25rem', fontWeight: 'bold', color: '#f59e0b'}}>
+                    {formatBytes(testInfo.summary.metrics.data_received?.count)}
                   </div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '0.75rem', color: '#999' }}>↑ Sent</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#f59e0b' }}>
-                    {formatBytes(testResult.summary.metrics.data_sent?.count)}
+                  <div style={{fontSize: '0.75rem', color: '#999'}}>↑ Sent</div>
+                  <div style={{fontSize: '1.25rem', fontWeight: 'bold', color: '#f59e0b'}}>
+                    {formatBytes(testInfo.summary.metrics.data_sent?.count)}
                   </div>
                 </div>
               </div>
@@ -840,7 +827,7 @@ export const TestDetail = () => {
               fontFamily: 'monospace',
               marginTop: '1rem'
             }}>
-              {JSON.stringify(testResult.summary, null, 2)}
+              {JSON.stringify(testInfo.summary, null, 2)}
             </pre>
           </details>
         </>
