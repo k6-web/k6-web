@@ -35,7 +35,7 @@ to run k6 load tests directly from their web browsers.
 
 ### 4. Test Result
 
-<img src="docs/test.png">
+<img src="docs/test_result.png">
 
 ## Installation
 
