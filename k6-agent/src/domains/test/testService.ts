@@ -22,6 +22,15 @@ export class TestService {
       throw new BadRequestError('Script is required and cannot be empty');
     }
 
+    // Check if there's already a running test
+    const runningTests = this.executor.getAllRunningTests();
+    if (runningTests.size > 0) {
+      const runningTestIds = Array.from(runningTests.keys());
+      throw new BadRequestError(
+        `A test is currently running (ID: ${runningTestIds[0]}). Please wait for it to complete or stop it before starting a new test.`
+      );
+    }
+
     return this.executor.runTest(script, metadata);
   }
 
@@ -62,6 +71,7 @@ export class TestService {
           startTime: result.startTime,
           endTime: result.endTime,
           exitCode: result.exitCode,
+          script: result.script,
           name: result.name,
           summary: result.summary,
         });

@@ -2,8 +2,10 @@ import {useEffect, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {k6Api} from '../apis/testApi.ts';
 import type {K6TestConfig} from '../types/k6.ts';
+import type {Test} from '../types/test.ts';
 import {Light as SyntaxHighlighter} from 'react-syntax-highlighter';
 import javascript from 'react-syntax-highlighter/dist/esm/languages/hljs/javascript';
+import {github} from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import Editor from 'react-simple-code-editor';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-javascript';
@@ -30,7 +32,10 @@ export const NewTest = () => {
   });
 
   const [showRecentTests, setShowRecentTests] = useState(false);
+  const [recentTests, setRecentTests] = useState<Test[]>([]);
+  const [loadingRecentTests, setLoadingRecentTests] = useState(false);
   const [isDynamicScript, setIsDynamicScript] = useState(false); // Dynamic script detection
+  const [showTooltip, setShowTooltip] = useState(false);
 
   const [headerKey, setHeaderKey] = useState('');
   const [headerValue, setHeaderValue] = useState('');
@@ -89,6 +94,54 @@ export default function () {
     }
   }, []);
 
+  useEffect(() => {
+    // Show tooltip after 1 second
+    const showTimer = setTimeout(() => {
+      setShowTooltip(true);
+    }, 1000);
+
+    // Hide tooltip after 11 seconds (1s delay + 10s display)
+    const hideTimer = setTimeout(() => {
+      setShowTooltip(false);
+    }, 11000);
+
+    return () => {
+      clearTimeout(showTimer);
+      clearTimeout(hideTimer);
+    };
+  }, []);
+
+  const fetchRecentTests = async () => {
+    setLoadingRecentTests(true);
+    try {
+      const data = await k6Api.getTests(null, 5);
+      // Filter out tests that don't have scripts and get only the first 5
+      const testsWithScripts = data.tests.filter(test => test.script).slice(0, 5);
+      setRecentTests(testsWithScripts);
+    } catch (err) {
+      console.error('Failed to fetch recent tests:', err);
+    } finally {
+      setLoadingRecentTests(false);
+    }
+  };
+
+  const handleLoadRecentTest = async (testId: string) => {
+    try {
+      const test = await k6Api.getTest(testId);
+      if (test.script) {
+        setScript(test.script);
+        scriptToHttpConfig(test.script);
+        validateScript(test.script);
+        setShowRecentTests(false);
+
+        // Scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    } catch (err) {
+      alert('Failed to load test script');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -106,8 +159,13 @@ export default function () {
         config: httpConfig
       });
       navigate(`/tests/${result.testId}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to start test');
+    } catch (err: any) {
+      // Extract error message from API response
+      const errorMessage = err?.response?.data?.error || err?.message || 'Failed to start test';
+      setError(errorMessage);
+
+      // Scroll to top to show error
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setLoading(false);
     }
@@ -357,6 +415,57 @@ export default function () {
         gap: '1rem'
       }}>
         <h1 style={{margin: 0, fontSize: 'clamp(1.5rem, 5vw, 2rem)'}}>Create New Test</h1>
+        <div style={{position: 'relative'}}>
+          <button
+            type="button"
+            onClick={() => {
+              setShowRecentTests(true);
+              fetchRecentTests();
+            }}
+            title="View and load your 5 most recent test scripts to quickly re-run or modify them"
+            style={{
+              padding: '0.5rem 1rem',
+              backgroundColor: '#8b5cf6',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '0.875rem',
+              fontWeight: 'bold'
+            }}
+          >
+            📋 Recent Tests
+          </button>
+          {showTooltip && (
+            <div style={{
+              position: 'absolute',
+              top: 'calc(100% + 0.5rem)',
+              right: 0,
+              backgroundColor: '#3b82f6',
+              color: 'white',
+              padding: '0.5rem 0.75rem',
+              borderRadius: '4px',
+              fontSize: '0.75rem',
+              whiteSpace: 'nowrap',
+              boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)',
+              zIndex: 10,
+              pointerEvents: 'none',
+              animation: 'fadeIn 0.3s ease-in'
+            }}>
+              💡 Quickly load your recent test scripts!
+              <div style={{
+                position: 'absolute',
+                top: '-4px',
+                right: '1rem',
+                width: 0,
+                height: 0,
+                borderLeft: '6px solid transparent',
+                borderRight: '6px solid transparent',
+                borderBottom: '6px solid #3b82f6'
+              }} />
+            </div>
+          )}
+        </div>
       </div>
 
       <form onSubmit={handleSubmit}>
@@ -851,21 +960,26 @@ export default function () {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 1000
+          zIndex: 1000,
+          padding: '1rem'
         }}>
           <div style={{
             backgroundColor: 'white',
             borderRadius: '8px',
             padding: '2rem',
-            maxWidth: '800px',
-            width: '90%',
-            maxHeight: '80vh',
+            maxWidth: '1200px',
+            width: '100%',
+            maxHeight: '85vh',
             overflow: 'auto',
             boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
           }}>
-            <div
-              style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem'}}>
-              <h2 style={{margin: 0}}>Recent Test Scripts</h2>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '1.5rem'
+            }}>
+              <h2 style={{margin: 0}}>📋 Recent Test Scripts</h2>
               <button
                 onClick={() => setShowRecentTests(false)}
                 style={{
@@ -879,6 +993,156 @@ export default function () {
               >
                 ✕ Close
               </button>
+            </div>
+
+            {loadingRecentTests ? (
+              <div style={{textAlign: 'center', padding: '3rem', color: '#6b7280'}}>
+                Loading recent tests...
+              </div>
+            ) : recentTests.length === 0 ? (
+              <div style={{
+                textAlign: 'center',
+                padding: '3rem',
+                color: '#6b7280',
+                backgroundColor: '#f9fafb',
+                borderRadius: '8px'
+              }}>
+                <p style={{fontSize: '1.125rem', marginBottom: '0.5rem'}}>No recent tests found</p>
+                <p style={{fontSize: '0.875rem'}}>Run your first test to see it here!</p>
+              </div>
+            ) : (
+              <div style={{
+                display: 'grid',
+                gap: '1rem'
+              }}>
+                {recentTests.map((test) => (
+                  <div
+                    key={test.testId}
+                    style={{
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      padding: '1.5rem',
+                      backgroundColor: '#fafafa',
+                      transition: 'box-shadow 0.2s',
+                      cursor: 'pointer'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                  >
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      marginBottom: '1rem',
+                      gap: '1rem',
+                      flexWrap: 'wrap'
+                    }}>
+                      <div style={{flex: 1, minWidth: '200px'}}>
+                        <div style={{
+                          fontSize: '1.125rem',
+                          fontWeight: 'bold',
+                          marginBottom: '0.5rem',
+                          color: '#1f2937'
+                        }}>
+                          {test.name || 'Unnamed Test'}
+                        </div>
+                        <div style={{
+                          fontSize: '0.75rem',
+                          color: '#6b7280',
+                          marginBottom: '0.5rem'
+                        }}>
+                          ID: {test.testId}
+                        </div>
+                        <div style={{display: 'flex', gap: '1rem', flexWrap: 'wrap'}}>
+                          <div style={{fontSize: '0.875rem', color: '#6b7280'}}>
+                            <span style={{fontWeight: '600'}}>Status:</span>{' '}
+                            <span style={{
+                              padding: '0.125rem 0.5rem',
+                              borderRadius: '9999px',
+                              backgroundColor: test.status === 'running' ? '#dbeafe' :
+                                test.status === 'completed' ? '#d1fae5' :
+                                  test.status === 'failed' ? '#fee2e2' : '#f3f4f6',
+                              color: test.status === 'running' ? '#1e40af' :
+                                test.status === 'completed' ? '#065f46' :
+                                  test.status === 'failed' ? '#991b1b' : '#374151'
+                            }}>
+                              {test.status}
+                            </span>
+                          </div>
+                          <div style={{fontSize: '0.875rem', color: '#6b7280'}}>
+                            <span style={{fontWeight: '600'}}>Started:</span> {new Date(test.startTime).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleLoadRecentTest(test.testId)}
+                        style={{
+                          padding: '0.5rem 1.5rem',
+                          backgroundColor: '#3b82f6',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '0.875rem',
+                          fontWeight: 'bold',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        📝 Load Script
+                      </button>
+                    </div>
+
+                    {/* Script Preview */}
+                    <div style={{
+                      backgroundColor: '#ffffff',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '4px',
+                      overflow: 'hidden'
+                    }}>
+                      <div style={{
+                        backgroundColor: '#f3f4f6',
+                        padding: '0.5rem 1rem',
+                        fontSize: '0.75rem',
+                        fontWeight: '600',
+                        color: '#6b7280',
+                        borderBottom: '1px solid #e5e7eb'
+                      }}>
+                        Script Preview
+                      </div>
+                      <div style={{maxHeight: '200px', overflow: 'auto'}}>
+                        <SyntaxHighlighter
+                          language="javascript"
+                          style={github}
+                          customStyle={{
+                            margin: 0,
+                            padding: '1rem',
+                            fontSize: '0.75rem',
+                            backgroundColor: 'transparent'
+                          }}
+                        >
+                          {test.script.substring(0, 500) + (test.script.length > 500 ? '...' : '')}
+                        </SyntaxHighlighter>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div style={{
+              marginTop: '1.5rem',
+              padding: '1rem',
+              backgroundColor: '#eff6ff',
+              border: '1px solid #bfdbfe',
+              borderRadius: '4px',
+              fontSize: '0.875rem',
+              color: '#1e40af'
+            }}>
+              💡 <strong>Tip:</strong> Click "Load Script" to copy a previous test's configuration and script to the editor above.
             </div>
           </div>
         </div>

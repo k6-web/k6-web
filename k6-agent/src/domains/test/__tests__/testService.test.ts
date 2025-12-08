@@ -23,7 +23,7 @@ describe('TestService', () => {
       stopTest: jest.fn(),
       stopAllTests: jest.fn(),
       getRunningTest: jest.fn(),
-      getAllRunningTests: jest.fn(),
+      getAllRunningTests: jest.fn(() => new Map()),
       addLogListener: jest.fn(),
       removeLogListener: jest.fn(),
     } as jest.Mocked<K6TestExecutor>;
