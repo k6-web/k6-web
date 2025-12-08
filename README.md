@@ -12,6 +12,13 @@ to run k6 load tests directly from their web browsers.
 - **Real-Time Results**: View test results in real-time within the browser.
 - **Script Management**: Easily create, edit, and manage k6 scripts.
 
+## Target Use Cases
+
+- Lightweight load testing for frontend and API performance validation
+- Quick local test execution for rapid verification without infrastructure setup
+- Collaboration and shared execution across QA / Engineering / Product teams
+- Demo, educational, or training environments for performance testing
+
 ## Preview
 
 ### 1. Home
