@@ -38,15 +38,38 @@ to run k6 load tests directly from their web browsers.
 
 ```shell
 docker pull ghcr.io/k6-web/k6-web-agent:latest
-docker run -p 3000:3000 ghcr.io/k6-web/k6-web-agent:latest
+docker run -p 3000:3000 \
+  -e PORT=3000 \
+  -e K6_BASE_PATH=/tmp/k6 \
+  -e MAX_RESULT_FILES=500 \
+  ghcr.io/k6-web/k6-web-agent:latest
 ```
 
 #### 2. K6 Web (k6-web-front)
 
 ```shell
 docker pull ghcr.io/k6-web/k6-web:latest
-docker run -p 5173:5173 -e VITE_API_URL=http://localhost:3000 ghcr.io/k6-web/k6-web:latest
+docker run -p 5173:5173 \
+  -e VITE_API_URL=http://localhost:3000 \
+  ghcr.io/k6-web/k6-web:latest
 ```
+
+#### Environment Variables
+
+##### k6-web-agent
+
+| Variable           | Description                              | Default   |
+|--------------------|------------------------------------------|-----------|
+| `PORT`             | Server port number                       | `3000`    |
+| `LOG_LEVEL`        | Logging level (error, warn, info, debug) | `info`    |
+| `K6_BASE_PATH`     | Base directory for k6 data               | `/tmp/k6` |
+| `MAX_RESULT_FILES` | Maximum number of result files to keep   | `500`     |
+
+##### k6-web-front
+
+| Variable       | Description      | Default                 |
+|----------------|------------------|-------------------------|
+| `VITE_API_URL` | K6 Agent API URL | `http://localhost:3000` |
 
 ### Option 2: Build from Source
 
