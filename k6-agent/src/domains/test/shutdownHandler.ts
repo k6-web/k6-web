@@ -1,5 +1,5 @@
 import logger from '@shared/logger';
-import {testService} from '@domains/test/testService';
+import {testService} from '@domains/test/service';
 
 export function setupGracefulShutdown(): void {
   process.on('SIGTERM', () => {

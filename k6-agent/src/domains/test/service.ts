@@ -2,10 +2,10 @@ import {TestInfo, TestMetadata, TestResult} from '@domains/test/models/types';
 import {TestListResponse, TestResponse} from '@domains/test/dto/response';
 import {K6TestExecutor} from '@domains/test/executors/K6TestExecutor';
 import {LocalK6TestExecutor} from '@domains/test/executors/LocalK6TestExecutor';
-import {FileSystemTestResultRepository, TestResultRepository} from '@domains/test/repositories';
+import {FileSystemTestResultRepository, TestResultRepository} from '@domains/test/results';
 import {BadRequestError, NotFoundError} from '@shared/errors';
 
-export class TestService {
+export class Service {
   private readonly repository: TestResultRepository;
   private readonly executor: K6TestExecutor;
 
@@ -131,4 +131,4 @@ export class TestService {
   }
 }
 
-export const testService = new TestService();
+export const testService = new Service();

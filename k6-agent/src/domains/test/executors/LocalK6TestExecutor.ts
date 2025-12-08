@@ -4,7 +4,7 @@ import path from 'path';
 import logger from '@shared/logger';
 import {SCRIPTS_DIR} from '@shared/configs';
 import {TestStatus} from '@domains/test/models/enums';
-import {TestResultRepository} from '@domains/test/repositories';
+import {TestResultRepository} from '@domains/test/results';
 import {TestInfo, TestMetadata, LogEntry, LogListener} from '@domains/test/models/types';
 import {K6TestExecutor} from './K6TestExecutor';
 

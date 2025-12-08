@@ -1,12 +1,12 @@
 import {describe, it, expect, jest, beforeEach} from '@jest/globals';
-import {TestService} from '../testService';
+import {Service} from '../service';
 import {NotFoundError, BadRequestError} from '@shared/errors';
 import {TestStatus} from '../models/enums';
-import {TestResultRepository} from '../repositories';
+import {TestResultRepository} from '../results';
 import {K6TestExecutor} from '../executors/K6TestExecutor';
 
 describe('TestService', () => {
-  let testService: TestService;
+  let testService: Service;
   let mockRepository: jest.Mocked<TestResultRepository>;
   let mockExecutor: jest.Mocked<K6TestExecutor>;
 
@@ -28,7 +28,7 @@ describe('TestService', () => {
       removeLogListener: jest.fn(),
     } as jest.Mocked<K6TestExecutor>;
 
-    testService = new TestService(mockRepository, mockExecutor);
+    testService = new Service(mockRepository, mockExecutor);
     jest.clearAllMocks();
   });
 

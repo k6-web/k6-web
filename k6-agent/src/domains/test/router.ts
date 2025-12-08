@@ -4,7 +4,7 @@ import {querySchemas, validateQuery} from '@shared/validation';
 import {LogEntry} from '@domains/test/models/types';
 import {CreateTestRequest, PaginationRequest} from '@domains/test/dto/request';
 import {RunTestResponse, StatusResponse} from '@domains/test/dto/response';
-import {testService} from '@domains/test/testService';
+import {testService} from '@domains/test/service';
 
 const router = express.Router();
 
