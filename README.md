@@ -20,18 +20,33 @@ up a separate environment.
 
 ### (1) Docker
 
-#### 1. K6 Agent (k6-web-agent)
+#### Quick Start with Docker Compose (Recommended)
 
 ```shell
-docker pull ghcr.io/k6-web/k6-web
-docker run -p 5173:5173 ghcr.io/k6-web/k6-web
+# Clone repository
+git clone https://github.com/k6-web/k6-web
+cd k6-web
+
+# Start all services
+docker-compose up -d
+
+# Access the application at http://localhost:5173
 ```
 
-#### 2. K6 Web (k6-web-front)
+#### Using Pre-built Images
+
+##### 1. K6 Agent (k6-web-agent)
 
 ```shell
-docker pull ghcr.io/k6-web/k6-web-agent
-docker run -p 3000:3000 -e VITE_API_URL={{YOUR_AGENT_URL}} ghcr.io/k6-web/k6-web-front:latest
+docker pull ghcr.io/k6-web/k6-web-agent:latest
+docker run -p 3000:3000 ghcr.io/k6-web/k6-web-agent:latest
+```
+
+##### 2. K6 Web (k6-web-front)
+
+```shell
+docker pull ghcr.io/k6-web/k6-web:latest
+docker run -p 5173:5173 -e VITE_API_URL=http://localhost:3000 ghcr.io/k6-web/k6-web:latest
 ```
 
 ### (2) Manual Installation (Source Build)
