@@ -3,8 +3,7 @@
 ## Overview
 
 k6-web is a web extension for [k6](https://k6.io/), a popular open-source load testing tool. This extension allows users
-to run k6 load tests directly from their web browsers, making it easier to test web applications without needing to set
-up a separate environment.
+to run k6 load tests directly from their web browsers.
 
 ## Features
 
@@ -12,48 +11,48 @@ up a separate environment.
 - **User-Friendly Interface**: Simple and intuitive UI for managing and executing load tests.
 - **Real-Time Results**: View test results in real-time within the browser.
 - **Script Management**: Easily create, edit, and manage k6 scripts.
-- **Customizable Load Profiles**: Define different load profiles to simulate various user behaviors.
-- **Export Results**: Export test results in various formats for further analysis.
-- **Open Source**: Fully open-source and community-driven.
+
+## Preview
+
+### 1. Home
+
+<img src="docs/home.png">
+
+### 2. New Test
+
+<img src="docs/new_test.png">
+
+### 3 Running Test (Live)
+
+<img src="docs/test_running.png">
+
+### 4. Test Result
+
+<img src="docs/test.png">
 
 ## Installation
 
-### (1) Docker
+### Option 1: Docker (Recommended)
 
-#### Quick Start with Docker Compose (Recommended)
-
-```shell
-# Clone repository
-git clone https://github.com/k6-web/k6-web
-cd k6-web
-
-# Start all services
-docker-compose up -d
-
-# Access the application at http://localhost:5173
-```
-
-#### Using Pre-built Images
-
-##### 1. K6 Agent (k6-web-agent)
+#### 1. K6 Agent (k6-web-agent)
 
 ```shell
 docker pull ghcr.io/k6-web/k6-web-agent:latest
 docker run -p 3000:3000 ghcr.io/k6-web/k6-web-agent:latest
 ```
 
-##### 2. K6 Web (k6-web-front)
+#### 2. K6 Web (k6-web-front)
 
 ```shell
 docker pull ghcr.io/k6-web/k6-web:latest
 docker run -p 5173:5173 -e VITE_API_URL=http://localhost:3000 ghcr.io/k6-web/k6-web:latest
 ```
 
-### (2) Manual Installation (Source Build)
+### Option 2: Build from Source
 
-#### 1. K6 Web (k6-web)
+#### 1. K6 Web
 
-Node.js is required.
+Node.js (>= 20) is required.
 
 ```shell
 git clone https://github.com/k6-web/k6-web
@@ -65,9 +64,9 @@ npm install
 npm start # or npm run build && npx serve -s build
 ```
 
-#### 2. K6 Agent (k6-agent)
+#### 2. K6 Agent
 
-Node.js and k6 are required.
+Node.js (>= 20) and k6 are required.
 
 ```shell
 git clone https://github.com/k6-web/k6-web
@@ -78,22 +77,3 @@ cd k6-web/k6-agent
 npm install
 npm start # or npm run build && node dist/index.js
 ```
-
-## Preview
-
-### Home
-
-<img src="docs/home.png">
-
-### New Test
-
-<img src="docs/new_test.png">
-
-### Running Test (Live)
-
-<img src="docs/test_running.png">
-
-### Test Result
-
-<img src="docs/test.png">
-
