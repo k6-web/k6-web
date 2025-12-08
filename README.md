@@ -61,7 +61,8 @@ cd k6-web/k6-front
 # Change Environment Variables if needed (.env)
 
 npm install
-npm start # or npm run build && npx serve -s build
+npm run build
+npm start
 ```
 
 #### 2. K6 Agent
@@ -75,5 +76,6 @@ cd k6-web/k6-agent
 # Change Environment Variables if needed (.env)
 
 npm install
-npm start # or npm run build && node dist/index.js
+npm run build
+npm start
 ```
