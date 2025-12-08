@@ -1,7 +1,6 @@
 import express from 'express';
 import {asyncHandler} from '@shared/asyncHandler';
-import {bodySchemas, querySchemas, validateBody, validateQuery} from '@shared/validation';
-import {addLogListener, getRunningTest, removeLogListener} from '@domains/test/k6Runner';
+import {querySchemas, validateQuery} from '@shared/validation';
 import {LogEntry} from '@domains/test/models/types';
 import {CreateTestRequest, PaginationRequest} from '@domains/test/dto/request';
 import {RunTestResponse, StatusResponse} from '@domains/test/dto/response';
@@ -9,7 +8,7 @@ import {testService} from '@domains/test/testService';
 
 const router = express.Router();
 
-router.post('/', validateBody(bodySchemas.createTest), asyncHandler(async (req, res) => {
+router.post('/', asyncHandler(async (req, res) => {
   const {script, name, config} = req.body as CreateTestRequest;
   const testId = testService.createTest(script, {name, config});
   const response: RunTestResponse = {testId};
@@ -18,32 +17,28 @@ router.post('/', validateBody(bodySchemas.createTest), asyncHandler(async (req, 
 
 router.get('/:testId/stream', (req, res) => {
   const testId = req.params.testId;
+  const executor = testService.getExecutor();
 
-  const test = getRunningTest(testId);
+  const test = executor.getRunningTest(testId);
   if (!test) {
     res.status(404).json({error: 'Test not found or not running'});
     return;
   }
 
-  // Set SSE headers
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache, no-transform',
     'Connection': 'keep-alive',
-    'X-Accel-Buffering': 'no', // Disable buffering for nginx
   });
 
-  // Send initial logs
   for (const log of test.logs) {
     res.write(`data: ${JSON.stringify(log)}\n\n`);
   }
 
-  // Flush the initial response
   if (res.flush && typeof res.flush === 'function') {
     res.flush();
   }
 
-  // Create log listener
   const logListener = (log: LogEntry) => {
     res.write(`data: ${JSON.stringify(log)}\n\n`);
     // Flush after each write
@@ -52,9 +47,8 @@ router.get('/:testId/stream', (req, res) => {
     }
   };
 
-  addLogListener(testId, logListener);
+  executor.addLogListener(testId, logListener);
 
-  // Send a heartbeat every 30 seconds to keep connection alive
   const heartbeatInterval = setInterval(() => {
     res.write(': heartbeat\n\n');
     if (res.flush && typeof res.flush === 'function') {
@@ -62,10 +56,9 @@ router.get('/:testId/stream', (req, res) => {
     }
   }, 30000);
 
-  // Clean up on connection close
   req.on('close', () => {
     clearInterval(heartbeatInterval);
-    removeLogListener(testId, logListener);
+    executor.removeLogListener(testId, logListener);
   });
 });
 

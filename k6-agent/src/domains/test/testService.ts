@@ -1,30 +1,32 @@
-import {TestMetadata, TestResult, TestInfo} from '@domains/test/models/types';
+import {TestInfo, TestMetadata, TestResult} from '@domains/test/models/types';
 import {TestListResponse, TestResponse} from '@domains/test/dto/response';
-import {
-  runTest as runK6Test,
-  stopTest as stopK6Test,
-  getRunningTest,
-  getAllRunningTests,
-} from '@domains/test/k6Runner';
-import {TestResultRepository, FileSystemTestResultRepository} from '@domains/test/repositories';
-import {NotFoundError, BadRequestError} from '@shared/errors';
+import {K6TestExecutor} from '@domains/test/executors/K6TestExecutor';
+import {LocalK6TestExecutor} from '@domains/test/executors/LocalK6TestExecutor';
+import {FileSystemTestResultRepository, TestResultRepository} from '@domains/test/repositories';
+import {BadRequestError, NotFoundError} from '@shared/errors';
 
 export class TestService {
   private readonly repository: TestResultRepository;
+  private readonly executor: K6TestExecutor;
 
-  constructor(repository: TestResultRepository = new FileSystemTestResultRepository()) {
+  constructor(
+    repository: TestResultRepository = new FileSystemTestResultRepository(),
+    executor?: K6TestExecutor
+  ) {
     this.repository = repository;
+    this.executor = executor ?? new LocalK6TestExecutor(repository);
   }
+
   createTest(script: string, metadata: TestMetadata): string {
     if (!script || script.trim().length === 0) {
       throw new BadRequestError('Script is required and cannot be empty');
     }
 
-    return runK6Test(script, metadata);
+    return this.executor.runTest(script, metadata);
   }
 
   getTest(testId: string): TestInfo | TestResult {
-    const runningTest = getRunningTest(testId);
+    const runningTest = this.executor.getRunningTest(testId);
     if (runningTest) {
       return runningTest;
     }
@@ -39,9 +41,8 @@ export class TestService {
 
   getAllTests(limit: number = 100, cursor: number | null = null): TestListResponse {
     const tests: TestResponse[] = [];
-    const runningTests = getAllRunningTests();
+    const runningTests = this.executor.getAllRunningTests();
 
-    // Add running tests
     for (const [testId, test] of runningTests.entries()) {
       tests.push({
         testId,
@@ -52,7 +53,6 @@ export class TestService {
       });
     }
 
-    // Add completed tests
     const fileResults = this.repository.findAll();
     for (const result of fileResults) {
       if (!runningTests.has(result.testId)) {
@@ -68,10 +68,8 @@ export class TestService {
       }
     }
 
-    // Sort by startTime descending
     const sortedTests = tests.sort((a, b) => b.startTime - a.startTime);
 
-    // Apply cursor-based pagination
     let filteredTests = sortedTests;
     if (cursor !== null) {
       const cursorIndex = sortedTests.findIndex((t) => t.startTime === cursor);
@@ -80,10 +78,8 @@ export class TestService {
       }
     }
 
-    // Apply limit
     const paginatedTests = filteredTests.slice(0, limit);
 
-    // Calculate next cursor
     const hasMore = filteredTests.length > limit;
     const nextCursor = hasMore ? paginatedTests[paginatedTests.length - 1].startTime : null;
 
@@ -97,19 +93,19 @@ export class TestService {
   }
 
   stopTest(testId: string): void {
-    const test = getRunningTest(testId);
+    const test = this.executor.getRunningTest(testId);
     if (!test) {
       throw new NotFoundError('Test not found or not running');
     }
 
-    const success = stopK6Test(testId);
+    const success = this.executor.stopTest(testId);
     if (!success) {
       throw new Error('Failed to stop test');
     }
   }
 
   deleteTest(testId: string): void {
-    const runningTest = getRunningTest(testId);
+    const runningTest = this.executor.getRunningTest(testId);
     if (runningTest) {
       throw new BadRequestError('Cannot delete result of running test');
     }
@@ -118,6 +114,10 @@ export class TestService {
     if (!success) {
       throw new NotFoundError('Test result not found');
     }
+  }
+
+  getExecutor(): K6TestExecutor {
+    return this.executor;
   }
 }
 

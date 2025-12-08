@@ -2,10 +2,13 @@ import fs from 'fs/promises';
 import fsSync from 'fs';
 import path from 'path';
 import logger from '@shared/logger';
-import {RESULTS_DIR, MAX_RESULT_FILES} from '@shared/configs';
+import {MAX_RESULT_FILES, RESULTS_DIR} from '@shared/configs';
 import {TestResult} from '@domains/test/models/types';
 import {TestResultRepository} from './TestResultRepository';
 
+/**
+ * FileSystem-base implementation of the test result repository.
+ */
 export class FileSystemTestResultRepository implements TestResultRepository {
   private readonly resultsDir: string;
   private readonly maxResultFiles: number;

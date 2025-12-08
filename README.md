@@ -18,7 +18,51 @@ up a separate environment.
 
 ## Installation
 
-- TBD
+### (1) Docker
+
+#### 1. K6 Agent (k6-web-agent)
+
+```shell
+docker pull ghcr.io/k6-web/k6-web
+docker run -p 5173:5173 ghcr.io/k6-web/k6-web
+```
+
+#### 2. K6 Web (k6-web-front)
+
+```shell
+docker pull ghcr.io/k6-web/k6-web-agent
+docker run -p 3000:3000 -e VITE_API_URL={{YOUR_AGENT_URL}} ghcr.io/k6-web/k6-web-front:latest
+```
+
+### (2) Manual Installation (Source Build)
+
+#### 1. K6 Web (k6-web)
+
+Node.js is required.
+
+```shell
+git clone https://github.com/k6-web/k6-web
+cd k6-web/k6-front
+
+# Change Environment Variables if needed (.env)
+
+npm install
+npm start # or npm run build && npx serve -s build
+```
+
+#### 2. K6 Agent (k6-agent)
+
+Node.js and k6 are required.
+
+```shell
+git clone https://github.com/k6-web/k6-web
+cd k6-web/k6-agent
+
+# Change Environment Variables if needed (.env)
+
+npm install
+npm start # or npm run build && node dist/index.js
+```
 
 ## Preview
 

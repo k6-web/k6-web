@@ -1,10 +1,7 @@
 import {LogListener, TestInfo, TestMetadata} from '@domains/test/models/types';
 
-/**
- * Interface for test execution strategies.
- * Implementations can use different execution backends (local k6, k6 operator, etc.)
- */
 export interface K6TestExecutor {
+
   /**
    * Execute a k6 test script
    * @param script - The k6 test script content
@@ -54,4 +51,5 @@ export interface K6TestExecutor {
    * @returns true if listener was removed, false if test not found
    */
   removeLogListener(testId: string, listener: LogListener): boolean;
+
 }

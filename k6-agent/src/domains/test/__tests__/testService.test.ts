@@ -3,15 +3,12 @@ import {TestService} from '../testService';
 import {NotFoundError, BadRequestError} from '@shared/errors';
 import {TestStatus} from '../models/enums';
 import {TestResultRepository} from '../repositories';
-
-// Mock dependencies
-jest.mock('../k6Runner');
-
-import * as k6Runner from '../k6Runner';
+import {K6TestExecutor} from '../executors/K6TestExecutor';
 
 describe('TestService', () => {
   let testService: TestService;
   let mockRepository: jest.Mocked<TestResultRepository>;
+  let mockExecutor: jest.Mocked<K6TestExecutor>;
 
   beforeEach(() => {
     mockRepository = {
@@ -21,7 +18,17 @@ describe('TestService', () => {
       deleteById: jest.fn(),
     } as jest.Mocked<TestResultRepository>;
 
-    testService = new TestService(mockRepository);
+    mockExecutor = {
+      runTest: jest.fn(),
+      stopTest: jest.fn(),
+      stopAllTests: jest.fn(),
+      getRunningTest: jest.fn(),
+      getAllRunningTests: jest.fn(),
+      addLogListener: jest.fn(),
+      removeLogListener: jest.fn(),
+    } as jest.Mocked<K6TestExecutor>;
+
+    testService = new TestService(mockRepository, mockExecutor);
     jest.clearAllMocks();
   });
 
@@ -30,12 +37,12 @@ describe('TestService', () => {
       const mockTestId = 'test-123';
       const script = 'export default function() { console.log("test"); }';
 
-      (k6Runner.runTest as jest.Mock) = jest.fn(() => mockTestId);
+      mockExecutor.runTest.mockReturnValue(mockTestId);
 
       const result = testService.createTest(script, {});
 
       expect(result).toBe(mockTestId);
-      expect(k6Runner.runTest).toHaveBeenCalledWith(script, {});
+      expect(mockExecutor.runTest).toHaveBeenCalledWith(script, {});
     });
 
     it('should create a test with metadata', () => {
@@ -46,12 +53,12 @@ describe('TestService', () => {
         config: {vus: 10, duration: '30s'},
       };
 
-      (k6Runner.runTest as jest.Mock) = jest.fn(() => mockTestId);
+      mockExecutor.runTest.mockReturnValue(mockTestId);
 
       const result = testService.createTest(script, metadata);
 
       expect(result).toBe(mockTestId);
-      expect(k6Runner.runTest).toHaveBeenCalledWith(script, metadata);
+      expect(mockExecutor.runTest).toHaveBeenCalledWith(script, metadata);
     });
 
     it('should throw BadRequestError for empty script', () => {
@@ -84,14 +91,14 @@ describe('TestService', () => {
         startTime: Date.now(),
         script: 'test script',
         logs: [],
-      };
+      } as any;
 
-      (k6Runner.getRunningTest as jest.Mock) = jest.fn(() => mockRunningTest);
+      mockExecutor.getRunningTest.mockReturnValue(mockRunningTest);
 
       const result = testService.getTest(mockTestId);
 
       expect(result).toEqual(mockRunningTest);
-      expect(k6Runner.getRunningTest).toHaveBeenCalledWith(mockTestId);
+      expect(mockExecutor.getRunningTest).toHaveBeenCalledWith(mockTestId);
     });
 
     it('should return stored test result if not running', () => {
@@ -107,7 +114,7 @@ describe('TestService', () => {
         summary: {},
       };
 
-      (k6Runner.getRunningTest as jest.Mock) = jest.fn(() => undefined);
+      mockExecutor.getRunningTest.mockReturnValue(undefined);
       mockRepository.findById.mockReturnValue(mockTestResult);
 
       const result = testService.getTest(mockTestId);
@@ -119,7 +126,7 @@ describe('TestService', () => {
     it('should throw NotFoundError if test does not exist', () => {
       const mockTestId = 'non-existent';
 
-      (k6Runner.getRunningTest as jest.Mock) = jest.fn(() => undefined);
+      mockExecutor.getRunningTest.mockReturnValue(undefined);
       mockRepository.findById.mockReturnValue(null);
 
       expect(() => {
@@ -134,20 +141,20 @@ describe('TestService', () => {
       const mockRunningTest = {
         testId: mockTestId,
         status: TestStatus.RUNNING,
-      };
+      } as any;
 
-      (k6Runner.getRunningTest as jest.Mock) = jest.fn(() => mockRunningTest);
-      (k6Runner.stopTest as jest.Mock) = jest.fn(() => true);
+      mockExecutor.getRunningTest.mockReturnValue(mockRunningTest);
+      mockExecutor.stopTest.mockReturnValue(true);
 
       testService.stopTest(mockTestId);
 
-      expect(k6Runner.stopTest).toHaveBeenCalledWith(mockTestId);
+      expect(mockExecutor.stopTest).toHaveBeenCalledWith(mockTestId);
     });
 
     it('should throw NotFoundError if test is not running', () => {
       const mockTestId = 'test-456';
 
-      (k6Runner.getRunningTest as jest.Mock) = jest.fn(() => undefined);
+      mockExecutor.getRunningTest.mockReturnValue(undefined);
 
       expect(() => {
         testService.stopTest(mockTestId);
@@ -159,10 +166,10 @@ describe('TestService', () => {
       const mockRunningTest = {
         testId: mockTestId,
         status: TestStatus.RUNNING,
-      };
+      } as any;
 
-      (k6Runner.getRunningTest as jest.Mock) = jest.fn(() => mockRunningTest);
-      (k6Runner.stopTest as jest.Mock) = jest.fn(() => false);
+      mockExecutor.getRunningTest.mockReturnValue(mockRunningTest);
+      mockExecutor.stopTest.mockReturnValue(false);
 
       expect(() => {
         testService.stopTest(mockTestId);
@@ -174,7 +181,7 @@ describe('TestService', () => {
     it('should delete a completed test', () => {
       const mockTestId = 'test-123';
 
-      (k6Runner.getRunningTest as jest.Mock) = jest.fn(() => undefined);
+      mockExecutor.getRunningTest.mockReturnValue(undefined);
       mockRepository.deleteById.mockReturnValue(true);
 
       testService.deleteTest(mockTestId);
@@ -187,9 +194,9 @@ describe('TestService', () => {
       const mockRunningTest = {
         testId: mockTestId,
         status: TestStatus.RUNNING,
-      };
+      } as any;
 
-      (k6Runner.getRunningTest as jest.Mock) = jest.fn(() => mockRunningTest);
+      mockExecutor.getRunningTest.mockReturnValue(mockRunningTest);
 
       expect(() => {
         testService.deleteTest(mockTestId);
@@ -199,7 +206,7 @@ describe('TestService', () => {
     it('should throw NotFoundError if test result does not exist', () => {
       const mockTestId = 'test-789';
 
-      (k6Runner.getRunningTest as jest.Mock) = jest.fn(() => undefined);
+      mockExecutor.getRunningTest.mockReturnValue(undefined);
       mockRepository.deleteById.mockReturnValue(false);
 
       expect(() => {
@@ -217,7 +224,7 @@ describe('TestService', () => {
           startTime: 1000,
           script: 'script 1',
           name: 'Running Test',
-        }],
+        } as any],
       ]);
 
       const mockStoredResults = [
@@ -234,7 +241,7 @@ describe('TestService', () => {
         },
       ];
 
-      (k6Runner.getAllRunningTests as jest.Mock) = jest.fn(() => mockRunningTests);
+      mockExecutor.getAllRunningTests.mockReturnValue(mockRunningTests);
       mockRepository.findAll.mockReturnValue(mockStoredResults);
 
       const result = testService.getAllTests(10, null);
@@ -253,7 +260,7 @@ describe('TestService', () => {
         {testId: 'test-3', status: TestStatus.COMPLETED, startTime: 1000, endTime: 2000, duration: 1000, exitCode: 0, script: '', summary: {}},
       ];
 
-      (k6Runner.getAllRunningTests as jest.Mock) = jest.fn(() => mockRunningTests);
+      mockExecutor.getAllRunningTests.mockReturnValue(mockRunningTests);
       mockRepository.findAll.mockReturnValue(mockStoredResults);
 
       const result = testService.getAllTests(2, null);
@@ -271,7 +278,7 @@ describe('TestService', () => {
         {testId: 'test-3', status: TestStatus.COMPLETED, startTime: 1000, endTime: 2000, duration: 1000, exitCode: 0, script: '', summary: {}},
       ];
 
-      (k6Runner.getAllRunningTests as jest.Mock) = jest.fn(() => mockRunningTests);
+      mockExecutor.getAllRunningTests.mockReturnValue(mockRunningTests);
       mockRepository.findAll.mockReturnValue(mockStoredResults);
 
       const result = testService.getAllTests(10, 3000);
