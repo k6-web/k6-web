@@ -9,8 +9,8 @@ interface LiveLogsPanelProps {
   onScrollToTop: () => void;
   onScrollToBottom: () => void;
   onToggleAutoScroll: () => void;
-  logsContainerRef: React.RefObject<HTMLDivElement>;
-  logsEndRef: React.RefObject<HTMLDivElement>;
+  logsContainerRef: React.RefObject<HTMLDivElement | null>;
+  logsEndRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export const LiveLogsPanel = ({
