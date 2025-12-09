@@ -50,6 +50,7 @@ export class LocalK6TestExecutor implements K6TestExecutor {
 
     const testInfo: TestInfo = {
       testId,
+      scriptId: metadata.scriptId,
       process: k6Process,
       status: TestStatus.RUNNING,
       startTime: Date.now(),
@@ -202,6 +203,7 @@ export class LocalK6TestExecutor implements K6TestExecutor {
 
     const result = {
       testId,
+      scriptId: testInfo.scriptId,
       status,
       startTime: testInfo.startTime,
       endTime,
@@ -213,10 +215,16 @@ export class LocalK6TestExecutor implements K6TestExecutor {
       summary,
     };
 
-    // Save test result asynchronously
-    this.repository.save(testId, result).catch(err => {
-      logger.error(`Failed to save test result: ${(err as Error).message}`);
-    });
+    // Save test result and cleanup history asynchronously
+    this.repository.save(testId, result)
+      .then(async () => {
+        if (result.scriptId) {
+          await this.repository.cleanupScriptHistory(result.scriptId, 50);
+        }
+      })
+      .catch(err => {
+        logger.error(`Failed to save test result: ${(err as Error).message}`);
+      });
 
     const logEntry: LogEntry = {
       type: 'system',

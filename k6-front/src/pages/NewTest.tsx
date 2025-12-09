@@ -1,6 +1,7 @@
 import {useEffect, useState} from 'react';
-import {useNavigate} from 'react-router-dom';
+import {useNavigate, useSearchParams} from 'react-router-dom';
 import {k6Api} from '../apis/testApi.ts';
+import {scriptApi} from '../apis/scriptApi';
 import type {Test} from '../types/test.ts';
 import {RecentTestsModal, HttpConfigForm, ScriptEditor} from '../components/new-test';
 import {Button, InfoBox} from '../components/common';
@@ -27,8 +28,14 @@ export default function () {
 
 export const NewTest = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [saveAsScript, setSaveAsScript] = useState(searchParams.get('saveScript') === 'true');
+  const [scriptId, setScriptId] = useState('');
+  const [scriptDescription, setScriptDescription] = useState('');
+  const [scriptTags, setScriptTags] = useState('');
 
   const {
     script,
@@ -126,15 +133,41 @@ export const NewTest = () => {
       return;
     }
 
+    if (saveAsScript && !httpConfig.name) {
+      setError('Script name is required when saving as script');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
+      let savedScriptId = scriptId;
+
+      if (saveAsScript) {
+        const trimmedScriptId = scriptId.trim();
+        const trimmedDescription = scriptDescription.trim();
+        const savedScript = await scriptApi.createScript({
+          ...(trimmedScriptId && {scriptId: trimmedScriptId}),
+          name: httpConfig.name || 'Untitled Script',
+          script: script,
+          config: httpConfig,
+          ...(trimmedDescription && {description: trimmedDescription}),
+          ...(scriptTags && {tags: scriptTags.split(',').map(t => t.trim()).filter(t => t)})
+        });
+        savedScriptId = savedScript.scriptId;
+      }
+
       const result = await k6Api.runTest(script, {
         name: httpConfig.name,
         config: httpConfig
       });
-      navigate(`/tests/${result.testId}`);
+
+      if (saveAsScript) {
+        navigate(`/scripts/${savedScriptId}`);
+      } else {
+        navigate(`/tests/${result.testId}`);
+      }
     } catch (err: any) {
       const errorMessage = err?.response?.data?.error || err?.message || 'Failed to start test';
       setError(errorMessage);
@@ -254,6 +287,101 @@ export const NewTest = () => {
           padding: '1.5rem',
           borderRadius: '8px',
           boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+          marginBottom: '1.5rem'
+        }}>
+          <div style={{marginBottom: '1rem'}}>
+            <label style={{display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer'}}>
+              <input
+                type="checkbox"
+                checked={saveAsScript}
+                onChange={(e) => setSaveAsScript(e.target.checked)}
+                style={{width: '18px', height: '18px'}}
+              />
+              <span style={{fontWeight: 'bold'}}>💾 Save as Reusable Script</span>
+            </label>
+            <p style={{margin: '0.5rem 0 0 1.75rem', fontSize: '0.875rem', color: '#6b7280'}}>
+              Save this script to run it again later from the Script Library
+            </p>
+          </div>
+
+          {saveAsScript && (
+            <div style={{
+              marginTop: '1rem',
+              padding: '1rem',
+              backgroundColor: '#f9fafb',
+              borderRadius: '4px',
+              borderLeft: '4px solid #10b981'
+            }}>
+              <div style={{marginBottom: '1rem'}}>
+                <label style={{display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: 'bold'}}>
+                  Script ID (optional)
+                </label>
+                <input
+                  type="text"
+                  value={scriptId}
+                  onChange={(e) => setScriptId(e.target.value)}
+                  placeholder="Leave empty for auto-generation"
+                  pattern="^[a-z0-9-]*$"
+                  title="Only lowercase letters, numbers, and hyphens"
+                  style={{
+                    width: '100%',
+                    padding: '0.5rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '4px',
+                    fontSize: '0.875rem'
+                  }}
+                />
+                <p style={{margin: '0.25rem 0 0 0', fontSize: '0.75rem', color: '#6b7280'}}>
+                  Custom ID for easy reference (e.g., "homepage-test")
+                </p>
+              </div>
+
+              <div style={{marginBottom: '1rem'}}>
+                <label style={{display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: 'bold'}}>
+                  Description (optional)
+                </label>
+                <textarea
+                  value={scriptDescription}
+                  onChange={(e) => setScriptDescription(e.target.value)}
+                  placeholder="Describe what this script tests..."
+                  rows={2}
+                  style={{
+                    width: '100%',
+                    padding: '0.5rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '4px',
+                    fontSize: '0.875rem'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: 'bold'}}>
+                  Tags (optional)
+                </label>
+                <input
+                  type="text"
+                  value={scriptTags}
+                  onChange={(e) => setScriptTags(e.target.value)}
+                  placeholder="api, production, critical (comma-separated)"
+                  style={{
+                    width: '100%',
+                    padding: '0.5rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '4px',
+                    fontSize: '0.875rem'
+                  }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div style={{
+          backgroundColor: 'white',
+          padding: '1.5rem',
+          borderRadius: '8px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
           textAlign: 'center'
         }}>
           <Button
@@ -267,10 +395,10 @@ export const NewTest = () => {
               boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
             }}
           >
-            {loading ? '🚀 Starting Test...' : '🚀 Start Load Test'}
+            {loading ? '🚀 Starting Test...' : saveAsScript ? '💾 Save & Run Test' : '🚀 Start Load Test'}
           </Button>
           <div style={{marginTop: '0.75rem', fontSize: 'clamp(0.75rem, 2vw, 0.875rem)', color: '#6b7280'}}>
-            Run load test with the configured script above
+            {saveAsScript ? 'Save script and run load test' : 'Run load test with the configured script above'}
           </div>
         </div>
       </form>

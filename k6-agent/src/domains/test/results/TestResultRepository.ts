@@ -10,4 +10,8 @@ export interface TestResultRepository {
 
   deleteById(testId: string): boolean;
 
+  findByScriptId(scriptId: string): TestResult[];
+
+  cleanupScriptHistory(scriptId: string, limit: number): Promise<void>;
+
 }

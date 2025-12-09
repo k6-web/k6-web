@@ -16,6 +16,8 @@ describe('TestService', () => {
       findById: jest.fn(),
       findAll: jest.fn(),
       deleteById: jest.fn(),
+      findByScriptId: jest.fn(),
+      cleanupScriptHistory: jest.fn(),
     } as jest.Mocked<TestResultRepository>;
 
     mockExecutor = {
