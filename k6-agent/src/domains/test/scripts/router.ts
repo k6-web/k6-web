@@ -1,6 +1,5 @@
 import express from 'express';
 import {asyncHandler} from '@shared/asyncHandler';
-import {bodySchemas, validateBody} from '@shared/validation';
 import {scriptService} from './ScriptService';
 import {testService} from '@domains/test/service';
 import {CreateScriptRequest, RunScriptRequest, ScriptListQuery, UpdateScriptRequest,} from './dto/request';
@@ -9,7 +8,7 @@ import {RunTestResponse, StatusResponse} from '@domains/test/dto/response';
 
 const router = express.Router();
 
-router.post('/', validateBody(bodySchemas.createScript), asyncHandler(async (req, res) => {
+router.post('/', asyncHandler(async (req, res) => {
   const request = req.body as CreateScriptRequest;
   const script = await scriptService.saveScript(request.scriptId, {
     name: request.name,
@@ -43,7 +42,7 @@ router.get('/:scriptId', asyncHandler(async (req, res) => {
   res.json(response);
 }));
 
-router.put('/:scriptId', validateBody(bodySchemas.updateScript), asyncHandler(async (req, res) => {
+router.put('/:scriptId', asyncHandler(async (req, res) => {
   const {scriptId} = req.params;
   const request = req.body as UpdateScriptRequest;
 
@@ -68,7 +67,7 @@ router.delete('/:scriptId', asyncHandler(async (req, res) => {
   res.json(response);
 }));
 
-router.post('/:scriptId/run', validateBody(bodySchemas.runScript), asyncHandler(async (req, res) => {
+router.post('/:scriptId/run', asyncHandler(async (req, res) => {
   const {scriptId} = req.params;
   const request = req.body as RunScriptRequest;
 

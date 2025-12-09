@@ -8,46 +8,6 @@ export const querySchemas = {
   }),
 };
 
-export const bodySchemas = {
-  createScript: Joi.object({
-    scriptId: Joi.string().optional().pattern(/^[a-z0-9-]+$/),
-    name: Joi.string().required().min(1).max(100),
-    script: Joi.string().required().min(1),
-    config: Joi.object({
-      vus: Joi.number().optional().min(1),
-      duration: Joi.string().optional(),
-      iterations: Joi.number().optional().min(1),
-    }).optional(),
-    description: Joi.string().optional().max(500),
-    tags: Joi.array().items(Joi.string().max(50)).optional(),
-  }),
-
-  updateScript: Joi.object({
-    name: Joi.string().optional().min(1).max(100),
-    script: Joi.string().optional().min(1),
-    config: Joi.object({
-      vus: Joi.number().optional().min(1),
-      duration: Joi.string().optional(),
-      iterations: Joi.number().optional().min(1),
-    }).optional(),
-    description: Joi.string().optional().max(500),
-    tags: Joi.array().items(Joi.string().max(50)).optional(),
-  }),
-
-  compareTests: Joi.object({
-    testIds: Joi.array().items(Joi.string()).min(2).required(),
-    baselineIndex: Joi.number().optional().min(0),
-  }),
-
-  runScript: Joi.object({
-    config: Joi.object({
-      vus: Joi.number().optional().min(1),
-      duration: Joi.string().optional(),
-      iterations: Joi.number().optional().min(1),
-    }).optional(),
-  }),
-};
-
 export function validateQuery(schema: Joi.ObjectSchema): RequestHandler {
   return (req: Request, res: Response, next: NextFunction) => {
     const {error, value} = schema.validate(req.query);
