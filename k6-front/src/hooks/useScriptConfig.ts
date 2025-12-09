@@ -33,7 +33,13 @@ export const useScriptConfig = (initialScript: string) => {
   const handleConfigChange = useCallback((changes: Partial<K6TestConfig>) => {
     const newConfig = {...httpConfig, ...changes};
     setHttpConfig(newConfig);
-    updateScriptFromConfig(newConfig);
+
+    const {name, ...otherChanges} = changes;
+    const hasNonNameChanges = Object.keys(otherChanges).length > 0;
+
+    if (hasNonNameChanges) {
+      updateScriptFromConfig(newConfig);
+    }
   }, [httpConfig, updateScriptFromConfig]);
 
   const handleScriptChange = useCallback((newScript: string) => {
