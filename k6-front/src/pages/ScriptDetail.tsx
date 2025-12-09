@@ -4,6 +4,7 @@ import {scriptApi} from '../apis/scriptApi';
 import type {Script, TestComparison} from '../types/script';
 import type {Test} from '../types/test';
 import {MetricsTrendChart} from '../components/MetricsTrendChart';
+import {Button} from "../components/common";
 
 export const ScriptDetail = () => {
   const {scriptId} = useParams<{ scriptId: string }>();
@@ -64,6 +65,15 @@ export const ScriptDetail = () => {
     }
   };
 
+  const handleShare = () => {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+      alert('Link copied to clipboard!');
+    }).catch(() => {
+      alert('Failed to copy link.');
+    });
+  }
+
   const extractMetrics = (test: Test) => {
     const summary = test.summary;
     if (!summary?.metrics) {
@@ -104,6 +114,13 @@ export const ScriptDetail = () => {
                 <p style={{margin: 0, color: '#6b7280'}}>{script.description || 'No description'}</p>
               </div>
               <div style={{display: 'flex', gap: '0.5rem'}}>
+                <Button
+                  variant="purple"
+                  onClick={handleShare}
+                  style={{fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'}}
+                >
+                  🔗 Share
+                </Button>
                 <button
                   onClick={() => setIsEditing(true)}
                   style={{
