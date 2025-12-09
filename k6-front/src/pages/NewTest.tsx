@@ -3,7 +3,7 @@ import {useNavigate, useSearchParams} from 'react-router-dom';
 import {k6Api} from '../apis/testApi.ts';
 import {scriptApi} from '../apis/scriptApi';
 import type {Test} from '../types/test.ts';
-import {RecentTestsModal, HttpConfigForm, ScriptEditor} from '../components/new-test';
+import {HttpConfigForm, RecentTestsModal, ScriptEditor} from '../components/new-test';
 import {Button, InfoBox} from '../components/common';
 import {useScriptConfig} from '../hooks/useScriptConfig';
 import {useScriptValidation} from '../hooks/useScriptValidation';
@@ -158,14 +158,13 @@ export const NewTest = () => {
         savedScriptId = savedScript.scriptId;
       }
 
-      const result = await k6Api.runTest(script, {
-        name: httpConfig.name,
-        config: httpConfig
-      });
-
       if (saveAsScript) {
         navigate(`/scripts/${savedScriptId}`);
       } else {
+        const result = await k6Api.runTest(script, {
+          name: httpConfig.name,
+          config: httpConfig
+        });
         navigate(`/tests/${result.testId}`);
       }
     } catch (err: any) {
@@ -244,7 +243,7 @@ export const NewTest = () => {
                 borderLeft: '6px solid transparent',
                 borderRight: '6px solid transparent',
                 borderBottom: '6px solid #3b82f6'
-              }} />
+              }}/>
             </div>
           )}
         </div>
