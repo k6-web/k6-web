@@ -1,8 +1,9 @@
 import {useEffect, useState} from 'react';
-import {useNavigate} from 'react-router-dom';
+import {useLocation, useNavigate, useSearchParams} from 'react-router-dom';
 import {k6Api} from '../apis/testApi.ts';
+import {folderApi} from '../apis/folderApi';
 import type {Test} from '../types/test.ts';
-import {RecentTestsModal, HttpConfigForm, ScriptEditor} from '../components/new-test';
+import {HttpConfigForm, RecentTestsModal, ScriptEditor} from '../components/new-test';
 import {Button, InfoBox} from '../components/common';
 import {useScriptConfig} from '../hooks/useScriptConfig';
 import {useScriptValidation} from '../hooks/useScriptValidation';
@@ -15,6 +16,18 @@ export const options = {
   stages: [
     { duration: '30s', target: 10 },
   ],
+  http: {
+    timeout: '30s',
+    reuseConnection: true,
+  },
+  noUsageReport: true,
+  batch: 20,
+  batchPerHost: 20,
+  thresholds: {
+    http_req_failed: [
+      { threshold: "rate<0.05", abortOnFail: true },
+    ],
+  },
 };
 
 export default function () {
@@ -27,8 +40,20 @@ export default function () {
 
 export const NewTest = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [saveAsScript, setSaveAsScript] = useState(searchParams.get('saveScript') === 'true');
+  const [scriptId, setScriptId] = useState('');
+  const [scriptDescription, setScriptDescription] = useState('');
+  const [scriptTags, setScriptTags] = useState('');
+  const [folderId, setFolderId] = useState(searchParams.get('folderId') || '');
+  const [folders, setFolders] = useState<Array<{ folderId: string; name: string }>>([]);
+  const [showFolderModal, setShowFolderModal] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [newFolderDescription, setNewFolderDescription] = useState('');
 
   const {
     script,
@@ -51,6 +76,55 @@ export const NewTest = () => {
   const [headerKey, setHeaderKey] = useState('');
   const [headerValue, setHeaderValue] = useState('');
 
+  // Load copied script from location state
+  useEffect(() => {
+    const state = location.state as { copiedScript?: {
+      script: string;
+      config?: any;
+      description?: string;
+      tags?: string[];
+      folderId?: string;
+    }} | null;
+
+    if (state?.copiedScript) {
+      const { script: copiedScriptContent, config, description, tags, folderId: copiedFolderId } = state.copiedScript;
+
+      setScript(copiedScriptContent);
+      setSaveAsScript(true);
+
+      if (description) {
+        setScriptDescription(description);
+      }
+
+      if (tags && tags.length > 0) {
+        setScriptTags(tags.join(', '));
+      }
+
+      if (copiedFolderId) {
+        setFolderId(copiedFolderId);
+      }
+
+      if (config) {
+        setHttpConfig({
+          url: config.url || '',
+          method: config.method || 'GET',
+          headers: config.headers || {},
+          body: config.body || '',
+          vusers: config.vusers || 1,
+          duration: config.duration || 10,
+          rampUp: config.rampUp || 0,
+          name: config.name || '',
+          failureThreshold: config.failureThreshold ?? 0.05
+        });
+      } else {
+        updateConfigFromScript(copiedScriptContent);
+      }
+
+      // Clear the state to prevent re-applying on navigation
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, setScript, setHttpConfig, updateConfigFromScript]);
+
   // Load rerun script from session storage
   useEffect(() => {
     const rerunScript = sessionStorage.getItem('rerunScript');
@@ -71,7 +145,8 @@ export const NewTest = () => {
             vusers: rerunConfig.vusers || 1,
             duration: rerunConfig.duration || 10,
             rampUp: rerunConfig.rampUp || 0,
-            name: rerunConfig.name || ''
+            name: rerunConfig.name || '',
+            failureThreshold: rerunConfig.failureThreshold ?? 0.05
           });
           sessionStorage.removeItem('rerunConfig');
         } catch (err) {
@@ -89,6 +164,21 @@ export const NewTest = () => {
       validate(script);
     }
   }, []);
+
+  // Load folders when saveAsScript is enabled
+  useEffect(() => {
+    if (saveAsScript) {
+      const loadFolders = async () => {
+        try {
+          const folderList = await folderApi.getFolders({sortBy: 'name', sortOrder: 'asc'});
+          setFolders(folderList);
+        } catch (err) {
+          console.error('Failed to load folders:', err);
+        }
+      };
+      loadFolders();
+    }
+  }, [saveAsScript]);
 
   const fetchRecentTests = async () => {
     setLoadingRecentTests(true);
@@ -130,11 +220,39 @@ export const NewTest = () => {
     setError(null);
 
     try {
-      const result = await k6Api.runTest(script, {
-        name: httpConfig.name,
-        config: httpConfig
-      });
-      navigate(`/tests/${result.testId}`);
+      let savedScriptId = scriptId;
+
+      if (saveAsScript) {
+        if (!folderId) {
+          setError('Please select a folder to save the script');
+          setLoading(false);
+          return;
+        }
+
+        const trimmedScriptId = scriptId.trim();
+        const trimmedDescription = scriptDescription.trim();
+        const scriptName = httpConfig.name || `Script ${new Date().toLocaleString()}`;
+
+        const savedScript = await folderApi.createScript(folderId, {
+          ...(trimmedScriptId && {scriptId: trimmedScriptId}),
+          name: scriptName,
+          script: script,
+          config: httpConfig,
+          ...(trimmedDescription && {description: trimmedDescription}),
+          ...(scriptTags && {tags: scriptTags.split(',').map(t => t.trim()).filter(t => t)})
+        });
+        savedScriptId = savedScript.scriptId;
+      }
+
+      if (saveAsScript) {
+        navigate(`/scripts/${savedScriptId}`);
+      } else {
+        const result = await k6Api.runTest(script, {
+          name: httpConfig.name,
+          config: httpConfig
+        });
+        navigate(`/tests/${result.testId}`);
+      }
     } catch (err: any) {
       const errorMessage = err?.response?.data?.error || err?.message || 'Failed to start test';
       setError(errorMessage);
@@ -161,6 +279,27 @@ export const NewTest = () => {
   const handleScriptChangeWithValidation = (newScript: string) => {
     handleScriptChange(newScript);
     validate(newScript);
+  };
+
+  const handleCreateNewFolder = async () => {
+    if (!newFolderName.trim()) {
+      alert('Folder name is required');
+      return;
+    }
+
+    try {
+      const newFolder = await folderApi.createFolder({
+        name: newFolderName,
+        description: newFolderDescription,
+      });
+      setFolders([...folders, {folderId: newFolder.folderId, name: newFolder.name}]);
+      setFolderId(newFolder.folderId);
+      setShowFolderModal(false);
+      setNewFolderName('');
+      setNewFolderDescription('');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to create folder');
+    }
   };
 
   return (
@@ -211,7 +350,7 @@ export const NewTest = () => {
                 borderLeft: '6px solid transparent',
                 borderRight: '6px solid transparent',
                 borderBottom: '6px solid #3b82f6'
-              }} />
+              }}/>
             </div>
           )}
         </div>
@@ -254,6 +393,238 @@ export const NewTest = () => {
           padding: '1.5rem',
           borderRadius: '8px',
           boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+          marginBottom: '1.5rem'
+        }}>
+          <div style={{marginBottom: '1rem'}}>
+            <label style={{display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer'}}>
+              <input
+                type="checkbox"
+                checked={saveAsScript}
+                onChange={(e) => setSaveAsScript(e.target.checked)}
+                style={{width: '18px', height: '18px'}}
+              />
+              <span style={{fontWeight: 'bold'}}>💾 Save as Reusable Script</span>
+            </label>
+            <p style={{margin: '0.5rem 0 0 1.75rem', fontSize: '0.875rem', color: '#6b7280'}}>
+              Save this script to run it again later from the Script Library
+            </p>
+          </div>
+
+          {saveAsScript && (
+            <div style={{
+              marginTop: '1rem',
+              padding: '1rem',
+              backgroundColor: '#f9fafb',
+              borderRadius: '4px',
+              borderLeft: '4px solid #10b981'
+            }}>
+              <div>
+                <label style={{display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 'bold'}}>
+                  Folder <span style={{color: '#ef4444'}}>*</span>
+                </label>
+                <div style={{display: 'flex', gap: '0.5rem'}}>
+                  <select
+                    value={folderId}
+                    onChange={(e) => setFolderId(e.target.value)}
+                    style={{
+                      flex: 1,
+                      padding: '0.5rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '4px',
+                      fontSize: '0.875rem',
+                      backgroundColor: 'white'
+                    }}
+                  >
+                    <option value="">Select a folder...</option>
+                    {folders.map(folder => (
+                      <option key={folder.folderId} value={folder.folderId}>
+                        {folder.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setShowFolderModal(true)}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      backgroundColor: '#10b981',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '0.875rem',
+                      fontWeight: 'bold',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    + New Folder
+                  </button>
+                </div>
+                <p style={{margin: '0.25rem 0 0 0', fontSize: '0.75rem', color: '#6b7280'}}>
+                  Scripts must be saved in a folder
+                </p>
+              </div>
+              <div style={{marginBottom: '1rem'}}>
+                <label style={{display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: 'bold'}}>
+                  Script ID (optional)
+                </label>
+                <input
+                  type="text"
+                  value={scriptId}
+                  onChange={(e) => setScriptId(e.target.value)}
+                  placeholder="Leave empty for auto-generation"
+                  pattern="^[a-z0-9-]*$"
+                  title="Only lowercase letters, numbers, and hyphens"
+                  style={{
+                    width: '100%',
+                    padding: '0.5rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '4px',
+                    fontSize: '0.875rem'
+                  }}
+                />
+                <p style={{margin: '0.25rem 0 0 0', fontSize: '0.75rem', color: '#6b7280'}}>
+                  Custom ID for easy reference (e.g., "homepage-test")
+                </p>
+              </div>
+
+              <div style={{marginBottom: '1rem'}}>
+                <label style={{display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: 'bold'}}>
+                  Description (optional)
+                </label>
+                <textarea
+                  value={scriptDescription}
+                  onChange={(e) => setScriptDescription(e.target.value)}
+                  placeholder="Describe what this script tests..."
+                  rows={2}
+                  style={{
+                    width: '100%',
+                    padding: '0.5rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '4px',
+                    fontSize: '0.875rem'
+                  }}
+                />
+              </div>
+
+              <div style={{marginBottom: '1rem'}}>
+                <label style={{display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: 'bold'}}>
+                  Tags (optional)
+                </label>
+                <input
+                  type="text"
+                  value={scriptTags}
+                  onChange={(e) => setScriptTags(e.target.value)}
+                  placeholder="api, production, critical (comma-separated)"
+                  style={{
+                    width: '100%',
+                    padding: '0.5rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '4px',
+                    fontSize: '0.875rem'
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {showFolderModal && (
+            <div style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              zIndex: 1000
+            }}>
+              <div style={{
+                backgroundColor: 'white',
+                padding: '2rem',
+                borderRadius: '8px',
+                maxWidth: '500px',
+                width: '90%'
+              }}>
+                <h2 style={{marginTop: 0}}>Create New Folder</h2>
+                <div style={{marginBottom: '1rem'}}>
+                  <label style={{display: 'block', marginBottom: '0.5rem'}}>Folder Name*</label>
+                  <input
+                    type="text"
+                    value={newFolderName}
+                    onChange={(e) => setNewFolderName(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '4px',
+                      fontSize: '1rem'
+                    }}
+                    placeholder="Enter folder name"
+                  />
+                </div>
+                <div style={{marginBottom: '1rem'}}>
+                  <label style={{display: 'block', marginBottom: '0.5rem'}}>Description</label>
+                  <textarea
+                    value={newFolderDescription}
+                    onChange={(e) => setNewFolderDescription(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '4px',
+                      fontSize: '1rem',
+                      minHeight: '80px'
+                    }}
+                    placeholder="Enter folder description"
+                  />
+                </div>
+                <div style={{display: 'flex', gap: '0.5rem', justifyContent: 'flex-end'}}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowFolderModal(false);
+                      setNewFolderName('');
+                      setNewFolderDescription('');
+                    }}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      backgroundColor: '#6b7280',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCreateNewFolder}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      backgroundColor: '#10b981',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Create
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div style={{
+          backgroundColor: 'white',
+          padding: '1.5rem',
+          borderRadius: '8px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
           textAlign: 'center'
         }}>
           <Button
@@ -267,10 +638,10 @@ export const NewTest = () => {
               boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
             }}
           >
-            {loading ? '🚀 Starting Test...' : '🚀 Start Load Test'}
+            {loading ? '🚀 Starting Test...' : saveAsScript ? '💾 Save Script' : '🚀 Start Load Test'}
           </Button>
           <div style={{marginTop: '0.75rem', fontSize: 'clamp(0.75rem, 2vw, 0.875rem)', color: '#6b7280'}}>
-            Run load test with the configured script above
+            {saveAsScript ? 'Save script and run load test' : 'Run load test with the configured script above'}
           </div>
         </div>
       </form>

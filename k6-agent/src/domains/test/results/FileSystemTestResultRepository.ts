@@ -70,6 +70,26 @@ export class FileSystemTestResultRepository implements TestResultRepository {
     }
   }
 
+  findByScriptId(scriptId: string): TestResult[] {
+    const allResults = this.findAll();
+    return allResults
+      .filter(result => result.scriptId === scriptId)
+      .sort((a, b) => b.startTime - a.startTime);
+  }
+
+  async cleanupScriptHistory(scriptId: string, limit: number): Promise<void> {
+    const scriptResults = this.findByScriptId(scriptId);
+
+    if (scriptResults.length > limit) {
+      const resultsToDelete = scriptResults.slice(limit);
+      for (const result of resultsToDelete) {
+        this.deleteById(result.testId);
+        logger.info(`Deleted old result ${result.testId} for script ${scriptId}`);
+      }
+      logger.info(`Cleaned up ${resultsToDelete.length} old result(s) for script ${scriptId}`);
+    }
+  }
+
   private async cleanupOldResults(): Promise<void> {
     try {
       const files = await fs.readdir(this.resultsDir);

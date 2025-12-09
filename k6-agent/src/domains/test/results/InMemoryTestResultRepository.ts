@@ -33,6 +33,24 @@ export class InMemoryTestResultRepository implements TestResultRepository {
     return this.storage.delete(testId);
   }
 
+  findByScriptId(scriptId: string): TestResult[] {
+    const allResults = this.findAll();
+    return allResults
+      .filter(result => result.scriptId === scriptId)
+      .sort((a, b) => b.startTime - a.startTime);
+  }
+
+  async cleanupScriptHistory(scriptId: string, limit: number): Promise<void> {
+    const scriptResults = this.findByScriptId(scriptId);
+
+    if (scriptResults.length > limit) {
+      const resultsToDelete = scriptResults.slice(limit);
+      for (const result of resultsToDelete) {
+        this.deleteById(result.testId);
+      }
+    }
+  }
+
   private async cleanupOldResults(): Promise<void> {
     if (this.storage.size <= this.maxResults) {
       return;

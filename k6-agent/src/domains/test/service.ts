@@ -59,6 +59,7 @@ export class Service {
         startTime: test.startTime,
         script: test.script.substring(0, 100) + '...',
         name: test.name,
+        scriptId: test.scriptId,
       });
     }
 
@@ -74,6 +75,7 @@ export class Service {
           script: result.script,
           name: result.name,
           summary: result.summary,
+          scriptId: result.scriptId,
         });
       }
     }

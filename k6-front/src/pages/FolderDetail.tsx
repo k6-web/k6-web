@@ -1,0 +1,369 @@
+import {useEffect, useState} from 'react';
+import {Link, useLocation, useNavigate, useParams} from 'react-router-dom';
+import {folderApi} from '../apis/folderApi';
+import {scriptApi} from '../apis/scriptApi';
+import {k6Api} from '../apis/testApi';
+import type {FolderWithScripts} from '../types/script';
+import type {Test} from '../types/test';
+import {TestTable} from '../components/test-list';
+
+export const FolderDetail = () => {
+  const {folderId} = useParams<{ folderId: string }>();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [folderData, setFolderData] = useState<FolderWithScripts | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isRunningAll, setIsRunningAll] = useState(false);
+  const [folderTests, setFolderTests] = useState<Test[]>([]);
+  const [expandedTests, setExpandedTests] = useState<Set<string>>(new Set());
+
+  // 최대 스크립트 수 (서버 설정과 동일하게)
+  const MAX_SCRIPTS_PER_FOLDER = 20;
+
+  const fetchFolderData = async () => {
+    if (!folderId) return;
+
+    try {
+      setLoading(true);
+      const data = await folderApi.getFolder(folderId);
+      setFolderData(data);
+      setError(null);
+
+      // 폴더 테스트 이력도 함께 가져오기
+      await fetchFolderTests(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch folder');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchFolderTests = async (folder?: FolderWithScripts) => {
+    if (!folderId) return;
+
+    const currentFolder = folder || folderData;
+    if (!currentFolder) return;
+
+    try {
+      // 폴더 내 스크립트 수만큼 최근 테스트 가져오기
+      const limit = Math.max(MAX_SCRIPTS_PER_FOLDER, currentFolder.scripts.length);
+      const response = await k6Api.getTests(null, limit);
+
+      // 폴더 내 스크립트 ID 목록
+      const scriptIds = new Set(currentFolder.scripts.map(s => s.scriptId));
+
+      // 폴더 내 스크립트의 테스트만 필터링
+      const filtered = response.tests.filter(test =>
+        test.scriptId && scriptIds.has(test.scriptId)
+      );
+
+      setFolderTests(filtered);
+    } catch (err) {
+      console.error('Failed to fetch folder tests:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchFolderData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [folderId]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('runAll') === 'true' && folderData && folderData.scripts.length > 0) {
+      handleRunAll();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search, folderData]);
+
+  // 실행 중일 때 폴더 테스트 주기적으로 갱신
+  useEffect(() => {
+    if (!isRunningAll) return;
+
+    const interval = setInterval(() => {
+      fetchFolderTests();
+    }, 2000); // 2초마다 갱신
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRunningAll, folderData]);
+
+  const handleDelete = async (scriptId: string) => {
+    if (!folderId) return;
+    if (!confirm('Are you sure you want to delete this script?')) return;
+
+    try {
+      await folderApi.deleteScript(folderId, scriptId);
+      fetchFolderData();
+    } catch (err) {
+      alert('Failed to delete script');
+    }
+  };
+
+  const handleRun = async (scriptId: string) => {
+    try {
+      const result = await scriptApi.runScript(scriptId);
+      navigate(`/tests/${result.testId}`);
+    } catch (err) {
+      alert('Failed to run script');
+    }
+  };
+
+  const handleRunAll = async () => {
+    if (!folderId || !folderData || folderData.scripts.length === 0) {
+      alert('No scripts to run in this folder');
+      return;
+    }
+
+    if (!confirm(`Run all ${folderData.scripts.length} scripts sequentially?`)) return;
+
+    try {
+      setIsRunningAll(true);
+      await folderApi.runAllScripts(folderId);
+
+      // 실행 완료 후 테스트 목록 새로고침
+      await fetchFolderTests();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to run scripts');
+    } finally {
+      setIsRunningAll(false);
+    }
+  };
+
+  const handleToggleExpand = (testId: string) => {
+    setExpandedTests(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(testId)) {
+        newSet.delete(testId);
+      } else {
+        newSet.add(testId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleRerun = async (testId: string) => {
+    const test = folderTests.find(t => t.testId === testId);
+    if (!test?.scriptId) {
+      alert('Cannot rerun: Script ID not found');
+      return;
+    }
+
+    try {
+      const result = await scriptApi.runScript(test.scriptId);
+      navigate(`/tests/${result.testId}`);
+    } catch (err) {
+      alert('Failed to rerun test');
+    }
+  };
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div style={{color: 'red'}}>Error: {error}</div>;
+  if (!folderData) return <div>Folder not found</div>;
+
+  return (
+    <div>
+      <div style={{marginBottom: '1rem'}}>
+        <Link to="/folders" style={{color: '#3b82f6', textDecoration: 'none'}}>
+          ← Back to Folders
+        </Link>
+      </div>
+
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '1rem',
+        flexWrap: 'wrap',
+        gap: '1rem'
+      }}>
+        <div>
+          <h1 style={{margin: 0, fontSize: 'clamp(1.5rem, 5vw, 2rem)'}}>{folderData.folder.name}</h1>
+          {folderData.folder.description && (
+            <p style={{margin: '0.5rem 0 0 0', color: '#6b7280'}}>
+              {folderData.folder.description}
+            </p>
+          )}
+          <p style={{margin: '0.5rem 0 0 0', fontSize: '0.875rem', color: '#9ca3af'}}>
+            {folderData.scriptCount} script{folderData.scriptCount === 1 ? '' : 's'} in this folder
+          </p>
+        </div>
+        <div style={{display: 'flex', gap: '0.5rem', flexWrap: 'wrap'}}>
+          <Link
+            to={`/new-test?saveScript=true&folderId=${folderId}`}
+            style={{
+              padding: '0.5rem 1rem',
+              backgroundColor: '#10b981',
+              color: 'white',
+              textDecoration: 'none',
+              borderRadius: '4px',
+              display: 'inline-block',
+              fontSize: 'clamp(0.75rem, 2vw, 0.875rem)',
+              fontWeight: 'bold'
+            }}
+          >
+            + New Script
+          </Link>
+          {folderData.scripts.length > 0 && (
+            <button
+              onClick={handleRunAll}
+              disabled={isRunningAll}
+              style={{
+                padding: '0.5rem 1rem',
+                backgroundColor: isRunningAll ? '#9ca3af' : '#8b5cf6',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: isRunningAll ? 'not-allowed' : 'pointer',
+                fontSize: 'clamp(0.75rem, 2vw, 0.875rem)',
+                fontWeight: 'bold'
+              }}
+            >
+              {isRunningAll ? 'Running...' : 'Run All Scripts'}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* 스크립트 목록 */}
+      {folderData.scripts.length === 0 ? (
+        <div style={{
+          backgroundColor: 'white',
+          padding: '3rem',
+          borderRadius: '8px',
+          textAlign: 'center',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+          marginBottom: '1.5rem'
+        }}>
+          <p>No scripts in this folder.</p>
+          <Link
+            to={`/new-test?saveScript=true&folderId=${folderId}`}
+            style={{color: '#3b82f6'}}
+          >
+            Create your first script
+          </Link>
+        </div>
+      ) : (
+        <div style={{
+          backgroundColor: 'white',
+          padding: '1.5rem',
+          borderRadius: '8px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+          marginBottom: '1.5rem'
+        }}>
+          <h2 style={{margin: '0 0 1rem 0', fontSize: '1.25rem'}}>Scripts</h2>
+          <div style={{overflowX: 'auto'}}>
+            <table style={{width: '100%', borderCollapse: 'collapse'}}>
+              <thead>
+              <tr style={{backgroundColor: '#f3f4f6'}}>
+                <th style={{padding: '0.75rem', textAlign: 'left', width: '40px'}}></th>
+                <th style={{padding: '0.75rem', textAlign: 'left'}}>Script ID</th>
+                <th style={{padding: '0.75rem', textAlign: 'left'}}>Description</th>
+                <th style={{padding: '0.75rem', textAlign: 'left'}}>Tags</th>
+                <th style={{padding: '0.75rem', textAlign: 'left'}}>Updated</th>
+                <th style={{padding: '0.75rem', textAlign: 'center', width: '180px'}}>Actions</th>
+              </tr>
+              </thead>
+              <tbody>
+              {folderData.scripts.map(script => (
+                <tr
+                  key={script.scriptId}
+                  style={{
+                    borderBottom: '1px solid #e5e7eb',
+                    cursor: 'pointer',
+                    transition: 'background-color 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  onClick={() => navigate(`/scripts/${script.scriptId}`)}
+                >
+                  <td style={{padding: '0.75rem', fontSize: '1.25rem'}}>📄</td>
+                  <td style={{padding: '0.75rem', fontWeight: 'bold'}}>
+                    {script.scriptId}
+                  </td>
+                  <td style={{padding: '0.75rem', color: '#6b7280'}}>
+                    {script.description || 'No description'}
+                  </td>
+                  <td style={{padding: '0.75rem'}}>
+                    {script.tags && script.tags.length > 0 ? (
+                      <div style={{display: 'flex', gap: '0.25rem', flexWrap: 'wrap'}}>
+                        {script.tags.map(tag => (
+                          <span
+                            key={tag}
+                            style={{
+                              backgroundColor: '#dbeafe',
+                              color: '#1e40af',
+                              padding: '0.125rem 0.5rem',
+                              borderRadius: '9999px',
+                              fontSize: '0.75rem'
+                            }}
+                          >
+                              {tag}
+                            </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span style={{color: '#9ca3af', fontSize: '0.875rem'}}>-</span>
+                    )}
+                  </td>
+                  <td style={{padding: '0.75rem', fontSize: '0.875rem', color: '#6b7280'}}>
+                    {new Date(script.updatedAt).toLocaleString()}
+                  </td>
+                  <td style={{padding: '0.75rem'}} onClick={(e) => e.stopPropagation()}>
+                    <div style={{display: 'flex', gap: '0.5rem', justifyContent: 'center'}}>
+                      <button
+                        onClick={() => handleRun(script.scriptId)}
+                        style={{
+                          padding: '0.375rem 0.75rem',
+                          backgroundColor: '#3b82f6',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '0.875rem'
+                        }}
+                      >
+                        Run
+                      </button>
+                      <button
+                        onClick={() => handleDelete(script.scriptId)}
+                        style={{
+                          padding: '0.375rem 0.75rem',
+                          backgroundColor: '#ef4444',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '0.875rem'
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* 테스트 실행 이력 */}
+      {folderTests.length > 0 && (
+        <div>
+          <h2 style={{margin: '0 0 1rem 0', fontSize: '1.25rem'}}>Recent Test Execution History</h2>
+          <TestTable
+            tests={folderTests}
+            expandedTests={expandedTests}
+            onToggleExpand={handleToggleExpand}
+            onRerun={handleRerun}
+          />
+        </div>
+      )}
+    </div>
+  );
+};

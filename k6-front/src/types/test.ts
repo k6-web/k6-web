@@ -4,6 +4,7 @@ export type TestStatus = 'running' | 'completed' | 'failed' | 'stopped';
 
 export interface Test {
   testId: string;
+  scriptId?: string;
   name?: string;
   status: TestStatus;
   startTime: number;

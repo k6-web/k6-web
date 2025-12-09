@@ -9,6 +9,8 @@ import {initializeDirectories} from '@shared/fileSystem';
 import {setupGracefulShutdown} from '@domains/test/shutdownHandler';
 import healthRouter from '@domains/health/router';
 import testRouter from '@domains/test/router';
+import scriptRouter from '@domains/test/scripts/router';
+import folderRouter from '@domains/test/folders/router';
 
 const app = express();
 
@@ -37,6 +39,8 @@ app.use(express.json({limit: '10mb'}));
 // Routes
 app.use('/health', healthRouter);
 app.use('/v1/tests', testRouter);
+app.use('/v1/scripts', scriptRouter);
+app.use('/v1/folders', folderRouter);
 
 // Error handling middleware (must be last)
 app.use(notFoundHandler);

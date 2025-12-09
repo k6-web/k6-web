@@ -13,6 +13,7 @@ export interface TestResponse {
   script?: string;
   name?: string;
   summary?: unknown;
+  scriptId?: string;
 }
 
 export interface TestListResponse {

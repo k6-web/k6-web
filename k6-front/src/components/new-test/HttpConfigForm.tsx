@@ -325,6 +325,32 @@ export const HttpConfigForm = ({
             }}
           />
         </div>
+        <div>
+          <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
+            Failure Threshold (%)
+          </label>
+          <input
+            type="number"
+            min="0"
+            max="100"
+            step="1"
+            value={((config.failureThreshold ?? 0.05) * 100).toFixed(0)}
+            disabled={isDynamic}
+            onChange={(e) => onConfigChange({failureThreshold: Number.parseInt(e.target.value) / 100})}
+            style={{
+              width: '100%',
+              padding: '0.5rem',
+              border: '1px solid #d1d5db',
+              borderRadius: '4px',
+              backgroundColor: isDynamic ? '#f3f4f6' : 'white',
+              cursor: isDynamic ? 'not-allowed' : 'text',
+              color: isDynamic ? '#6b7280' : '#000'
+            }}
+          />
+          <div style={{fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem'}}>
+            Test aborts if error rate exceeds this
+          </div>
+        </div>
       </div>
     </div>
   );

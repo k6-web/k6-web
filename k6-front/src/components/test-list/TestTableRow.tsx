@@ -67,6 +67,18 @@ export const TestTableRow = ({test, isExpanded, onToggleExpand, onRerun}: TestTa
         <td style={{padding: '1rem'}}>
           <StatusBadge status={test.status} />
         </td>
+        <td style={{padding: '1rem'}}>
+          {test.scriptId ? (
+            <Link
+              to={`/scripts/${test.scriptId}`}
+              style={{color: '#8b5cf6', textDecoration: 'none', fontWeight: '600'}}
+            >
+              {test.scriptId}
+            </Link>
+          ) : (
+            <span style={{color: '#9ca3af', fontSize: '0.875rem'}}>-</span>
+          )}
+        </td>
         <td style={{padding: '1rem', fontSize: '0.875rem', fontWeight: '600', color: '#3b82f6'}}>
           {test.summary ? getTPS(test.summary) : '-'}
         </td>
@@ -119,7 +131,7 @@ export const TestTableRow = ({test, isExpanded, onToggleExpand, onRerun}: TestTa
       </tr>
       {isExpanded && test.summary && (
         <tr key={`${test.testId}-expanded`}>
-          <td colSpan={9} style={{padding: '1rem', backgroundColor: '#f9fafb'}}>
+          <td colSpan={10} style={{padding: '1rem', backgroundColor: '#f9fafb'}}>
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
