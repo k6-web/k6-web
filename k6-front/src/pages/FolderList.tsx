@@ -62,6 +62,12 @@ export const FolderList = () => {
     }
   };
 
+  const handleRunAllFromCard = (folderId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm('Run all scripts in this folder?')) return;
+    navigate(`/folders/${folderId}?runAll=true`);
+  };
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div style={{color: 'red'}}>Error: {error}</div>;
 
@@ -215,7 +221,7 @@ export const FolderList = () => {
               onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)'}
               onMouseLeave={(e) => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)'}
             >
-              <h3 style={{margin: '0 0 0.5rem 0', fontSize: '1.125rem'}}>{folder.name}</h3>
+              <h3 style={{margin: '0 0 0.5rem 0', fontSize: '1.125rem'}}>📁 {folder.name}</h3>
               <p style={{
                 margin: '0 0 1rem 0',
                 fontSize: '0.875rem',
@@ -234,6 +240,21 @@ export const FolderList = () => {
               </div>
 
               <div style={{display: 'flex', gap: '0.5rem'}} onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={(e) => handleRunAllFromCard(folder.folderId, e)}
+                  style={{
+                    flex: 1,
+                    padding: '0.5rem',
+                    backgroundColor: '#8b5cf6',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '0.875rem'
+                  }}
+                >
+                  ▶ Run All
+                </button>
                 <button
                   onClick={() => navigate(`/folders/${folder.folderId}`)}
                   style={{

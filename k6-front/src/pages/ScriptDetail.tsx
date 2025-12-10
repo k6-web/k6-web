@@ -72,7 +72,24 @@ export const ScriptDetail = () => {
     }).catch(() => {
       alert('Failed to copy link.');
     });
-  }
+  };
+
+  const handleCopy = () => {
+    if (!script) return;
+
+    // NewTest 페이지로 이동하면서 스크립트 내용을 state로 전달
+    navigate('/new-test', {
+      state: {
+        copiedScript: {
+          script: script.script,
+          config: script.config,
+          description: script.description,
+          tags: script.tags,
+          folderId: script.folderId,
+        }
+      }
+    });
+  };
 
   const extractMetrics = (test: Test) => {
     const summary = test.summary;
@@ -120,6 +137,13 @@ export const ScriptDetail = () => {
                   style={{fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'}}
                 >
                   🔗 Share
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleCopy}
+                  style={{fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'}}
+                >
+                  📋 Copy to New Test
                 </Button>
                 <button
                   onClick={() => setIsEditing(true)}
@@ -171,7 +195,6 @@ export const ScriptDetail = () => {
             )}
 
             <div style={{fontSize: '0.875rem', color: '#9ca3af'}}>
-              <div>ID: <code>{script.scriptId}</code></div>
               <div>Created: {new Date(script.createdAt).toLocaleString()}</div>
               <div>Updated: {new Date(script.updatedAt).toLocaleString()}</div>
             </div>

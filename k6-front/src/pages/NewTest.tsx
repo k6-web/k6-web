@@ -1,5 +1,5 @@
 import {useEffect, useState} from 'react';
-import {useNavigate, useSearchParams} from 'react-router-dom';
+import {useLocation, useNavigate, useSearchParams} from 'react-router-dom';
 import {k6Api} from '../apis/testApi.ts';
 import {folderApi} from '../apis/folderApi';
 import type {Test} from '../types/test.ts';
@@ -28,6 +28,7 @@ export default function () {
 
 export const NewTest = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,6 +63,54 @@ export const NewTest = () => {
 
   const [headerKey, setHeaderKey] = useState('');
   const [headerValue, setHeaderValue] = useState('');
+
+  // Load copied script from location state
+  useEffect(() => {
+    const state = location.state as { copiedScript?: {
+      script: string;
+      config?: any;
+      description?: string;
+      tags?: string[];
+      folderId?: string;
+    }} | null;
+
+    if (state?.copiedScript) {
+      const { script: copiedScriptContent, config, description, tags, folderId: copiedFolderId } = state.copiedScript;
+
+      setScript(copiedScriptContent);
+      setSaveAsScript(true);
+
+      if (description) {
+        setScriptDescription(description);
+      }
+
+      if (tags && tags.length > 0) {
+        setScriptTags(tags.join(', '));
+      }
+
+      if (copiedFolderId) {
+        setFolderId(copiedFolderId);
+      }
+
+      if (config) {
+        setHttpConfig({
+          url: config.url || '',
+          method: config.method || 'GET',
+          headers: config.headers || {},
+          body: config.body || '',
+          vusers: config.vusers || 1,
+          duration: config.duration || 10,
+          rampUp: config.rampUp || 0,
+          name: config.name || ''
+        });
+      } else {
+        updateConfigFromScript(copiedScriptContent);
+      }
+
+      // Clear the state to prevent re-applying on navigation
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, setScript, setHttpConfig, updateConfigFromScript]);
 
   // Load rerun script from session storage
   useEffect(() => {
