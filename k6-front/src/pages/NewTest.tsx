@@ -624,7 +624,7 @@ export const NewTest = () => {
               boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
             }}
           >
-            {loading ? '🚀 Starting Test...' : saveAsScript ? '💾 Save & Run Test' : '🚀 Start Load Test'}
+            {loading ? '🚀 Starting Test...' : saveAsScript ? '💾 Save Script' : '🚀 Start Load Test'}
           </Button>
           <div style={{marginTop: '0.75rem', fontSize: 'clamp(0.75rem, 2vw, 0.875rem)', color: '#6b7280'}}>
             {saveAsScript ? 'Save script and run load test' : 'Run load test with the configured script above'}
