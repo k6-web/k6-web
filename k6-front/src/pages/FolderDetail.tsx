@@ -1,39 +1,43 @@
 import {useEffect, useState} from 'react';
-import {Link, useNavigate} from 'react-router-dom';
+import {Link, useNavigate, useParams} from 'react-router-dom';
+import {folderApi} from '../apis/folderApi';
 import {scriptApi} from '../apis/scriptApi';
-import type {Script} from '../types/script';
+import type {FolderWithScripts} from '../types/script';
 
-export const ScriptList = () => {
+export const FolderDetail = () => {
+  const {folderId} = useParams<{folderId: string}>();
   const navigate = useNavigate();
-  const [scripts, setScripts] = useState<Script[]>([]);
+  const [folderData, setFolderData] = useState<FolderWithScripts | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [sortBy] = useState<'createdAt' | 'updatedAt' | 'name'>('updatedAt');
-  const [sortOrder] = useState<'asc' | 'desc'>('desc');
+  const [runningAll, setRunningAll] = useState(false);
 
-  const fetchScripts = async () => {
+  const fetchFolderData = async () => {
+    if (!folderId) return;
+
     try {
       setLoading(true);
-      const data = await scriptApi.getScripts({sortBy, sortOrder});
-      setScripts(data);
+      const data = await folderApi.getFolder(folderId);
+      setFolderData(data);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch scripts');
+      setError(err instanceof Error ? err.message : 'Failed to fetch folder');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchScripts();
-  }, [sortBy, sortOrder]);
+    fetchFolderData();
+  }, [folderId]);
 
   const handleDelete = async (scriptId: string) => {
+    if (!folderId) return;
     if (!confirm('Are you sure you want to delete this script?')) return;
 
     try {
-      await scriptApi.deleteScript(scriptId);
-      fetchScripts();
+      await folderApi.deleteScript(folderId, scriptId);
+      fetchFolderData();
     } catch (err) {
       alert('Failed to delete script');
     }
@@ -48,11 +52,41 @@ export const ScriptList = () => {
     }
   };
 
+  const handleRunAll = async () => {
+    if (!folderId) return;
+    if (!folderData || folderData.scripts.length === 0) {
+      alert('No scripts to run in this folder');
+      return;
+    }
+
+    if (!confirm(`Run all ${folderData.scripts.length} scripts sequentially?`)) return;
+
+    try {
+      setRunningAll(true);
+      const result = await folderApi.runAllScripts(folderId);
+      alert(result.message);
+      if (result.testIds.length > 0) {
+        navigate(`/tests/${result.testIds[0]}`);
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to run scripts');
+    } finally {
+      setRunningAll(false);
+    }
+  };
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div style={{color: 'red'}}>Error: {error}</div>;
+  if (!folderData) return <div>Folder not found</div>;
 
   return (
     <div>
+      <div style={{marginBottom: '1rem'}}>
+        <Link to="/folders" style={{color: '#3b82f6', textDecoration: 'none'}}>
+          ← Back to Folders
+        </Link>
+      </div>
+
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -61,10 +95,20 @@ export const ScriptList = () => {
         flexWrap: 'wrap',
         gap: '1rem'
       }}>
-        <h1 style={{margin: 0, fontSize: 'clamp(1.5rem, 5vw, 2rem)'}}>Script Library</h1>
+        <div>
+          <h1 style={{margin: 0, fontSize: 'clamp(1.5rem, 5vw, 2rem)'}}>{folderData.folder.name}</h1>
+          {folderData.folder.description && (
+            <p style={{margin: '0.5rem 0 0 0', color: '#6b7280'}}>
+              {folderData.folder.description}
+            </p>
+          )}
+          <p style={{margin: '0.5rem 0 0 0', fontSize: '0.875rem', color: '#9ca3af'}}>
+            {folderData.scriptCount} script{folderData.scriptCount !== 1 ? 's' : ''} in this folder
+          </p>
+        </div>
         <div style={{display: 'flex', gap: '0.5rem', flexWrap: 'wrap'}}>
           <Link
-            to="/new-test?saveScript=true"
+            to={`/new-test?saveScript=true&folderId=${folderId}`}
             style={{
               padding: '0.5rem 1rem',
               backgroundColor: '#10b981',
@@ -78,10 +122,28 @@ export const ScriptList = () => {
           >
             + New Script
           </Link>
+          {folderData.scripts.length > 0 && (
+            <button
+              onClick={handleRunAll}
+              disabled={runningAll}
+              style={{
+                padding: '0.5rem 1rem',
+                backgroundColor: runningAll ? '#9ca3af' : '#8b5cf6',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: runningAll ? 'not-allowed' : 'pointer',
+                fontSize: 'clamp(0.75rem, 2vw, 0.875rem)',
+                fontWeight: 'bold'
+              }}
+            >
+              {runningAll ? 'Running...' : 'Run All Scripts'}
+            </button>
+          )}
         </div>
       </div>
 
-      {scripts.length === 0 ? (
+      {folderData.scripts.length === 0 ? (
         <div style={{
           backgroundColor: 'white',
           padding: '3rem',
@@ -89,12 +151,17 @@ export const ScriptList = () => {
           textAlign: 'center',
           boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
         }}>
-          <p>No scripts found.</p>
-          <Link to="/new-test?saveScript=true" style={{color: '#3b82f6'}}>Create your first script</Link>
+          <p>No scripts in this folder.</p>
+          <Link
+            to={`/new-test?saveScript=true&folderId=${folderId}`}
+            style={{color: '#3b82f6'}}
+          >
+            Create your first script
+          </Link>
         </div>
       ) : (
         <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem'}}>
-          {scripts.map(script => (
+          {folderData.scripts.map(script => (
             <div
               key={script.scriptId}
               style={{

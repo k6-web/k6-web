@@ -1,6 +1,7 @@
-import {Script, TestResult, TestComparison} from '@domains/test/models/types';
+import {Script, TestComparison, TestResult} from '@domains/test/models/types';
 
-export interface ScriptResponse extends Script {}
+export interface ScriptResponse extends Script {
+}
 
 export interface ScriptListResponse {
   scripts: ScriptResponse[];
@@ -8,9 +9,9 @@ export interface ScriptListResponse {
 
 export interface ScriptHistoryResponse {
   scriptId: string;
-  scriptName: string;
   tests: TestResult[];
   count: number;
 }
 
-export interface ComparisonResponse extends TestComparison {}
+export interface ComparisonResponse extends TestComparison {
+}

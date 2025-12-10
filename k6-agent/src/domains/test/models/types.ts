@@ -48,7 +48,6 @@ export interface TestResult {
 
 export interface Script {
   scriptId: string;
-  name: string;
   script: string;
   config?: K6TestConfig;
   createdAt: number;
@@ -72,7 +71,6 @@ export interface FolderMetadata {
 }
 
 export interface ScriptMetadata {
-  name: string;
   script: string;
   config?: K6TestConfig;
   description?: string;
@@ -100,9 +98,4 @@ export interface TestComparison {
     degraded: number;
     unchanged: number;
   };
-}
-
-export interface ComparisonRequest {
-  testIds: string[];
-  baselineIndex?: number;
 }

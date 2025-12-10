@@ -22,9 +22,6 @@ export class ScriptService {
     if (!metadata.script || metadata.script.trim().length === 0) {
       throw new BadRequestError('Script content is required');
     }
-    if (!metadata.name || metadata.name.trim().length === 0) {
-      throw new BadRequestError('Script name is required');
-    }
     if (!metadata.folderId || metadata.folderId.trim().length === 0) {
       throw new BadRequestError('Folder ID is required - scripts must belong to a folder');
     }
@@ -48,7 +45,7 @@ export class ScriptService {
 
     this.validateScriptLimitForFolder(metadata.folderId);
 
-    const newScriptId = scriptId || this.generateScriptId(metadata.name);
+    const newScriptId = scriptId ? scriptId : `script-${now}`;
 
     if (this.scriptRepository.exists(newScriptId)) {
       throw new BadRequestError(`Script with ID '${newScriptId}' already exists`);
@@ -56,7 +53,6 @@ export class ScriptService {
 
     const newScript: Script = {
       scriptId: newScriptId,
-      name: metadata.name,
       script: metadata.script,
       config: metadata.config,
       description: metadata.description,
@@ -111,16 +107,6 @@ export class ScriptService {
 
     const results = this.resultRepository.findByScriptId(scriptId);
     return results.slice(0, limit);
-  }
-
-  private generateScriptId(name: string): string {
-    const sanitized = name.toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .substring(0, 50);
-    const timestamp = Date.now().toString(36);
-    const random = Math.random().toString(36).substring(2, 6);
-    return `${sanitized}-${timestamp}-${random}`;
   }
 }
 

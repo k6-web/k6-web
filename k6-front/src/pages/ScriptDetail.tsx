@@ -29,7 +29,7 @@ export const ScriptDetail = () => {
         ]);
         setScript(scriptData);
         setHistory(historyData.tests);
-        setEditData({name: scriptData.name, description: scriptData.description || ''});
+        setEditData({name: scriptData.scriptId, description: scriptData.description || ''});
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch script');
@@ -94,7 +94,7 @@ export const ScriptDetail = () => {
 
   return (
     <div>
-      <Link to="/scripts"
+      <Link to="/folders"
             style={{color: '#3b82f6', textDecoration: 'none', marginBottom: '1rem', display: 'inline-block'}}>
         ← Back to Scripts
       </Link>
@@ -110,7 +110,7 @@ export const ScriptDetail = () => {
           <>
             <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem'}}>
               <div>
-                <h1 style={{margin: '0 0 0.5rem 0'}}>{script.name}</h1>
+                <h1 style={{margin: '0 0 0.5rem 0'}}>{script.scriptId}</h1>
                 <p style={{margin: 0, color: '#6b7280'}}>{script.description || 'No description'}</p>
               </div>
               <div style={{display: 'flex', gap: '0.5rem'}}>

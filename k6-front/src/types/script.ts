@@ -3,7 +3,6 @@ import type {Test} from './test';
 
 export interface Script {
   scriptId: string;
-  name: string;
   script: string;
   config?: K6TestConfig;
   createdAt: number;
@@ -33,7 +32,6 @@ export interface ScriptListResponse {
 
 export interface ScriptHistoryResponse {
   scriptId: string;
-  scriptName: string;
   tests: Test[];
   count: number;
 }

@@ -94,7 +94,7 @@ export class FileSystemScriptRepository implements ScriptRepository {
       scripts.sort((a, b) => {
         let comparison = 0;
         if (sortBy === 'name') {
-          comparison = a.name.localeCompare(b.name);
+          comparison = a.scriptId.localeCompare(b.scriptId);
         } else {
           comparison = a[sortBy] - b[sortBy];
         }

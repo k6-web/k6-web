@@ -37,7 +37,7 @@ export const NewTest = () => {
   const [scriptDescription, setScriptDescription] = useState('');
   const [scriptTags, setScriptTags] = useState('');
   const [folderId, setFolderId] = useState(searchParams.get('folderId') || '');
-  const [folders, setFolders] = useState<Array<{folderId: string; name: string}>>([]);
+  const [folders, setFolders] = useState<Array<{ folderId: string; name: string }>>([]);
   const [showFolderModal, setShowFolderModal] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [newFolderDescription, setNewFolderDescription] = useState('');
@@ -153,11 +153,6 @@ export const NewTest = () => {
       return;
     }
 
-    if (saveAsScript && !httpConfig.name) {
-      setError('Script name is required when saving as script');
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
@@ -173,9 +168,11 @@ export const NewTest = () => {
 
         const trimmedScriptId = scriptId.trim();
         const trimmedDescription = scriptDescription.trim();
+        const scriptName = httpConfig.name || `Script ${new Date().toLocaleString()}`;
+
         const savedScript = await folderApi.createScript(folderId, {
           ...(trimmedScriptId && {scriptId: trimmedScriptId}),
-          name: httpConfig.name || 'Untitled Script',
+          name: scriptName,
           script: script,
           config: httpConfig,
           ...(trimmedDescription && {description: trimmedDescription}),
@@ -358,6 +355,52 @@ export const NewTest = () => {
               borderRadius: '4px',
               borderLeft: '4px solid #10b981'
             }}>
+              <div>
+                <label style={{display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 'bold'}}>
+                  Folder <span style={{color: '#ef4444'}}>*</span>
+                </label>
+                <div style={{display: 'flex', gap: '0.5rem'}}>
+                  <select
+                    value={folderId}
+                    onChange={(e) => setFolderId(e.target.value)}
+                    style={{
+                      flex: 1,
+                      padding: '0.5rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '4px',
+                      fontSize: '0.875rem',
+                      backgroundColor: 'white'
+                    }}
+                  >
+                    <option value="">Select a folder...</option>
+                    {folders.map(folder => (
+                      <option key={folder.folderId} value={folder.folderId}>
+                        {folder.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setShowFolderModal(true)}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      backgroundColor: '#10b981',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '0.875rem',
+                      fontWeight: 'bold',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    + New Folder
+                  </button>
+                </div>
+                <p style={{margin: '0.25rem 0 0 0', fontSize: '0.75rem', color: '#6b7280'}}>
+                  Scripts must be saved in a folder
+                </p>
+              </div>
               <div style={{marginBottom: '1rem'}}>
                 <label style={{display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: 'bold'}}>
                   Script ID (optional)
@@ -418,53 +461,6 @@ export const NewTest = () => {
                     fontSize: '0.875rem'
                   }}
                 />
-              </div>
-
-              <div>
-                <label style={{display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 'bold'}}>
-                  Folder <span style={{color: '#ef4444'}}>*</span>
-                </label>
-                <div style={{display: 'flex', gap: '0.5rem'}}>
-                  <select
-                    value={folderId}
-                    onChange={(e) => setFolderId(e.target.value)}
-                    style={{
-                      flex: 1,
-                      padding: '0.5rem',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '4px',
-                      fontSize: '0.875rem',
-                      backgroundColor: 'white'
-                    }}
-                  >
-                    <option value="">Select a folder...</option>
-                    {folders.map(folder => (
-                      <option key={folder.folderId} value={folder.folderId}>
-                        {folder.name}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => setShowFolderModal(true)}
-                    style={{
-                      padding: '0.5rem 1rem',
-                      backgroundColor: '#10b981',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      fontSize: '0.875rem',
-                      fontWeight: 'bold',
-                      whiteSpace: 'nowrap'
-                    }}
-                  >
-                    + New Folder
-                  </button>
-                </div>
-                <p style={{margin: '0.25rem 0 0 0', fontSize: '0.75rem', color: '#6b7280'}}>
-                  Scripts must be saved in a folder
-                </p>
               </div>
             </div>
           )}

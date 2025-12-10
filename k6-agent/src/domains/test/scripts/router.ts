@@ -24,7 +24,6 @@ router.post('/:scriptId/run', asyncHandler(async (req, res) => {
   const config = request.config ?? script.config;
 
   const testId = testService.createTest(script.script, {
-    name: script.name,
     config,
     scriptId: script.scriptId,
   });
@@ -42,7 +41,6 @@ router.get('/:scriptId/history', asyncHandler(async (req, res) => {
 
   const response: ScriptHistoryResponse = {
     scriptId: script.scriptId,
-    scriptName: script.name,
     tests,
     count: tests.length,
   };
