@@ -109,14 +109,7 @@ export const RecentTestsModal = ({show, tests, loading, onClose, onLoadTest}: Re
                       marginBottom: '0.5rem',
                       color: '#1f2937'
                     }}>
-                      {test.name || 'Unnamed Test'}
-                    </div>
-                    <div style={{
-                      fontSize: '0.75rem',
-                      color: '#6b7280',
-                      marginBottom: '0.5rem'
-                    }}>
-                      ID: {test.testId}
+                      {test.testId}
                     </div>
                     <div style={{display: 'flex', gap: '1rem', flexWrap: 'wrap'}}>
                       <div style={{fontSize: '0.875rem', color: '#6b7280'}}>
@@ -133,9 +126,6 @@ export const RecentTestsModal = ({show, tests, loading, onClose, onLoadTest}: Re
                         }}>
                           {test.status}
                         </span>
-                      </div>
-                      <div style={{fontSize: '0.875rem', color: '#6b7280'}}>
-                        <span style={{fontWeight: '600'}}>Started:</span> {new Date(test.startTime).toLocaleString()}
                       </div>
                     </div>
                   </div>
@@ -202,7 +192,8 @@ export const RecentTestsModal = ({show, tests, loading, onClose, onLoadTest}: Re
           fontSize: '0.875rem',
           color: '#1e40af'
         }}>
-          💡 <strong>Tip:</strong> Click "Load Script" to copy a previous test's configuration and script to the editor above.
+          💡 <strong>Tip:</strong> Click "Load Script" to copy a previous test's configuration and script to the editor
+          above.
         </div>
       </div>
     </div>
