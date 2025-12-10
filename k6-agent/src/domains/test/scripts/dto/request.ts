@@ -7,6 +7,7 @@ export interface CreateScriptRequest {
   config?: K6TestConfig;
   description?: string;
   tags?: string[];
+  folderId?: string;
 }
 
 export interface UpdateScriptRequest {
@@ -15,6 +16,7 @@ export interface UpdateScriptRequest {
   config?: K6TestConfig;
   description?: string;
   tags?: string[];
+  folderId?: string;
 }
 
 export interface RunScriptRequest {

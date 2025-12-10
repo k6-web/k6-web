@@ -12,21 +12,43 @@ export class FileSystemScriptRepository implements ScriptRepository {
     this.scriptsDir = scriptsDir;
   }
 
+  private getFolderScriptPath(folderId: string, scriptId: string): string {
+    return path.join(this.scriptsDir, folderId, `${scriptId}.json`);
+  }
+
+  private ensureFolderDir(folderId: string): void {
+    const folderDir = path.join(this.scriptsDir, folderId);
+    if (!fsSync.existsSync(folderDir)) {
+      fsSync.mkdirSync(folderDir, {recursive: true});
+    }
+  }
+
   async save(script: Script): Promise<void> {
-    const scriptFile = path.join(this.scriptsDir, `${script.scriptId}.json`);
+    if (!script.folderId) {
+      throw new Error('Script must have a folderId');
+    }
+
+    this.ensureFolderDir(script.folderId);
+    const scriptFile = this.getFolderScriptPath(script.folderId, script.scriptId);
     await fs.writeFile(scriptFile, JSON.stringify(script, null, 2));
-    logger.info(`Saved script: ${script.scriptId}`);
+    logger.info(`Saved script: ${script.scriptId} in folder: ${script.folderId}`);
   }
 
   findById(scriptId: string): Script | null {
-    const scriptFile = path.join(this.scriptsDir, `${scriptId}.json`);
     try {
-      const content = fsSync.readFileSync(scriptFile, 'utf8');
-      return JSON.parse(content) as Script;
-    } catch (err) {
-      if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
-        return null;
+      const folders = fsSync.readdirSync(this.scriptsDir);
+      for (const folder of folders) {
+        const folderPath = path.join(this.scriptsDir, folder);
+        if (fsSync.statSync(folderPath).isDirectory()) {
+          const scriptFile = path.join(folderPath, `${scriptId}.json`);
+          if (fsSync.existsSync(scriptFile)) {
+            const content = fsSync.readFileSync(scriptFile, 'utf8');
+            return JSON.parse(content) as Script;
+          }
+        }
       }
+      return null;
+    } catch (err) {
       logger.error(`Failed to read script: ${(err as Error).message}`);
       return null;
     }
@@ -39,20 +61,30 @@ export class FileSystemScriptRepository implements ScriptRepository {
   }): Script[] {
     const scripts: Script[] = [];
     try {
-      const files = fsSync.readdirSync(this.scriptsDir);
-      for (const file of files) {
-        if (file.endsWith('.json')) {
-          const scriptFile = path.join(this.scriptsDir, file);
-          const content = fsSync.readFileSync(scriptFile, 'utf8');
-          const script = JSON.parse(content) as Script;
+      if (!fsSync.existsSync(this.scriptsDir)) {
+        return scripts;
+      }
 
-          if (options?.tags && options.tags.length > 0) {
-            if (!script.tags || !script.tags.some(tag => options.tags!.includes(tag))) {
-              continue;
+      const folders = fsSync.readdirSync(this.scriptsDir);
+      for (const folder of folders) {
+        const folderPath = path.join(this.scriptsDir, folder);
+        if (fsSync.statSync(folderPath).isDirectory()) {
+          const files = fsSync.readdirSync(folderPath);
+          for (const file of files) {
+            if (file.endsWith('.json')) {
+              const scriptFile = path.join(folderPath, file);
+              const content = fsSync.readFileSync(scriptFile, 'utf8');
+              const script = JSON.parse(content) as Script;
+
+              if (options?.tags && options.tags.length > 0) {
+                if (!script.tags || !script.tags.some(tag => options.tags!.includes(tag))) {
+                  continue;
+                }
+              }
+
+              scripts.push(script);
             }
           }
-
-          scripts.push(script);
         }
       }
 
@@ -75,23 +107,88 @@ export class FileSystemScriptRepository implements ScriptRepository {
     return scripts;
   }
 
-  deleteById(scriptId: string): boolean {
-    const scriptFile = path.join(this.scriptsDir, `${scriptId}.json`);
+  findByFolderId(folderId: string): Script[] {
+    const scripts: Script[] = [];
     try {
-      fsSync.unlinkSync(scriptFile);
-      logger.info(`Deleted script: ${scriptId}`);
-      return true;
-    } catch (err) {
-      if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
-        return false;
+      const folderPath = path.join(this.scriptsDir, folderId);
+      if (!fsSync.existsSync(folderPath)) {
+        return scripts;
       }
+
+      const files = fsSync.readdirSync(folderPath);
+      for (const file of files) {
+        if (file.endsWith('.json')) {
+          const scriptFile = path.join(folderPath, file);
+          const content = fsSync.readFileSync(scriptFile, 'utf8');
+          const script = JSON.parse(content) as Script;
+          scripts.push(script);
+        }
+      }
+
+      scripts.sort((a, b) => b.updatedAt - a.updatedAt);
+    } catch (err) {
+      logger.error(`Failed to read scripts for folder ${folderId}: ${(err as Error).message}`);
+    }
+    return scripts;
+  }
+
+  deleteById(scriptId: string): boolean {
+    try {
+      const folders = fsSync.readdirSync(this.scriptsDir);
+      for (const folder of folders) {
+        const folderPath = path.join(this.scriptsDir, folder);
+        if (fsSync.statSync(folderPath).isDirectory()) {
+          const scriptFile = path.join(folderPath, `${scriptId}.json`);
+          if (fsSync.existsSync(scriptFile)) {
+            fsSync.unlinkSync(scriptFile);
+            logger.info(`Deleted script: ${scriptId} from folder: ${folder}`);
+            return true;
+          }
+        }
+      }
+      return false;
+    } catch (err) {
       logger.error(`Failed to delete script: ${(err as Error).message}`);
       return false;
     }
   }
 
+  deleteByFolderId(folderId: string): number {
+    let deletedCount = 0;
+    try {
+      const folderPath = path.join(this.scriptsDir, folderId);
+      if (fsSync.existsSync(folderPath)) {
+        const files = fsSync.readdirSync(folderPath);
+        for (const file of files) {
+          if (file.endsWith('.json')) {
+            fsSync.unlinkSync(path.join(folderPath, file));
+            deletedCount++;
+          }
+        }
+        fsSync.rmdirSync(folderPath);
+        logger.info(`Deleted ${deletedCount} scripts from folder: ${folderId}`);
+      }
+    } catch (err) {
+      logger.error(`Failed to delete scripts from folder ${folderId}: ${(err as Error).message}`);
+    }
+    return deletedCount;
+  }
+
   exists(scriptId: string): boolean {
-    const scriptFile = path.join(this.scriptsDir, `${scriptId}.json`);
-    return fsSync.existsSync(scriptFile);
+    try {
+      const folders = fsSync.readdirSync(this.scriptsDir);
+      for (const folder of folders) {
+        const folderPath = path.join(this.scriptsDir, folder);
+        if (fsSync.statSync(folderPath).isDirectory()) {
+          const scriptFile = path.join(folderPath, `${scriptId}.json`);
+          if (fsSync.existsSync(scriptFile)) {
+            return true;
+          }
+        }
+      }
+      return false;
+    } catch (err) {
+      return false;
+    }
   }
 }

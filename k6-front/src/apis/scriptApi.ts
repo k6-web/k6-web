@@ -11,6 +11,7 @@ export const scriptApi = {
     config?: K6TestConfig;
     description?: string;
     tags?: string[];
+    folderId?: string;
   }): Promise<Script> => {
     const response = await api.post<Script>('/v1/scripts', data);
     return response.data;
@@ -44,6 +45,7 @@ export const scriptApi = {
     config?: K6TestConfig;
     description?: string;
     tags?: string[];
+    folderId?: string;
   }): Promise<Script> => {
     const response = await api.put<Script>(`/v1/scripts/${scriptId}`, data);
     return response.data;

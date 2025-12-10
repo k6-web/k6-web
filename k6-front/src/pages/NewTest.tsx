@@ -1,7 +1,7 @@
 import {useEffect, useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router-dom';
 import {k6Api} from '../apis/testApi.ts';
-import {scriptApi} from '../apis/scriptApi';
+import {folderApi} from '../apis/folderApi';
 import type {Test} from '../types/test.ts';
 import {HttpConfigForm, RecentTestsModal, ScriptEditor} from '../components/new-test';
 import {Button, InfoBox} from '../components/common';
@@ -36,6 +36,11 @@ export const NewTest = () => {
   const [scriptId, setScriptId] = useState('');
   const [scriptDescription, setScriptDescription] = useState('');
   const [scriptTags, setScriptTags] = useState('');
+  const [folderId, setFolderId] = useState(searchParams.get('folderId') || '');
+  const [folders, setFolders] = useState<Array<{folderId: string; name: string}>>([]);
+  const [showFolderModal, setShowFolderModal] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [newFolderDescription, setNewFolderDescription] = useState('');
 
   const {
     script,
@@ -97,6 +102,21 @@ export const NewTest = () => {
     }
   }, []);
 
+  // Load folders when saveAsScript is enabled
+  useEffect(() => {
+    if (saveAsScript) {
+      const loadFolders = async () => {
+        try {
+          const folderList = await folderApi.getFolders({sortBy: 'name', sortOrder: 'asc'});
+          setFolders(folderList);
+        } catch (err) {
+          console.error('Failed to load folders:', err);
+        }
+      };
+      loadFolders();
+    }
+  }, [saveAsScript]);
+
   const fetchRecentTests = async () => {
     setLoadingRecentTests(true);
     try {
@@ -145,9 +165,15 @@ export const NewTest = () => {
       let savedScriptId = scriptId;
 
       if (saveAsScript) {
+        if (!folderId) {
+          setError('Please select a folder to save the script');
+          setLoading(false);
+          return;
+        }
+
         const trimmedScriptId = scriptId.trim();
         const trimmedDescription = scriptDescription.trim();
-        const savedScript = await scriptApi.createScript({
+        const savedScript = await folderApi.createScript(folderId, {
           ...(trimmedScriptId && {scriptId: trimmedScriptId}),
           name: httpConfig.name || 'Untitled Script',
           script: script,
@@ -193,6 +219,27 @@ export const NewTest = () => {
   const handleScriptChangeWithValidation = (newScript: string) => {
     handleScriptChange(newScript);
     validate(newScript);
+  };
+
+  const handleCreateNewFolder = async () => {
+    if (!newFolderName.trim()) {
+      alert('Folder name is required');
+      return;
+    }
+
+    try {
+      const newFolder = await folderApi.createFolder({
+        name: newFolderName,
+        description: newFolderDescription,
+      });
+      setFolders([...folders, {folderId: newFolder.folderId, name: newFolder.name}]);
+      setFolderId(newFolder.folderId);
+      setShowFolderModal(false);
+      setNewFolderName('');
+      setNewFolderDescription('');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to create folder');
+    }
   };
 
   return (
@@ -354,7 +401,7 @@ export const NewTest = () => {
                 />
               </div>
 
-              <div>
+              <div style={{marginBottom: '1rem'}}>
                 <label style={{display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: 'bold'}}>
                   Tags (optional)
                 </label>
@@ -371,6 +418,144 @@ export const NewTest = () => {
                     fontSize: '0.875rem'
                   }}
                 />
+              </div>
+
+              <div>
+                <label style={{display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 'bold'}}>
+                  Folder <span style={{color: '#ef4444'}}>*</span>
+                </label>
+                <div style={{display: 'flex', gap: '0.5rem'}}>
+                  <select
+                    value={folderId}
+                    onChange={(e) => setFolderId(e.target.value)}
+                    style={{
+                      flex: 1,
+                      padding: '0.5rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '4px',
+                      fontSize: '0.875rem',
+                      backgroundColor: 'white'
+                    }}
+                  >
+                    <option value="">Select a folder...</option>
+                    {folders.map(folder => (
+                      <option key={folder.folderId} value={folder.folderId}>
+                        {folder.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setShowFolderModal(true)}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      backgroundColor: '#10b981',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '0.875rem',
+                      fontWeight: 'bold',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    + New Folder
+                  </button>
+                </div>
+                <p style={{margin: '0.25rem 0 0 0', fontSize: '0.75rem', color: '#6b7280'}}>
+                  Scripts must be saved in a folder
+                </p>
+              </div>
+            </div>
+          )}
+
+          {showFolderModal && (
+            <div style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              zIndex: 1000
+            }}>
+              <div style={{
+                backgroundColor: 'white',
+                padding: '2rem',
+                borderRadius: '8px',
+                maxWidth: '500px',
+                width: '90%'
+              }}>
+                <h2 style={{marginTop: 0}}>Create New Folder</h2>
+                <div style={{marginBottom: '1rem'}}>
+                  <label style={{display: 'block', marginBottom: '0.5rem'}}>Folder Name*</label>
+                  <input
+                    type="text"
+                    value={newFolderName}
+                    onChange={(e) => setNewFolderName(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '4px',
+                      fontSize: '1rem'
+                    }}
+                    placeholder="Enter folder name"
+                  />
+                </div>
+                <div style={{marginBottom: '1rem'}}>
+                  <label style={{display: 'block', marginBottom: '0.5rem'}}>Description</label>
+                  <textarea
+                    value={newFolderDescription}
+                    onChange={(e) => setNewFolderDescription(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '4px',
+                      fontSize: '1rem',
+                      minHeight: '80px'
+                    }}
+                    placeholder="Enter folder description"
+                  />
+                </div>
+                <div style={{display: 'flex', gap: '0.5rem', justifyContent: 'flex-end'}}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowFolderModal(false);
+                      setNewFolderName('');
+                      setNewFolderDescription('');
+                    }}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      backgroundColor: '#6b7280',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCreateNewFolder}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      backgroundColor: '#10b981',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Create
+                  </button>
+                </div>
               </div>
             </div>
           )}

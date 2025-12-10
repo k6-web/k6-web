@@ -25,6 +25,9 @@ export class ScriptService {
     if (!metadata.name || metadata.name.trim().length === 0) {
       throw new BadRequestError('Script name is required');
     }
+    if (!metadata.folderId || metadata.folderId.trim().length === 0) {
+      throw new BadRequestError('Folder ID is required - scripts must belong to a folder');
+    }
 
     const now = Date.now();
 
@@ -43,6 +46,8 @@ export class ScriptService {
       }
     }
 
+    this.validateScriptLimitForFolder(metadata.folderId);
+
     const newScriptId = scriptId || this.generateScriptId(metadata.name);
 
     if (this.scriptRepository.exists(newScriptId)) {
@@ -56,13 +61,22 @@ export class ScriptService {
       config: metadata.config,
       description: metadata.description,
       tags: metadata.tags,
+      folderId: metadata.folderId,
       createdAt: now,
       updatedAt: now,
     };
 
     await this.scriptRepository.save(newScript);
-    logger.info(`Created script: ${newScriptId}`);
+    logger.info(`Created script: ${newScriptId} in folder: ${metadata.folderId}`);
     return newScript;
+  }
+
+  private validateScriptLimitForFolder(folderId: string): void {
+    const folderScripts = this.scriptRepository.findByFolderId(folderId);
+    const MAX_SCRIPTS_PER_FOLDER = 20;
+    if (folderScripts.length >= MAX_SCRIPTS_PER_FOLDER) {
+      throw new BadRequestError(`Maximum number of scripts per folder (${MAX_SCRIPTS_PER_FOLDER}) reached`);
+    }
   }
 
   getScript(scriptId: string): Script {

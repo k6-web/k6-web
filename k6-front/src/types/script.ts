@@ -10,6 +10,21 @@ export interface Script {
   updatedAt: number;
   description?: string;
   tags?: string[];
+  folderId?: string;
+}
+
+export interface Folder {
+  folderId: string;
+  name: string;
+  description?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface FolderWithScripts {
+  folder: Folder;
+  scripts: Script[];
+  scriptCount: number;
 }
 
 export interface ScriptListResponse {

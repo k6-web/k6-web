@@ -55,6 +55,20 @@ export interface Script {
   updatedAt: number;
   description?: string;
   tags?: string[];
+  folderId?: string;
+}
+
+export interface Folder {
+  folderId: string;
+  name: string;
+  description?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface FolderMetadata {
+  name: string;
+  description?: string;
 }
 
 export interface ScriptMetadata {
@@ -63,6 +77,7 @@ export interface ScriptMetadata {
   config?: K6TestConfig;
   description?: string;
   tags?: string[];
+  folderId: string;
 }
 
 export interface MetricComparison {

@@ -30,7 +30,7 @@ export const Layout = () => {
               textDecoration: 'none',
               fontSize: 'clamp(0.875rem, 2vw, 1rem)'
             }}>Tests</Link>
-            <Link to="/scripts" style={{
+            <Link to="/folders" style={{
               color: 'white',
               textDecoration: 'none',
               fontSize: 'clamp(0.875rem, 2vw, 1rem)'

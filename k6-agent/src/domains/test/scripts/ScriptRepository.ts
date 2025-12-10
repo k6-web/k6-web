@@ -11,7 +11,11 @@ export interface ScriptRepository {
     sortOrder?: 'asc' | 'desc';
   }): Script[];
 
+  findByFolderId(folderId: string): Script[];
+
   deleteById(scriptId: string): boolean;
+
+  deleteByFolderId(folderId: string): number;
 
   exists(scriptId: string): boolean;
 }
