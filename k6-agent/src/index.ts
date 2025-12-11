@@ -9,8 +9,8 @@ import {initializeDirectories} from '@shared/fileSystem';
 import {setupGracefulShutdown} from '@domains/test/shutdownHandler';
 import healthRouter from '@domains/health/router';
 import testRouter from '@domains/test/router';
-import scriptRouter from '@domains/test/scripts/router';
-import folderRouter from '@domains/test/folders/router';
+import scriptRouter from '@domains/scripts/router';
+import folderRouter from '@domains/folders/router';
 
 const app = express();
 

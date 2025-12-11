@@ -2,11 +2,11 @@ import express from 'express';
 import {asyncHandler} from '@shared/asyncHandler';
 import {folderService} from './FolderService';
 import {testService} from '@domains/test/service';
-import {scriptService} from '@domains/test/scripts/ScriptService';
+import {scriptService} from '@domains/scripts/ScriptService';
 import {CreateFolderRequest, FolderListQuery, UpdateFolderRequest} from './dto/request';
 import {FolderListResponse, FolderResponse, FolderWithScriptsResponse} from './dto/response';
 import {StatusResponse} from '@domains/test/dto/response';
-import {ScriptResponse} from '@domains/test/scripts/dto/response';
+import {ScriptResponse} from '@domains/scripts/dto/response';
 
 const router = express.Router();
 

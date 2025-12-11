@@ -1,8 +1,8 @@
 import {Folder, FolderMetadata, Script} from '@domains/test/models/types';
 import {FolderRepository} from './FolderRepository';
 import {FileSystemFolderRepository} from './FileSystemFolderRepository';
-import {ScriptRepository} from '@domains/test/scripts/ScriptRepository';
-import {FileSystemScriptRepository} from '@domains/test/scripts/FileSystemScriptRepository';
+import {ScriptRepository} from '@domains/scripts/ScriptRepository';
+import {FileSystemScriptRepository} from '@domains/scripts/FileSystemScriptRepository';
 import {BadRequestError, NotFoundError} from '@shared/errors';
 import {FOLDERS_REPO_DIR, MAX_FOLDERS, MAX_SCRIPTS_PER_FOLDER, SCRIPTS_REPO_DIR} from '@shared/configs';
 import logger from '@shared/logger';
