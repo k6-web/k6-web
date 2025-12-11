@@ -34,7 +34,7 @@ export const Layout = () => {
               color: 'white',
               textDecoration: 'none',
               fontSize: 'clamp(0.875rem, 2vw, 1rem)'
-            }}>Scripts</Link>
+            }}>Script Folders</Link>
             <Link to="/new-test" style={{
               color: 'white',
               textDecoration: 'none',

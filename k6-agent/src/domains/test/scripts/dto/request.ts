@@ -21,6 +21,7 @@ export interface UpdateScriptRequest {
 
 export interface RunScriptRequest {
   config?: K6TestConfig;
+  name?: string;
 }
 
 export interface CompareTestsRequest {

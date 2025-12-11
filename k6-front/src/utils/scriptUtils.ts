@@ -21,7 +21,7 @@ export const validateScript = (code: string): { valid: boolean; error: string | 
 };
 
 export const httpConfigToScript = (config: K6TestConfig): string => {
-  const {url, method, headers, body, vusers, duration, rampUp} = config;
+  const {url, method, headers, body, vusers, duration, rampUp, failureThreshold} = config;
 
   let scriptCode = `import http from 'k6/http';
 import { check } from 'k6';
@@ -42,17 +42,32 @@ export const options = {
   }
 
   scriptCode += `  ],
+  http: {
+    timeout: '30s',
+    reuseConnection: true,
+  },
+  noUsageReport: true,
+  batch: 20,
+  batchPerHost: 20,
+  thresholds: {
+    http_req_failed: [
+      { threshold: "rate<${failureThreshold ?? 0.05}", abortOnFail: true },
+    ],
+  },
 };
-
-export default function () {
 `;
 
   if (headers && Object.keys(headers).length > 0) {
-    scriptCode += `  const params = {
-    headers: ${JSON.stringify(headers, null, 6)},
-  };
+    scriptCode += `
+const params = {
+  headers: ${JSON.stringify(headers, null, 2)},
+};
 `;
   }
+
+  scriptCode += `
+export default function () {
+`;
 
   const methodLower = method.toLowerCase();
 

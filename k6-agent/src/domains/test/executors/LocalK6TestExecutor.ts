@@ -1,11 +1,11 @@
-import {spawn, ChildProcess} from 'child_process';
+import {ChildProcess, spawn} from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import logger from '@shared/logger';
 import {SCRIPTS_DIR} from '@shared/configs';
 import {TestStatus} from '@domains/test/models/enums';
 import {TestResultRepository} from '@domains/test/results';
-import {TestInfo, TestMetadata, LogEntry, LogListener} from '@domains/test/models/types';
+import {LogEntry, LogListener, TestInfo, TestMetadata} from '@domains/test/models/types';
 import {K6TestExecutor} from './K6TestExecutor';
 
 /**

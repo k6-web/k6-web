@@ -77,27 +77,43 @@ router.post('/:folderId/run-all', asyncHandler(async (req, res) => {
     return;
   }
 
-  const testIds: string[] = [];
+  // 즉시 응답 반환
+  res.json({
+    message: `Queued ${scripts.length} tests for sequential execution`,
+    count: scripts.length,
+  });
 
-  for (const script of scripts) {
-    const testId = testService.createTest(script.script, {
-      config: script.config,
-      scriptId: script.scriptId,
-    });
-    testIds.push(testId);
+  // 백그라운드에서 순차 실행
+  setImmediate(async () => {
+    for (const script of scripts) {
+      try {
+        const testId = testService.createTest(script.script, {
+          config: script.config,
+          scriptId: script.scriptId,
+          name: `${script.scriptId}`,
+        });
 
-    await new Promise(resolve => {
-      const checkInterval = setInterval(() => {
-        const test = testService.getTest(testId);
-        if (test.status === 'completed' || test.status === 'failed' || test.status === 'stopped') {
-          clearInterval(checkInterval);
-          resolve(null);
-        }
-      }, 1000);
-    });
-  }
-
-  res.json({testIds, message: `Started ${testIds.length} tests sequentially`});
+        // 테스트 완료 대기
+        await new Promise(resolve => {
+          const checkInterval = setInterval(() => {
+            try {
+              const test = testService.getTest(testId);
+              if (test.status === 'completed' || test.status === 'failed' || test.status === 'stopped') {
+                clearInterval(checkInterval);
+                resolve(null);
+              }
+            } catch (err) {
+              clearInterval(checkInterval);
+              resolve(null);
+            }
+          }, 1000);
+        });
+      } catch (err) {
+        const logger = require('@shared/logger').default;
+        logger.error(`Failed to run test for script ${script.scriptId}: ${(err as Error).message}`);
+      }
+    }
+  });
 }));
 
 router.post('/:folderId/scripts', asyncHandler(async (req, res) => {

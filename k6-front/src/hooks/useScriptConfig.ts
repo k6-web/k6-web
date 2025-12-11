@@ -12,7 +12,8 @@ export const useScriptConfig = (initialScript: string) => {
     vusers: 1,
     duration: 10,
     rampUp: 0,
-    name: ''
+    name: '',
+    failureThreshold: 0.05
   });
   const [isDynamicScript, setIsDynamicScript] = useState(false);
 

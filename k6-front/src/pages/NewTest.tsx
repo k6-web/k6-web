@@ -16,6 +16,18 @@ export const options = {
   stages: [
     { duration: '30s', target: 10 },
   ],
+  http: {
+    timeout: '30s',
+    reuseConnection: true,
+  },
+  noUsageReport: true,
+  batch: 20,
+  batchPerHost: 20,
+  thresholds: {
+    http_req_failed: [
+      { threshold: "rate<0.05", abortOnFail: true },
+    ],
+  },
 };
 
 export default function () {
@@ -101,7 +113,8 @@ export const NewTest = () => {
           vusers: config.vusers || 1,
           duration: config.duration || 10,
           rampUp: config.rampUp || 0,
-          name: config.name || ''
+          name: config.name || '',
+          failureThreshold: config.failureThreshold ?? 0.05
         });
       } else {
         updateConfigFromScript(copiedScriptContent);
@@ -132,7 +145,8 @@ export const NewTest = () => {
             vusers: rerunConfig.vusers || 1,
             duration: rerunConfig.duration || 10,
             rampUp: rerunConfig.rampUp || 0,
-            name: rerunConfig.name || ''
+            name: rerunConfig.name || '',
+            failureThreshold: rerunConfig.failureThreshold ?? 0.05
           });
           sessionStorage.removeItem('rerunConfig');
         } catch (err) {

@@ -355,7 +355,7 @@ export const FolderDetail = () => {
       {/* 테스트 실행 이력 */}
       {folderTests.length > 0 && (
         <div>
-          <h2 style={{margin: '0 0 1rem 0', fontSize: '1.25rem'}}>Test Execution History</h2>
+          <h2 style={{margin: '0 0 1rem 0', fontSize: '1.25rem'}}>Recent Test Execution History</h2>
           <TestTable
             tests={folderTests}
             expandedTests={expandedTests}

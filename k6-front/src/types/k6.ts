@@ -7,6 +7,7 @@ export interface K6TestConfig {
   duration: number;
   rampUp?: number;
   name?: string;
+  failureThreshold?: number;
 }
 
 export interface K6Summary {

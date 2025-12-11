@@ -26,6 +26,7 @@ router.post('/:scriptId/run', asyncHandler(async (req, res) => {
   const testId = testService.createTest(script.script, {
     config,
     scriptId: script.scriptId,
+    name: request.name || `[${script.scriptId}] Test Run`,
   });
 
   const response: RunTestResponse = {testId};

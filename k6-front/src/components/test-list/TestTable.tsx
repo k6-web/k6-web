@@ -22,6 +22,7 @@ export const TestTable = ({tests, expandedTests, onToggleExpand, onRerun}: TestT
             <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb', width: '40px'}}></th>
             <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>Name / Test ID</th>
             <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>Status</th>
+            <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>Script ID</th>
             <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>TPS</th>
             <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>Latency</th>
             <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>Success</th>

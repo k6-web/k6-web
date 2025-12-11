@@ -195,6 +195,17 @@ export const ScriptDetail = () => {
             )}
 
             <div style={{fontSize: '0.875rem', color: '#9ca3af'}}>
+              {script.folderId && (
+                <div style={{marginBottom: '0.5rem'}}>
+                  <span style={{color: '#6b7280'}}>Folder: </span>
+                  <Link
+                    to={`/folders/${script.folderId}`}
+                    style={{color: '#8b5cf6', textDecoration: 'none', fontWeight: '600'}}
+                  >
+                    {script.folderId}
+                  </Link>
+                </div>
+              )}
               <div>Created: {new Date(script.createdAt).toLocaleString()}</div>
               <div>Updated: {new Date(script.updatedAt).toLocaleString()}</div>
             </div>

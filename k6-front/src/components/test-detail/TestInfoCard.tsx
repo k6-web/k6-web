@@ -1,5 +1,6 @@
 import type {Test} from '../../types/test';
 import {Card} from '../common';
+import {Link} from 'react-router-dom';
 
 interface TestInfoCardProps {
   test: Test;
@@ -23,6 +24,18 @@ export const TestInfoCard = ({test, progress = 0, errorCount = 0}: TestInfoCardP
             {test.status.toUpperCase()}
           </div>
         </div>
+
+        {test.scriptId && (
+          <div>
+            <div style={{fontSize: '0.875rem', color: '#666'}}>Script ID</div>
+            <Link
+              to={`/scripts/${test.scriptId}`}
+              style={{fontSize: '1rem', color: '#8b5cf6', textDecoration: 'none', fontWeight: '600'}}
+            >
+              {test.scriptId}
+            </Link>
+          </div>
+        )}
 
         {test.status === 'running' && progress > 0 && (
           <div>

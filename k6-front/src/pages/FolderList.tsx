@@ -62,12 +62,6 @@ export const FolderList = () => {
     }
   };
 
-  const handleRunAllFromCard = (folderId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!confirm('Run all scripts in this folder?')) return;
-    navigate(`/folders/${folderId}?runAll=true`);
-  };
-
   if (loading) return <div>Loading...</div>;
   if (error) return <div style={{color: 'red'}}>Error: {error}</div>;
 
@@ -199,7 +193,13 @@ export const FolderList = () => {
           <p>No folders found.</p>
           <button
             onClick={() => setShowCreateModal(true)}
-            style={{color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline'}}
+            style={{
+              color: '#3b82f6',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              textDecoration: 'underline'
+            }}
           >
             Create your first folder
           </button>
@@ -240,21 +240,6 @@ export const FolderList = () => {
               </div>
 
               <div style={{display: 'flex', gap: '0.5rem'}} onClick={(e) => e.stopPropagation()}>
-                <button
-                  onClick={(e) => handleRunAllFromCard(folder.folderId, e)}
-                  style={{
-                    flex: 1,
-                    padding: '0.5rem',
-                    backgroundColor: '#8b5cf6',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '0.875rem'
-                  }}
-                >
-                  ▶ Run All
-                </button>
                 <button
                   onClick={() => navigate(`/folders/${folder.folderId}`)}
                   style={{
