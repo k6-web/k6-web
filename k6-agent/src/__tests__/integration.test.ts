@@ -1,8 +1,8 @@
 import {describe, it, expect, beforeAll} from '@jest/globals';
 import express, {Express} from 'express';
 import request from 'supertest';
-import healthRouter from '@domains/health/router';
-import {errorHandler, notFoundHandler} from '@shared/errorHandler';
+import healthRouter from '@domains/health/health-router';
+import {errorHandler, notFoundHandler} from '@shared/http/error-handler';
 
 describe('Integration Tests', () => {
   let app: Express;

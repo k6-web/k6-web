@@ -2,15 +2,15 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
-import logger from '@shared/logger';
-import {notFoundHandler, errorHandler} from '@shared/errorHandler';
+import logger from '@shared/logger/logger';
+import {notFoundHandler, errorHandler} from '@shared/http/error-handler';
 import {PORT, K6_BASE_PATH, RESULTS_DIR, SCRIPTS_DIR, MAX_RESULT_FILES} from '@shared/configs';
-import {initializeDirectories} from '@shared/fileSystem';
-import {setupGracefulShutdown} from '@domains/test/shutdownHandler';
-import healthRouter from '@domains/health/router';
-import testRouter from '@domains/test/router';
-import scriptRouter from '@domains/scripts/router';
-import folderRouter from '@domains/folders/router';
+import {initializeDirectories} from '@shared/filesystem/filesystem';
+import {setupGracefulShutdown} from '@domains/test/test-shutdown-handler';
+import healthRouter from '@domains/health/health-router';
+import testRouter from '@domains/test/test-router';
+import scriptRouter from '@domains/scripts/script-router';
+import folderRouter from '@domains/folders/folder-router';
 
 const app = express();
 
