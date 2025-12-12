@@ -3,7 +3,7 @@ import {ScriptRepository} from './ScriptRepository';
 import {FileSystemScriptRepository} from './FileSystemScriptRepository';
 import {FileSystemTestResultRepository, TestResultRepository} from '@domains/test/results';
 import {BadRequestError, NotFoundError} from '@shared/errors';
-import {MAX_HISTORY_PER_SCRIPT, SCRIPTS_REPO_DIR} from '@shared/configs';
+import {MAX_SCRIPTS_PER_FOLDER, SCRIPTS_REPO_DIR} from '@shared/configs';
 import logger from '@shared/logger';
 
 export class ScriptService {
@@ -69,7 +69,6 @@ export class ScriptService {
 
   private validateScriptLimitForFolder(folderId: string): void {
     const folderScripts = this.scriptRepository.findByFolderId(folderId);
-    const MAX_SCRIPTS_PER_FOLDER = 20;
     if (folderScripts.length >= MAX_SCRIPTS_PER_FOLDER) {
       throw new BadRequestError(`Maximum number of scripts per folder (${MAX_SCRIPTS_PER_FOLDER}) reached`);
     }
@@ -83,14 +82,6 @@ export class ScriptService {
     return script;
   }
 
-  getAllScripts(options?: {
-    tags?: string[];
-    sortBy?: 'createdAt' | 'updatedAt' | 'name';
-    sortOrder?: 'asc' | 'desc';
-  }): Script[] {
-    return this.scriptRepository.findAll(options);
-  }
-
   deleteScript(scriptId: string): void {
     const success = this.scriptRepository.deleteById(scriptId);
     if (!success) {
@@ -99,7 +90,7 @@ export class ScriptService {
     logger.info(`Deleted script: ${scriptId}`);
   }
 
-  getScriptHistory(scriptId: string, limit: number = MAX_HISTORY_PER_SCRIPT): TestResult[] {
+  getScriptHistory(scriptId: string, limit: number): TestResult[] {
     const script = this.scriptRepository.findById(scriptId);
     if (!script) {
       throw new NotFoundError(`Script not found: ${scriptId}`);

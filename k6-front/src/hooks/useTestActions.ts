@@ -21,7 +21,7 @@ export const useTestActions = (testId: string | undefined, testInfo: Test | null
 
     try {
       await k6Api.deleteTest(testId);
-      navigate('/');
+      navigate('/tests');
     } catch (err) {
       alert('Failed to delete test: ' + (err instanceof Error ? err.message : 'Unknown error'));
     }

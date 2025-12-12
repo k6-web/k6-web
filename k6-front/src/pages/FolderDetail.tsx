@@ -18,8 +18,7 @@ export const FolderDetail = () => {
   const [folderTests, setFolderTests] = useState<Test[]>([]);
   const [expandedTests, setExpandedTests] = useState<Set<string>>(new Set());
 
-  // 최대 스크립트 수 (서버 설정과 동일하게)
-  const MAX_SCRIPTS_PER_FOLDER = 20;
+  const MAX_SCRIPTS_PER_FOLDER = 30;
 
   const fetchFolderData = async () => {
     if (!folderId) return;
@@ -167,7 +166,7 @@ export const FolderDetail = () => {
   return (
     <div>
       <div style={{marginBottom: '1rem'}}>
-        <Link to="/folders" style={{color: '#3b82f6', textDecoration: 'none'}}>
+        <Link to="/" style={{color: '#3b82f6', textDecoration: 'none'}}>
           ← Back to Folders
         </Link>
       </div>

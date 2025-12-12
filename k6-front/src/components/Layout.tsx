@@ -29,17 +29,17 @@ export const Layout = () => {
               color: 'white',
               textDecoration: 'none',
               fontSize: 'clamp(0.875rem, 2vw, 1rem)'
-            }}>Tests</Link>
-            <Link to="/folders" style={{
-              color: 'white',
-              textDecoration: 'none',
-              fontSize: 'clamp(0.875rem, 2vw, 1rem)'
-            }}>Script Folders</Link>
+            }}>Scripts</Link>
             <Link to="/new-test" style={{
               color: 'white',
               textDecoration: 'none',
               fontSize: 'clamp(0.875rem, 2vw, 1rem)'
             }}>New Test</Link>
+            <Link to="/tests" style={{
+              color: 'white',
+              textDecoration: 'none',
+              fontSize: 'clamp(0.875rem, 2vw, 1rem)'
+            }}>Tests</Link>
           </div>
         </nav>
       </header>

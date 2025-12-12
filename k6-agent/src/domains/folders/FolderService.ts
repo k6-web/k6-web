@@ -4,7 +4,7 @@ import {FileSystemFolderRepository} from './FileSystemFolderRepository';
 import {ScriptRepository} from '@domains/scripts/ScriptRepository';
 import {FileSystemScriptRepository} from '@domains/scripts/FileSystemScriptRepository';
 import {BadRequestError, NotFoundError} from '@shared/errors';
-import {FOLDERS_REPO_DIR, MAX_FOLDERS, MAX_SCRIPTS_PER_FOLDER, SCRIPTS_REPO_DIR} from '@shared/configs';
+import {FOLDERS_REPO_DIR, MAX_FOLDERS, SCRIPTS_REPO_DIR} from '@shared/configs';
 import logger from '@shared/logger';
 
 export class FolderService {
@@ -99,13 +99,6 @@ export class FolderService {
   getScriptsByFolder(folderId: string): Script[] {
     this.getFolder(folderId);
     return this.scriptRepository.findByFolderId(folderId);
-  }
-
-  validateScriptLimit(folderId: string): void {
-    const scripts = this.getScriptsByFolder(folderId);
-    if (scripts.length >= MAX_SCRIPTS_PER_FOLDER) {
-      throw new BadRequestError(`Maximum number of scripts per folder (${MAX_SCRIPTS_PER_FOLDER}) reached`);
-    }
   }
 
   private generateFolderId(name: string): string {

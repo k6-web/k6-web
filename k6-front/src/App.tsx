@@ -11,11 +11,12 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Layout/>}>
-        <Route path="/" element={<TestList/>}/>
+        <Route path="" element={<FolderList/>}/>
+        <Route path="tests" element={<TestList/>}/>
         <Route path="tests/:testId" element={<TestDetail/>}/>
         <Route path="new-test" element={<NewTest/>}/>
         <Route path="scripts/:scriptId" element={<ScriptDetail/>}/>
-        <Route path="folders" element={<FolderList/>}/>
+        <Route path="/folders" element={<FolderList/>}/>
         <Route path="folders/:folderId" element={<FolderDetail/>}/>
       </Route>
     </Routes>
