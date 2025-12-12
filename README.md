@@ -82,6 +82,8 @@ docker run -p 3000:3000 \
   -e PORT=3000 \
   -e K6_BASE_PATH=/tmp/k6 \
   -e MAX_RESULT_FILES=500 \
+  -e MAX_FOLDERS=50 \
+  -e MAX_SCRIPTS_PER_FOLDER=20 \
   ghcr.io/k6-web/k6-web-agent:latest
 ```
 
@@ -98,12 +100,14 @@ docker run -p 5173:5173 \
 
 ##### k6-web-agent
 
-| Variable           | Description                              | Default   |
-|--------------------|------------------------------------------|-----------|
-| `PORT`             | Server port number                       | `3000`    |
-| `LOG_LEVEL`        | Logging level (error, warn, info, debug) | `info`    |
-| `K6_BASE_PATH`     | Base directory for k6 data               | `/tmp/k6` |
-| `MAX_RESULT_FILES` | Maximum number of result files to keep   | `500`     |
+| Variable                  | Description                              | Default   |
+|---------------------------|------------------------------------------|-----------|
+| `PORT`                    | Server port number                       | `3000`    |
+| `LOG_LEVEL`               | Logging level (error, warn, info, debug) | `info`    |
+| `K6_BASE_PATH`            | Base directory for k6 data               | `/tmp/k6` |
+| `MAX_RESULT_FILES`        | Maximum number of result files to keep   | `500`     |
+| `MAX_FOLDERS`             | Maximum number of folders                | `50`      |
+| `MAX_SCRIPTS_PER_FOLDER`  | Maximum number of scripts per folder     | `20`      |
 
 ##### k6-web-front
 
