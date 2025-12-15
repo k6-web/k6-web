@@ -100,20 +100,21 @@ docker run -p 5173:5173 \
 
 ##### k6-web-agent
 
-| Variable                  | Description                              | Default   |
-|---------------------------|------------------------------------------|-----------|
-| `PORT`                    | Server port number                       | `3000`    |
-| `LOG_LEVEL`               | Logging level (error, warn, info, debug) | `info`    |
-| `K6_BASE_PATH`            | Base directory for k6 data               | `/tmp/k6` |
-| `MAX_RESULT_FILES`        | Maximum number of result files to keep   | `500`     |
-| `MAX_FOLDERS`             | Maximum number of folders                | `50`      |
-| `MAX_SCRIPTS_PER_FOLDER`  | Maximum number of scripts per folder     | `20`      |
+| Variable                 | Description                              | Default   |
+|--------------------------|------------------------------------------|-----------|
+| `PORT`                   | Server port number                       | `3000`    |
+| `LOG_LEVEL`              | Logging level (error, warn, info, debug) | `info`    |
+| `K6_BASE_PATH`           | Base directory for k6 data               | `/tmp/k6` |
+| `MAX_RESULT_FILES`       | Maximum number of result files to keep   | `500`     |
+| `MAX_FOLDERS`            | Maximum number of folders                | `50`      |
+| `MAX_SCRIPTS_PER_FOLDER` | Maximum number of scripts per folder     | `20`      |
 
 ##### k6-web-front
 
-| Variable       | Description      | Default                 |
-|----------------|------------------|-------------------------|
-| `VITE_API_URL` | K6 Agent API URL | `http://localhost:3000` |
+| Variable                | Description      | Default                 | Available Values              |
+|-------------------------|------------------|-------------------------|-------------------------------|
+| `VITE_API_URL`          | K6 Agent API URL | `http://localhost:3000` |                               |
+| `VITE_DEFAULT_LANGUAGE` | Default Language | `en`                    | `en` (English), `ko` (Korean) |
 
 ### Option 2: Build from Source
 
