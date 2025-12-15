@@ -1,3 +1,4 @@
+import {useTranslation} from 'react-i18next';
 import type {K6Summary} from '../../types/k6';
 import {MetricCard} from './MetricCard';
 import {formatBytes, formatDuration} from '../../utils/formatUtils';
@@ -7,6 +8,7 @@ interface MetricsGridProps {
 }
 
 export const MetricsGrid = ({summary}: MetricsGridProps) => {
+  const {t} = useTranslation();
   const checks = summary.metrics.checks;
   const passRate = checks ? checks.value * 100 : 0;
   const failRate = 100 - passRate;
@@ -23,33 +25,33 @@ export const MetricsGrid = ({summary}: MetricsGridProps) => {
     }}>
       {/* TPS Card */}
       <MetricCard
-        title="TPS (Transactions Per Second)"
+        title={`TPS`}
         value={summary.metrics.http_reqs?.rate ? Math.round(summary.metrics.http_reqs.rate) : 'N/A'}
-        subtitle={`Total Requests: ${summary.metrics.http_reqs?.count || 'N/A'}`}
+        subtitle={`${t('metrics.httpReqs')}: ${summary.metrics.http_reqs?.count || 'N/A'}`}
         color="#3b82f6"
       />
 
       {/* Latency Card */}
       <MetricCard
-        title="Response Time (Latency)"
+        title={t('metrics.httpReqDuration')}
         value=""
         color="#8b5cf6"
       >
         <div style={{display: 'flex', gap: '1rem', marginTop: '0.5rem'}}>
           <div>
-            <div style={{fontSize: '0.75rem', color: '#999'}}>Avg</div>
+            <div style={{fontSize: '0.75rem', color: '#999'}}>{t('metrics.avg')}</div>
             <div style={{fontSize: '1.25rem', fontWeight: 'bold', color: '#8b5cf6'}}>
               {formatDuration(summary.metrics.http_req_duration?.avg)}
             </div>
           </div>
           <div>
-            <div style={{fontSize: '0.75rem', color: '#999'}}>P90</div>
+            <div style={{fontSize: '0.75rem', color: '#999'}}>{t('metrics.p90')}</div>
             <div style={{fontSize: '1.25rem', fontWeight: 'bold', color: '#8b5cf6'}}>
               {formatDuration(summary.metrics.http_req_duration?.['p(90)'])}
             </div>
           </div>
           <div>
-            <div style={{fontSize: '0.75rem', color: '#999'}}>P95</div>
+            <div style={{fontSize: '0.75rem', color: '#999'}}>{t('metrics.p95')}</div>
             <div style={{fontSize: '1.25rem', fontWeight: 'bold', color: '#8b5cf6'}}>
               {formatDuration(summary.metrics.http_req_duration?.['p(95)'])}
             </div>
@@ -59,13 +61,13 @@ export const MetricsGrid = ({summary}: MetricsGridProps) => {
 
       {/* Success/Failure Card */}
       <MetricCard
-        title="Success / Failure"
+        title={`${t('testDetail.passed')} / ${t('testDetail.failed')}`}
         value=""
         color={failedChecks > 0 ? '#ef4444' : '#22c55e'}
       >
         <div style={{display: 'flex', gap: '1.5rem', alignItems: 'center'}}>
           <div>
-            <div style={{fontSize: '0.75rem', color: '#22c55e'}}>✓ Succeeded</div>
+            <div style={{fontSize: '0.75rem', color: '#22c55e'}}>✓ {t('testDetail.passed')}</div>
             <div style={{fontSize: '1.5rem', fontWeight: 'bold', color: '#22c55e'}}>
               {passRate.toFixed(1)}%
             </div>
@@ -74,7 +76,7 @@ export const MetricsGrid = ({summary}: MetricsGridProps) => {
             </div>
           </div>
           <div>
-            <div style={{fontSize: '0.75rem', color: '#ef4444'}}>✗ Failed</div>
+            <div style={{fontSize: '0.75rem', color: '#ef4444'}}>✗ {t('testDetail.failed')}</div>
             <div style={{fontSize: '1.5rem', fontWeight: 'bold', color: '#ef4444'}}>
               {failRate.toFixed(1)}%
             </div>
@@ -93,13 +95,13 @@ export const MetricsGrid = ({summary}: MetricsGridProps) => {
       >
         <div style={{marginTop: '0.5rem'}}>
           <div style={{marginBottom: '0.75rem'}}>
-            <div style={{fontSize: '0.75rem', color: '#999'}}>↓ Received</div>
+            <div style={{fontSize: '0.75rem', color: '#999'}}>↓ {t('metrics.dataReceived')}</div>
             <div style={{fontSize: '1.25rem', fontWeight: 'bold', color: '#f59e0b'}}>
               {formatBytes(summary.metrics.data_received?.count)}
             </div>
           </div>
           <div>
-            <div style={{fontSize: '0.75rem', color: '#999'}}>↑ Sent</div>
+            <div style={{fontSize: '0.75rem', color: '#999'}}>↑ {t('metrics.dataSent')}</div>
             <div style={{fontSize: '1.25rem', fontWeight: 'bold', color: '#f59e0b'}}>
               {formatBytes(summary.metrics.data_sent?.count)}
             </div>

@@ -1,3 +1,4 @@
+import {useTranslation} from 'react-i18next';
 import type {Test} from '../../types/test';
 import {Light as SyntaxHighlighter} from 'react-syntax-highlighter';
 import {github} from 'react-syntax-highlighter/dist/esm/styles/hljs';
@@ -11,6 +12,8 @@ interface RecentTestsModalProps {
 }
 
 export const RecentTestsModal = ({show, tests, loading, onClose, onLoadTest}: RecentTestsModalProps) => {
+  const {t} = useTranslation();
+
   if (!show) return null;
 
   return (
@@ -43,7 +46,7 @@ export const RecentTestsModal = ({show, tests, loading, onClose, onLoadTest}: Re
           alignItems: 'center',
           marginBottom: '1.5rem'
         }}>
-          <h2 style={{margin: 0}}>📋 Recent Test Scripts</h2>
+          <h2 style={{margin: 0}}>{t('recentTestsModal.title')}</h2>
           <button
             onClick={onClose}
             style={{
@@ -55,13 +58,13 @@ export const RecentTestsModal = ({show, tests, loading, onClose, onLoadTest}: Re
               fontWeight: 'bold'
             }}
           >
-            ✕ Close
+            {t('common.close')}
           </button>
         </div>
 
         {loading ? (
           <div style={{textAlign: 'center', padding: '3rem', color: '#6b7280'}}>
-            Loading recent tests...
+            {t('recentTestsModal.loadingTests')}
           </div>
         ) : tests.length === 0 ? (
           <div style={{
@@ -71,8 +74,7 @@ export const RecentTestsModal = ({show, tests, loading, onClose, onLoadTest}: Re
             backgroundColor: '#f9fafb',
             borderRadius: '8px'
           }}>
-            <p style={{fontSize: '1.125rem', marginBottom: '0.5rem'}}>No recent tests found</p>
-            <p style={{fontSize: '0.875rem'}}>Run your first test to see it here!</p>
+            <p style={{fontSize: '1.125rem', marginBottom: '0.5rem'}}>{t('recentTestsModal.noTests')}</p>
           </div>
         ) : (
           <div style={{display: 'grid', gap: '1rem'}}>
@@ -113,7 +115,7 @@ export const RecentTestsModal = ({show, tests, loading, onClose, onLoadTest}: Re
                     </div>
                     <div style={{display: 'flex', gap: '1rem', flexWrap: 'wrap'}}>
                       <div style={{fontSize: '0.875rem', color: '#6b7280'}}>
-                        <span style={{fontWeight: '600'}}>Status:</span>{' '}
+                        <span style={{fontWeight: '600'}}>{t('recentTestsModal.status')}:</span>{' '}
                         <span style={{
                           padding: '0.125rem 0.5rem',
                           borderRadius: '9999px',
@@ -143,7 +145,7 @@ export const RecentTestsModal = ({show, tests, loading, onClose, onLoadTest}: Re
                       whiteSpace: 'nowrap'
                     }}
                   >
-                    📝 Load Script
+                    {t('recentTestsModal.loadScript')}
                   </button>
                 </div>
 

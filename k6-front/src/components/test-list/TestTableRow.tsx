@@ -1,3 +1,4 @@
+import {useTranslation} from 'react-i18next';
 import {Link} from 'react-router-dom';
 import type {Test} from '../../types/test';
 import type {K6Summary} from '../../types/k6';
@@ -30,6 +31,8 @@ const getSuccessRate = (summary?: K6Summary): string => {
 };
 
 export const TestTableRow = ({test, isExpanded, onToggleExpand, onRerun}: TestTableRowProps) => {
+  const {t} = useTranslation();
+
   return (
     <>
       <tr style={{borderBottom: '1px solid #e5e7eb'}}>
@@ -43,7 +46,7 @@ export const TestTableRow = ({test, isExpanded, onToggleExpand, onRerun}: TestTa
               fontSize: '1.25rem',
               color: '#6b7280'
             }}
-            title={isExpanded ? 'Collapse' : 'Expand'}
+            title={isExpanded ? t('common.close') : 'Expand'}
           >
             {isExpanded ? '▼' : '▶'}
           </button>
@@ -107,7 +110,7 @@ export const TestTableRow = ({test, isExpanded, onToggleExpand, onRerun}: TestTa
                 fontSize: '0.875rem'
               }}
             >
-              View
+              {t('folderList.viewFolder')}
             </Link>
             {test.status !== 'running' && (
               <button
@@ -121,9 +124,9 @@ export const TestTableRow = ({test, isExpanded, onToggleExpand, onRerun}: TestTa
                   fontSize: '0.875rem',
                   cursor: 'pointer'
                 }}
-                title="Re-run test"
+                title={t('testList.rerun')}
               >
-                Re-run
+                {t('testList.rerun')}
               </button>
             )}
           </div>
@@ -194,7 +197,7 @@ export const TestTableRow = ({test, isExpanded, onToggleExpand, onRerun}: TestTa
                   fontSize: '0.875rem'
                 }}
               >
-                View Details
+                {t('folderList.viewFolder')}
               </Link>
               <button
                 onClick={() => onRerun(test.testId)}
@@ -208,7 +211,7 @@ export const TestTableRow = ({test, isExpanded, onToggleExpand, onRerun}: TestTa
                   cursor: 'pointer'
                 }}
               >
-                🔄 Re-run Test
+                {t('testList.rerun')}
               </button>
             </div>
           </td>

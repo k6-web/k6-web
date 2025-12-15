@@ -1,5 +1,6 @@
 import {useEffect, useState} from 'react';
 import {Link, useLocation, useNavigate, useParams} from 'react-router-dom';
+import {useTranslation} from 'react-i18next';
 import {folderApi} from '../apis/folderApi';
 import {scriptApi} from '../apis/scriptApi';
 import {k6Api} from '../apis/testApi';
@@ -8,6 +9,7 @@ import type {Test} from '../types/test';
 import {TestTable} from '../components/test-list';
 
 export const FolderDetail = () => {
+  const {t} = useTranslation();
   const {folderId} = useParams<{ folderId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -92,13 +94,13 @@ export const FolderDetail = () => {
 
   const handleDelete = async (scriptId: string) => {
     if (!folderId) return;
-    if (!confirm('Are you sure you want to delete this script?')) return;
+    if (!confirm(t('folderDetail.confirmDeleteScript'))) return;
 
     try {
       await folderApi.deleteScript(folderId, scriptId);
       fetchFolderData();
     } catch (err) {
-      alert('Failed to delete script');
+      alert(t('folderDetail.failedToDeleteScript'));
     }
   };
 
@@ -107,13 +109,13 @@ export const FolderDetail = () => {
       const result = await scriptApi.runScript(scriptId);
       navigate(`/tests/${result.testId}`);
     } catch (err) {
-      alert('Failed to run script');
+      alert(t('folderDetail.failedToDeleteScript'));
     }
   };
 
   const handleRunAll = async () => {
     if (!folderId || !folderData || folderData.scripts.length === 0) {
-      alert('No scripts to run in this folder');
+      alert(t('folderDetail.noScripts'));
       return;
     }
 
@@ -126,7 +128,7 @@ export const FolderDetail = () => {
       // 실행 완료 후 테스트 목록 새로고침
       await fetchFolderTests();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to run scripts');
+      alert(err instanceof Error ? err.message : t('folderDetail.failedToDeleteScript'));
     } finally {
       setIsRunningAll(false);
     }
@@ -147,7 +149,7 @@ export const FolderDetail = () => {
   const handleRerun = async (testId: string) => {
     const test = folderTests.find(t => t.testId === testId);
     if (!test?.scriptId) {
-      alert('Cannot rerun: Script ID not found');
+      alert(t('testList.noScriptAvailable'));
       return;
     }
 
@@ -155,19 +157,19 @@ export const FolderDetail = () => {
       const result = await scriptApi.runScript(test.scriptId);
       navigate(`/tests/${result.testId}`);
     } catch (err) {
-      alert('Failed to rerun test');
+      alert(t('folderDetail.failedToDeleteScript'));
     }
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div style={{color: 'red'}}>Error: {error}</div>;
-  if (!folderData) return <div>Folder not found</div>;
+  if (loading) return <div>{t('common.loading')}</div>;
+  if (error) return <div style={{color: 'red'}}>{t('common.error')}: {error}</div>;
+  if (!folderData) return <div>{t('folderList.noFolders')}</div>;
 
   return (
     <div>
       <div style={{marginBottom: '1rem'}}>
         <Link to="/" style={{color: '#3b82f6', textDecoration: 'none'}}>
-          ← Back to Folders
+          {t('folderDetail.backToFolders')}
         </Link>
       </div>
 
@@ -204,7 +206,7 @@ export const FolderDetail = () => {
               fontWeight: 'bold'
             }}
           >
-            + New Script
+            + {t('folderDetail.newScript')}
           </Link>
           {folderData.scripts.length > 0 && (
             <button
@@ -221,7 +223,7 @@ export const FolderDetail = () => {
                 fontWeight: 'bold'
               }}
             >
-              {isRunningAll ? 'Running...' : 'Run All Scripts'}
+              {isRunningAll ? t('testList.loadingMore') : 'Run All Scripts'}
             </button>
           )}
         </div>
@@ -237,12 +239,12 @@ export const FolderDetail = () => {
           boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
           marginBottom: '1.5rem'
         }}>
-          <p>No scripts in this folder.</p>
+          <p>{t('folderDetail.noScripts')}</p>
           <Link
             to={`/new-test?saveScript=true&folderId=${folderId}`}
             style={{color: '#3b82f6'}}
           >
-            Create your first script
+            {t('folderDetail.createFirstScript')}
           </Link>
         </div>
       ) : (
@@ -253,17 +255,17 @@ export const FolderDetail = () => {
           boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
           marginBottom: '1.5rem'
         }}>
-          <h2 style={{margin: '0 0 1rem 0', fontSize: '1.25rem'}}>Scripts</h2>
+          <h2 style={{margin: '0 0 1rem 0', fontSize: '1.25rem'}}>{t('folderList.scriptsCount')}</h2>
           <div style={{overflowX: 'auto'}}>
             <table style={{width: '100%', borderCollapse: 'collapse'}}>
               <thead>
               <tr style={{backgroundColor: '#f3f4f6'}}>
                 <th style={{padding: '0.75rem', textAlign: 'left', width: '40px'}}></th>
-                <th style={{padding: '0.75rem', textAlign: 'left'}}>Script ID</th>
-                <th style={{padding: '0.75rem', textAlign: 'left'}}>Description</th>
-                <th style={{padding: '0.75rem', textAlign: 'left'}}>Tags</th>
-                <th style={{padding: '0.75rem', textAlign: 'left'}}>Updated</th>
-                <th style={{padding: '0.75rem', textAlign: 'center', width: '180px'}}>Actions</th>
+                <th style={{padding: '0.75rem', textAlign: 'left'}}>{t('scriptDetail.scriptId')}</th>
+                <th style={{padding: '0.75rem', textAlign: 'left'}}>{t('common.description')}</th>
+                <th style={{padding: '0.75rem', textAlign: 'left'}}>{t('common.tags')}</th>
+                <th style={{padding: '0.75rem', textAlign: 'left'}}>{t('common.updatedAt')}</th>
+                <th style={{padding: '0.75rem', textAlign: 'center', width: '180px'}}>{t('common.actions')}</th>
               </tr>
               </thead>
               <tbody>
@@ -325,7 +327,7 @@ export const FolderDetail = () => {
                           fontSize: '0.875rem'
                         }}
                       >
-                        Run
+                        {t('folderDetail.runScript')}
                       </button>
                       <button
                         onClick={() => handleDelete(script.scriptId)}
@@ -339,7 +341,7 @@ export const FolderDetail = () => {
                           fontSize: '0.875rem'
                         }}
                       >
-                        Delete
+                        {t('common.delete')}
                       </button>
                     </div>
                   </td>
@@ -354,7 +356,7 @@ export const FolderDetail = () => {
       {/* 테스트 실행 이력 */}
       {folderTests.length > 0 && (
         <div>
-          <h2 style={{margin: '0 0 1rem 0', fontSize: '1.25rem'}}>Recent Test Execution History</h2>
+          <h2 style={{margin: '0 0 1rem 0', fontSize: '1.25rem'}}>{t('testList.title')}</h2>
           <TestTable
             tests={folderTests}
             expandedTests={expandedTests}

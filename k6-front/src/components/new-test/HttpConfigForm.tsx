@@ -1,3 +1,4 @@
+import {useTranslation} from 'react-i18next';
 import type {K6TestConfig} from '../../types/k6';
 
 interface HttpConfigFormProps {
@@ -23,6 +24,8 @@ export const HttpConfigForm = ({
   onAddHeader,
   onRemoveHeader
 }: HttpConfigFormProps) => {
+  const {t} = useTranslation();
+
   return (
     <div style={{
       backgroundColor: 'white',
@@ -30,7 +33,7 @@ export const HttpConfigForm = ({
       borderRadius: '8px',
       boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
     }}>
-      <h2 style={{marginTop: 0, marginBottom: '1rem'}}>HTTP Test Configuration</h2>
+      <h2 style={{marginTop: 0, marginBottom: '1rem'}}>{t('httpConfig.title')}</h2>
 
       {isDynamic ? (
         <div style={{
@@ -42,8 +45,7 @@ export const HttpConfigForm = ({
           fontSize: '0.875rem',
           color: '#92400e'
         }}>
-          ⚠️ <strong>Dynamic Script Detected:</strong> This script uses dynamic URLs or complex logic.
-          HTTP settings are read-only and can only be modified in Custom Script. (Test name can be changed)
+          {t('httpConfig.dynamicScriptNote')}
         </div>
       ) : (
         <div style={{
@@ -55,20 +57,19 @@ export const HttpConfigForm = ({
           fontSize: '0.875rem',
           color: '#1e40af'
         }}>
-          💡 <strong>Tip:</strong> If you need dynamic URLs or complex logic, write a Custom Script directly.
-          This configuration is for quickly generating simple HTTP tests.
+          {t('httpConfig.dynamicScriptNote')}
         </div>
       )}
 
       <div style={{marginBottom: '1rem'}}>
         <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
-          Test Name (Optional)
+          {t('httpConfig.testName')}
         </label>
         <input
           type="text"
           value={config.name}
           onChange={(e) => onConfigChange({name: e.target.value.slice(0, 50)})}
-          placeholder="e.g., API Performance Test"
+          placeholder={t('httpConfig.testNamePlaceholder')}
           maxLength={50}
           style={{
             width: '100%',
@@ -85,7 +86,7 @@ export const HttpConfigForm = ({
 
       <div style={{marginBottom: '1rem'}}>
         <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
-          URL *
+          {t('httpConfig.url')} *
         </label>
         <input
           type="url"
@@ -93,7 +94,7 @@ export const HttpConfigForm = ({
           value={config.url}
           disabled={isDynamic}
           onChange={(e) => onConfigChange({url: e.target.value})}
-          placeholder="https://api.example.com/endpoint"
+          placeholder={t('httpConfig.urlPlaceholder')}
           style={{
             width: '100%',
             padding: '0.5rem',
@@ -109,7 +110,7 @@ export const HttpConfigForm = ({
 
       <div style={{marginBottom: '1rem'}}>
         <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
-          Method
+          {t('httpConfig.method')}
         </label>
         <select
           value={config.method}
@@ -138,12 +139,12 @@ export const HttpConfigForm = ({
 
       <div style={{marginBottom: '1rem'}}>
         <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
-          Headers
+          {t('httpConfig.headers')}
         </label>
         <div style={{display: 'flex', gap: '0.5rem', marginBottom: '0.5rem'}}>
           <input
             type="text"
-            placeholder="Header name"
+            placeholder={t('httpConfig.headerKeyPlaceholder')}
             value={headerKey}
             disabled={isDynamic}
             onChange={(e) => onHeaderKeyChange(e.target.value)}
@@ -159,7 +160,7 @@ export const HttpConfigForm = ({
           />
           <input
             type="text"
-            placeholder="Header value"
+            placeholder={t('httpConfig.headerValuePlaceholder')}
             value={headerValue}
             disabled={isDynamic}
             onChange={(e) => onHeaderValueChange(e.target.value)}
@@ -186,7 +187,7 @@ export const HttpConfigForm = ({
               cursor: isDynamic ? 'not-allowed' : 'pointer'
             }}
           >
-            Add
+            {t('httpConfig.addHeader')}
           </button>
         </div>
         {config.headers && Object.keys(config.headers).length > 0 && (
@@ -221,7 +222,7 @@ export const HttpConfigForm = ({
                     fontSize: '0.75rem'
                   }}
                 >
-                  Remove
+                  {t('httpConfig.remove')}
                 </button>
               </div>
             ))}
@@ -232,13 +233,13 @@ export const HttpConfigForm = ({
       {['POST', 'PUT', 'PATCH'].includes(config.method) && (
         <div style={{marginBottom: '1rem'}}>
           <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
-            Request Body
+            {t('httpConfig.requestBody')}
           </label>
           <textarea
             value={config.body as string}
             disabled={isDynamic}
             onChange={(e) => onConfigChange({body: e.target.value})}
-            placeholder='{"key": "value"}'
+            placeholder={t('httpConfig.requestBodyPlaceholder')}
             rows={5}
             style={{
               width: '100%',
@@ -262,7 +263,7 @@ export const HttpConfigForm = ({
       }}>
         <div>
           <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
-            Virtual Users *
+            {t('httpConfig.vusers')} *
           </label>
           <input
             type="number"
@@ -284,7 +285,7 @@ export const HttpConfigForm = ({
         </div>
         <div>
           <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
-            Duration (seconds) *
+            {t('httpConfig.duration')} *
           </label>
           <input
             type="number"
@@ -306,7 +307,7 @@ export const HttpConfigForm = ({
         </div>
         <div>
           <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
-            Ramp-up (seconds)
+            {t('httpConfig.rampUp')}
           </label>
           <input
             type="number"
@@ -327,7 +328,7 @@ export const HttpConfigForm = ({
         </div>
         <div>
           <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
-            Failure Threshold (%)
+            {t('httpConfig.failureThreshold')}
           </label>
           <input
             type="number"
@@ -348,7 +349,7 @@ export const HttpConfigForm = ({
             }}
           />
           <div style={{fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem'}}>
-            Test aborts if error rate exceeds this
+            {t('httpConfig.failureThresholdDescription')}
           </div>
         </div>
       </div>

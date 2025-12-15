@@ -1,3 +1,4 @@
+import {useTranslation} from 'react-i18next';
 import {Button} from '../common';
 
 interface TestHeaderProps {
@@ -19,6 +20,7 @@ export const TestHeader = ({
   onDelete,
   onCopyLink
 }: TestHeaderProps) => {
+  const {t} = useTranslation();
   return (
     <div style={{
       display: 'flex',
@@ -50,7 +52,7 @@ export const TestHeader = ({
             onClick={onStop}
             style={{fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'}}
           >
-            Stop Test
+            {t('common.cancel')}
           </Button>
         )}
         {status !== 'running' && (
@@ -60,21 +62,21 @@ export const TestHeader = ({
               onClick={onCopyLink}
               style={{fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'}}
             >
-              🔗 Share
+              Share
             </Button>
             <Button
               variant="primary"
               onClick={onRerun}
               style={{fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'}}
             >
-              🔄 Re-run
+              {t('testList.rerun')}
             </Button>
             <Button
               variant="gray"
               onClick={onDelete}
               style={{fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'}}
             >
-              Delete
+              {t('common.delete')}
             </Button>
           </>
         )}

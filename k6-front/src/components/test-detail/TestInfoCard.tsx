@@ -1,3 +1,4 @@
+import {useTranslation} from 'react-i18next';
 import type {Test} from '../../types/test';
 import {Card} from '../common';
 import {Link} from 'react-router-dom';
@@ -9,11 +10,13 @@ interface TestInfoCardProps {
 }
 
 export const TestInfoCard = ({test, progress = 0, errorCount = 0}: TestInfoCardProps) => {
+  const {t} = useTranslation();
+
   return (
-    <Card title="Test Information">
+    <Card title={t('testDetail.summary')}>
       <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem'}}>
         <div>
-          <div style={{fontSize: '0.875rem', color: '#666'}}>Status</div>
+          <div style={{fontSize: '0.875rem', color: '#666'}}>{t('common.status')}</div>
           <div style={{
             fontSize: '1.25rem',
             fontWeight: 'bold',
@@ -21,13 +24,13 @@ export const TestInfoCard = ({test, progress = 0, errorCount = 0}: TestInfoCardP
               test.status === 'completed' ? '#22c55e' :
                 test.status === 'failed' ? '#ef4444' : '#6b7280'
           }}>
-            {test.status.toUpperCase()}
+            {t(`testDetail.${test.status}`).toUpperCase()}
           </div>
         </div>
 
         {test.scriptId && (
           <div>
-            <div style={{fontSize: '0.875rem', color: '#666'}}>Script ID</div>
+            <div style={{fontSize: '0.875rem', color: '#666'}}>{t('scriptDetail.scriptId')}</div>
             <Link
               to={`/scripts/${test.scriptId}`}
               style={{fontSize: '1rem', color: '#8b5cf6', textDecoration: 'none', fontWeight: '600'}}
@@ -63,7 +66,7 @@ export const TestInfoCard = ({test, progress = 0, errorCount = 0}: TestInfoCardP
 
         {test.status === 'running' && errorCount > 0 && (
           <div>
-            <div style={{fontSize: '0.875rem', color: '#666'}}>Errors</div>
+            <div style={{fontSize: '0.875rem', color: '#666'}}>{t('common.error')}</div>
             <div style={{fontSize: '1.25rem', fontWeight: 'bold', color: '#ef4444'}}>
               {errorCount}
             </div>
@@ -71,17 +74,17 @@ export const TestInfoCard = ({test, progress = 0, errorCount = 0}: TestInfoCardP
         )}
 
         <div>
-          <div style={{fontSize: '0.875rem', color: '#666'}}>Start Time</div>
+          <div style={{fontSize: '0.875rem', color: '#666'}}>{t('testDetail.startTime')}</div>
           <div style={{fontSize: '1rem'}}>{new Date(test.startTime).toLocaleString()}</div>
         </div>
         {test?.endTime && (
           <>
             <div>
-              <div style={{fontSize: '0.875rem', color: '#666'}}>End Time</div>
+              <div style={{fontSize: '0.875rem', color: '#666'}}>{t('testDetail.endTime')}</div>
               <div style={{fontSize: '1rem'}}>{new Date(test.endTime).toLocaleString()}</div>
             </div>
             <div>
-              <div style={{fontSize: '0.875rem', color: '#666'}}>Duration</div>
+              <div style={{fontSize: '0.875rem', color: '#666'}}>{t('testDetail.duration')}</div>
               <div style={{fontSize: '1rem'}}>{((test.endTime - test.startTime) / 1000).toFixed(2)}s</div>
             </div>
           </>

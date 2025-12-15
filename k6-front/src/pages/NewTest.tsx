@@ -1,5 +1,6 @@
 import {useEffect, useState} from 'react';
 import {useLocation, useNavigate, useSearchParams} from 'react-router-dom';
+import {useTranslation} from 'react-i18next';
 import {k6Api} from '../apis/testApi.ts';
 import {folderApi} from '../apis/folderApi';
 import type {Test} from '../types/test.ts';
@@ -39,6 +40,7 @@ export default function () {
 `;
 
 export const NewTest = () => {
+  const {t} = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -204,7 +206,7 @@ export const NewTest = () => {
         window.scrollTo({top: 0, behavior: 'smooth'});
       }
     } catch (err) {
-      alert('Failed to load test script');
+      alert(t('newTest.failedToLoadScript'));
     }
   };
 
@@ -212,7 +214,7 @@ export const NewTest = () => {
     e.preventDefault();
 
     if (!validate(script)) {
-      setError('Script has syntax errors. Please fix and try again.');
+      setError(t('newTest.syntaxError'));
       return;
     }
 
@@ -224,7 +226,7 @@ export const NewTest = () => {
 
       if (saveAsScript) {
         if (!folderId) {
-          setError('Please select a folder to save the script');
+          setError(t('newTest.folderRequired'));
           setLoading(false);
           return;
         }
@@ -283,7 +285,7 @@ export const NewTest = () => {
 
   const handleCreateNewFolder = async () => {
     if (!newFolderName.trim()) {
-      alert('Folder name is required');
+      alert(t('newTest.folderNameRequired'));
       return;
     }
 
@@ -298,7 +300,7 @@ export const NewTest = () => {
       setNewFolderName('');
       setNewFolderDescription('');
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to create folder');
+      alert(err instanceof Error ? err.message : t('newTest.failedToCreateFolder'));
     }
   };
 
@@ -312,7 +314,7 @@ export const NewTest = () => {
         flexWrap: 'wrap',
         gap: '1rem'
       }}>
-        <h1 style={{margin: 0, fontSize: 'clamp(1.5rem, 5vw, 2rem)'}}>Create New Test</h1>
+        <h1 style={{margin: 0, fontSize: 'clamp(1.5rem, 5vw, 2rem)'}}>{t('newTest.title')}</h1>
         <div style={{position: 'relative'}}>
           <Button
             variant="purple"
@@ -320,9 +322,9 @@ export const NewTest = () => {
               setShowRecentTests(true);
               fetchRecentTests();
             }}
-            title="View and load your 5 most recent test scripts to quickly re-run or modify them"
+            title={t('newTest.recentTestsTooltip')}
           >
-            📋 Recent Tests
+            📋 {t('newTest.recentTests')}
           </Button>
           {showTooltip && (
             <div style={{
@@ -340,7 +342,7 @@ export const NewTest = () => {
               pointerEvents: 'none',
               animation: 'fadeIn 0.3s ease-in'
             }}>
-              💡 Quickly load your recent test scripts!
+              💡 {t('newTest.quickLoadTooltip')}
               <div style={{
                 position: 'absolute',
                 top: '-4px',
@@ -403,10 +405,10 @@ export const NewTest = () => {
                 onChange={(e) => setSaveAsScript(e.target.checked)}
                 style={{width: '18px', height: '18px'}}
               />
-              <span style={{fontWeight: 'bold'}}>💾 Save as Reusable Script</span>
+              <span style={{fontWeight: 'bold'}}>💾 {t('newTest.saveAsScript')}</span>
             </label>
             <p style={{margin: '0.5rem 0 0 1.75rem', fontSize: '0.875rem', color: '#6b7280'}}>
-              Save this script to run it again later from the Script Library
+              {t('newTest.saveAsScriptDescription')}
             </p>
           </div>
 
@@ -420,7 +422,7 @@ export const NewTest = () => {
             }}>
               <div>
                 <label style={{display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 'bold'}}>
-                  Folder <span style={{color: '#ef4444'}}>*</span>
+                  {t('newTest.folder')} <span style={{color: '#ef4444'}}>{t('newTest.required')}</span>
                 </label>
                 <div style={{display: 'flex', gap: '0.5rem'}}>
                   <select
@@ -435,7 +437,7 @@ export const NewTest = () => {
                       backgroundColor: 'white'
                     }}
                   >
-                    <option value="">Select a folder...</option>
+                    <option value="">{t('newTest.selectFolder')}</option>
                     {folders.map(folder => (
                       <option key={folder.folderId} value={folder.folderId}>
                         {folder.name}
@@ -457,24 +459,24 @@ export const NewTest = () => {
                       whiteSpace: 'nowrap'
                     }}
                   >
-                    + New Folder
+                    {t('newTest.newFolder')}
                   </button>
                 </div>
                 <p style={{margin: '0.25rem 0 0 0', fontSize: '0.75rem', color: '#6b7280'}}>
-                  Scripts must be saved in a folder
+                  {t('newTest.scriptsMustBeInFolder')}
                 </p>
               </div>
               <div style={{marginBottom: '1rem'}}>
                 <label style={{display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: 'bold'}}>
-                  Script ID (optional)
+                  {t('newTest.scriptId')}
                 </label>
                 <input
                   type="text"
                   value={scriptId}
                   onChange={(e) => setScriptId(e.target.value)}
-                  placeholder="Leave empty for auto-generation"
+                  placeholder={t('newTest.scriptIdPlaceholder')}
                   pattern="^[a-z0-9-]*$"
-                  title="Only lowercase letters, numbers, and hyphens"
+                  title={t('newTest.scriptIdPattern')}
                   style={{
                     width: '100%',
                     padding: '0.5rem',
@@ -484,18 +486,18 @@ export const NewTest = () => {
                   }}
                 />
                 <p style={{margin: '0.25rem 0 0 0', fontSize: '0.75rem', color: '#6b7280'}}>
-                  Custom ID for easy reference (e.g., "homepage-test")
+                  {t('newTest.scriptIdHelper')}
                 </p>
               </div>
 
               <div style={{marginBottom: '1rem'}}>
                 <label style={{display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: 'bold'}}>
-                  Description (optional)
+                  {t('newTest.descriptionOptional')}
                 </label>
                 <textarea
                   value={scriptDescription}
                   onChange={(e) => setScriptDescription(e.target.value)}
-                  placeholder="Describe what this script tests..."
+                  placeholder={t('newTest.descriptionPlaceholder')}
                   rows={2}
                   style={{
                     width: '100%',
@@ -509,13 +511,13 @@ export const NewTest = () => {
 
               <div style={{marginBottom: '1rem'}}>
                 <label style={{display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: 'bold'}}>
-                  Tags (optional)
+                  {t('newTest.tagsOptional')}
                 </label>
                 <input
                   type="text"
                   value={scriptTags}
                   onChange={(e) => setScriptTags(e.target.value)}
-                  placeholder="api, production, critical (comma-separated)"
+                  placeholder={t('newTest.tagsPlaceholder')}
                   style={{
                     width: '100%',
                     padding: '0.5rem',
@@ -548,9 +550,9 @@ export const NewTest = () => {
                 maxWidth: '500px',
                 width: '90%'
               }}>
-                <h2 style={{marginTop: 0}}>Create New Folder</h2>
+                <h2 style={{marginTop: 0}}>{t('newTest.createNewFolder')}</h2>
                 <div style={{marginBottom: '1rem'}}>
-                  <label style={{display: 'block', marginBottom: '0.5rem'}}>Folder Name*</label>
+                  <label style={{display: 'block', marginBottom: '0.5rem'}}>{t('newTest.folderName')}</label>
                   <input
                     type="text"
                     value={newFolderName}
@@ -562,11 +564,11 @@ export const NewTest = () => {
                       borderRadius: '4px',
                       fontSize: '1rem'
                     }}
-                    placeholder="Enter folder name"
+                    placeholder={t('newTest.folderNamePlaceholder')}
                   />
                 </div>
                 <div style={{marginBottom: '1rem'}}>
-                  <label style={{display: 'block', marginBottom: '0.5rem'}}>Description</label>
+                  <label style={{display: 'block', marginBottom: '0.5rem'}}>{t('newTest.folderDescription')}</label>
                   <textarea
                     value={newFolderDescription}
                     onChange={(e) => setNewFolderDescription(e.target.value)}
@@ -578,7 +580,7 @@ export const NewTest = () => {
                       fontSize: '1rem',
                       minHeight: '80px'
                     }}
-                    placeholder="Enter folder description"
+                    placeholder={t('newTest.folderDescriptionPlaceholder')}
                   />
                 </div>
                 <div style={{display: 'flex', gap: '0.5rem', justifyContent: 'flex-end'}}>
@@ -598,7 +600,7 @@ export const NewTest = () => {
                       cursor: 'pointer'
                     }}
                   >
-                    Cancel
+                    {t('common.cancel')}
                   </button>
                   <button
                     type="button"
@@ -612,7 +614,7 @@ export const NewTest = () => {
                       cursor: 'pointer'
                     }}
                   >
-                    Create
+                    {t('common.create')}
                   </button>
                 </div>
               </div>
@@ -638,10 +640,10 @@ export const NewTest = () => {
               boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
             }}
           >
-            {loading ? '🚀 Starting Test...' : saveAsScript ? '💾 Save Script' : '🚀 Start Load Test'}
+            {loading ? `🚀 ${t('newTest.startingTest')}` : saveAsScript ? `💾 ${t('newTest.saveScript')}` : `🚀 ${t('newTest.startTest')}`}
           </Button>
           <div style={{marginTop: '0.75rem', fontSize: 'clamp(0.75rem, 2vw, 0.875rem)', color: '#6b7280'}}>
-            {saveAsScript ? 'Save script and run load test' : 'Run load test with the configured script above'}
+            {saveAsScript ? t('newTest.saveScriptDescription') : t('newTest.startTestDescription')}
           </div>
         </div>
       </form>

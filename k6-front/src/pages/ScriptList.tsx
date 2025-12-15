@@ -1,9 +1,11 @@
 import {useEffect, useState} from 'react';
 import {Link, useNavigate} from 'react-router-dom';
+import {useTranslation} from 'react-i18next';
 import {scriptApi} from '../apis/scriptApi';
 import type {Script} from '../types/script';
 
 export const ScriptList = () => {
+  const {t} = useTranslation();
   const navigate = useNavigate();
   const [scripts, setScripts] = useState<Script[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,13 +31,13 @@ export const ScriptList = () => {
   }, [sortBy, sortOrder]);
 
   const handleDelete = async (scriptId: string) => {
-    if (!confirm('Are you sure you want to delete this script?')) return;
+    if (!confirm(t('folderDetail.confirmDeleteScript'))) return;
 
     try {
       await scriptApi.deleteScript(scriptId);
       fetchScripts();
     } catch (err) {
-      alert('Failed to delete script');
+      alert(t('folderDetail.failedToDeleteScript'));
     }
   };
 
@@ -44,12 +46,12 @@ export const ScriptList = () => {
       const result = await scriptApi.runScript(scriptId);
       navigate(`/tests/${result.testId}`);
     } catch (err) {
-      alert('Failed to run script');
+      alert(t('folderDetail.failedToDeleteScript'));
     }
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div style={{color: 'red'}}>Error: {error}</div>;
+  if (loading) return <div>{t('common.loading')}</div>;
+  if (error) return <div style={{color: 'red'}}>{t('common.error')}: {error}</div>;
 
   return (
     <div>
@@ -61,7 +63,7 @@ export const ScriptList = () => {
         flexWrap: 'wrap',
         gap: '1rem'
       }}>
-        <h1 style={{margin: 0, fontSize: 'clamp(1.5rem, 5vw, 2rem)'}}>Script Library</h1>
+        <h1 style={{margin: 0, fontSize: 'clamp(1.5rem, 5vw, 2rem)'}}>{t('folderList.title')}</h1>
         <div style={{display: 'flex', gap: '0.5rem', flexWrap: 'wrap'}}>
           <Link
             to="/new-test?saveScript=true"
@@ -76,7 +78,7 @@ export const ScriptList = () => {
               fontWeight: 'bold'
             }}
           >
-            + New Script
+            + {t('folderDetail.newScript')}
           </Link>
         </div>
       </div>
@@ -89,8 +91,8 @@ export const ScriptList = () => {
           textAlign: 'center',
           boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
         }}>
-          <p>No scripts found.</p>
-          <Link to="/new-test?saveScript=true" style={{color: '#3b82f6'}}>Create your first script</Link>
+          <p>{t('folderDetail.noScripts')}</p>
+          <Link to="/new-test?saveScript=true" style={{color: '#3b82f6'}}>{t('folderDetail.createFirstScript')}</Link>
         </div>
       ) : (
         <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem'}}>
@@ -160,7 +162,7 @@ export const ScriptList = () => {
                     fontSize: '0.875rem'
                   }}
                 >
-                  Run
+                  {t('folderDetail.runScript')}
                 </button>
                 <button
                   onClick={() => handleDelete(script.scriptId)}
@@ -174,7 +176,7 @@ export const ScriptList = () => {
                     fontSize: '0.875rem'
                   }}
                 >
-                  Delete
+                  {t('common.delete')}
                 </button>
               </div>
             </div>

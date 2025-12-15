@@ -1,3 +1,4 @@
+import {useTranslation} from 'react-i18next';
 import type {Test} from '../../types/test';
 import {TestTableRow} from './TestTableRow';
 
@@ -9,6 +10,7 @@ interface TestTableProps {
 }
 
 export const TestTable = ({tests, expandedTests, onToggleExpand, onRerun}: TestTableProps) => {
+  const {t} = useTranslation();
   return (
     <div style={{
       backgroundColor: 'white',
@@ -20,15 +22,15 @@ export const TestTable = ({tests, expandedTests, onToggleExpand, onRerun}: TestT
         <thead style={{backgroundColor: '#f9fafb'}}>
           <tr>
             <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb', width: '40px'}}></th>
-            <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>Name / Test ID</th>
-            <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>Status</th>
-            <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>Script ID</th>
+            <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>{t('common.name')} / {t('testDetail.testId')}</th>
+            <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>{t('common.status')}</th>
+            <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>{t('scriptDetail.scriptId')}</th>
             <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>TPS</th>
             <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>Latency</th>
             <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>Success</th>
-            <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>Start Time</th>
-            <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>Duration</th>
-            <th style={{padding: '1rem', textAlign: 'center', borderBottom: '1px solid #e5e7eb'}}>Actions</th>
+            <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>{t('testDetail.startTime')}</th>
+            <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>{t('testDetail.duration')}</th>
+            <th style={{padding: '1rem', textAlign: 'center', borderBottom: '1px solid #e5e7eb'}}>{t('common.actions')}</th>
           </tr>
         </thead>
         <tbody>

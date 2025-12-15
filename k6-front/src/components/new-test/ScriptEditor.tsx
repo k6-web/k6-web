@@ -1,3 +1,4 @@
+import {useTranslation} from 'react-i18next';
 import Editor from 'react-simple-code-editor';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-javascript';
@@ -10,6 +11,8 @@ interface ScriptEditorProps {
 }
 
 export const ScriptEditor = ({script, syntaxError, onScriptChange}: ScriptEditorProps) => {
+  const {t} = useTranslation();
+
   return (
     <div style={{
       backgroundColor: 'white',
@@ -19,11 +22,11 @@ export const ScriptEditor = ({script, syntaxError, onScriptChange}: ScriptEditor
       display: 'flex',
       flexDirection: 'column'
     }}>
-      <h2 style={{marginTop: 0, marginBottom: '1.5rem'}}>Custom k6 Script</h2>
+      <h2 style={{marginTop: 0, marginBottom: '1.5rem'}}>{t('scriptEditor.title')}</h2>
 
       <div style={{flex: 1, display: 'flex', flexDirection: 'column'}}>
         <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
-          k6 Script *
+          {t('scriptEditor.title')} *
         </label>
         <div style={{
           border: '1px solid #d1d5db',
@@ -66,15 +69,10 @@ export const ScriptEditor = ({script, syntaxError, onScriptChange}: ScriptEditor
           }}>
             <span style={{flexShrink: 0}}>⚠️</span>
             <div>
-              <strong>Syntax Error:</strong> {syntaxError}
+              <strong>{t('scriptEditor.syntaxError')}:</strong> {syntaxError}
             </div>
           </div>
         )}
-
-        <div style={{marginTop: '0.5rem', fontSize: '0.75rem', color: '#6b7280'}}>
-          💡 Tip: Changing HTTP settings will automatically generate the script, and modifying the script will
-          automatically extract HTTP settings.
-        </div>
       </div>
     </div>
   );

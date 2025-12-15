@@ -1,3 +1,4 @@
+import {useTranslation} from 'react-i18next';
 import type {K6Summary} from '../../types/k6';
 
 interface SummaryDetailsProps {
@@ -5,6 +6,8 @@ interface SummaryDetailsProps {
 }
 
 export const SummaryDetails = ({summary}: SummaryDetailsProps) => {
+  const {t} = useTranslation();
+
   return (
     <details style={{
       backgroundColor: 'white',
@@ -19,7 +22,7 @@ export const SummaryDetails = ({summary}: SummaryDetailsProps) => {
         fontSize: '1.125rem',
         userSelect: 'none'
       }}>
-        Raw Summary (JSON)
+        {t('testDetail.summary')} (JSON)
       </summary>
       <pre style={{
         backgroundColor: '#1e1e1e',

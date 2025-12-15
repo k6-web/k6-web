@@ -1,4 +1,5 @@
 import {useParams} from 'react-router-dom';
+import {useTranslation} from 'react-i18next';
 import {
   TestHeader,
   TestInfoCard,
@@ -13,6 +14,7 @@ import {useLiveLogs} from '../hooks/useLiveLogs';
 import {useTestActions} from '../hooks/useTestActions';
 
 export const TestDetail = () => {
+  const {t} = useTranslation();
   const {testId} = useParams<{ testId: string }>();
   const {testInfo, loading, error} = useTestDetail(testId);
   const {
@@ -31,9 +33,9 @@ export const TestDetail = () => {
   } = useLiveLogs(testId, testInfo);
   const {handleStop, handleDelete, handleRerun, handleCopyLink} = useTestActions(testId, testInfo);
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div style={{color: 'red'}}>Error: {error}</div>;
-  if (!testInfo || !testId) return <div>Test not found</div>;
+  if (loading) return <div>{t('common.loading')}</div>;
+  if (error) return <div style={{color: 'red'}}>{t('common.error')}: {error}</div>;
+  if (!testInfo || !testId) return <div>{t('testList.testNotFound')}</div>;
 
   const timeSeriesData = testInfo.status === 'running' ? livePerformanceData : [];
 

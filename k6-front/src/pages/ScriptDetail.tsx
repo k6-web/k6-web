@@ -1,5 +1,6 @@
 import {useEffect, useState} from 'react';
 import {Link, useNavigate, useParams} from 'react-router-dom';
+import {useTranslation} from 'react-i18next';
 import {scriptApi} from '../apis/scriptApi';
 import type {Script, TestComparison} from '../types/script';
 import type {Test} from '../types/test';
@@ -7,6 +8,7 @@ import {MetricsTrendChart} from '../components/MetricsTrendChart';
 import {Button} from "../components/common";
 
 export const ScriptDetail = () => {
+  const {t} = useTranslation();
   const {scriptId} = useParams<{ scriptId: string }>();
   const navigate = useNavigate();
   const [script, setScript] = useState<Script | null>(null);
@@ -47,7 +49,7 @@ export const ScriptDetail = () => {
       const result = await scriptApi.runScript(scriptId);
       navigate(`/tests/${result.testId}`);
     } catch (err) {
-      alert('Failed to run script');
+      alert(t('folderDetail.failedToDeleteScript'));
     }
   };
 
@@ -61,16 +63,16 @@ export const ScriptDetail = () => {
       setScript(updated);
       setIsEditing(false);
     } catch (err) {
-      alert('Failed to update script');
+      alert(t('scriptDetail.failedToDelete'));
     }
   };
 
   const handleShare = () => {
     const url = window.location.href;
     navigator.clipboard.writeText(url).then(() => {
-      alert('Link copied to clipboard!');
+      alert(t('scriptDetail.copiedToClipboard'));
     }).catch(() => {
-      alert('Failed to copy link.');
+      alert(t('scriptDetail.failedToDelete'));
     });
   };
 
@@ -105,15 +107,15 @@ export const ScriptDetail = () => {
     return {tps, p95, p90, errorRate};
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div style={{color: 'red'}}>Error: {error}</div>;
-  if (!script) return <div>Script not found</div>;
+  if (loading) return <div>{t('common.loading')}</div>;
+  if (error) return <div style={{color: 'red'}}>{t('common.error')}: {error}</div>;
+  if (!script) return <div>{t('testList.noScriptAvailable')}</div>;
 
   return (
     <div>
       <Link to="/folders"
             style={{color: '#3b82f6', textDecoration: 'none', marginBottom: '1rem', display: 'inline-block'}}>
-        ← Back to Scripts
+        {t('scriptDetail.backToFolder')}
       </Link>
 
       <div style={{
@@ -136,14 +138,14 @@ export const ScriptDetail = () => {
                   onClick={handleShare}
                   style={{fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'}}
                 >
-                  🔗 Share
+                  🔗 {t('scriptDetail.copyScript')}
                 </Button>
                 <Button
                   variant="primary"
                   onClick={handleCopy}
                   style={{fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'}}
                 >
-                  📋 Copy to New Test
+                  📋 {t('scriptDetail.copyScript')}
                 </Button>
                 <button
                   onClick={() => setIsEditing(true)}
@@ -156,7 +158,7 @@ export const ScriptDetail = () => {
                     cursor: 'pointer'
                   }}
                 >
-                  Edit
+                  {t('common.edit')}
                 </button>
                 <button
                   onClick={handleRun}
@@ -170,7 +172,7 @@ export const ScriptDetail = () => {
                     fontWeight: 'bold'
                   }}
                 >
-                  Run Test
+                  {t('scriptDetail.runTest')}
                 </button>
               </div>
             </div>
@@ -197,7 +199,7 @@ export const ScriptDetail = () => {
             <div style={{fontSize: '0.875rem', color: '#9ca3af'}}>
               {script.folderId && (
                 <div style={{marginBottom: '0.5rem'}}>
-                  <span style={{color: '#6b7280'}}>Folder: </span>
+                  <span style={{color: '#6b7280'}}>{t('scriptDetail.folder')}: </span>
                   <Link
                     to={`/folders/${script.folderId}`}
                     style={{color: '#8b5cf6', textDecoration: 'none', fontWeight: '600'}}
@@ -206,15 +208,15 @@ export const ScriptDetail = () => {
                   </Link>
                 </div>
               )}
-              <div>Created: {new Date(script.createdAt).toLocaleString()}</div>
-              <div>Updated: {new Date(script.updatedAt).toLocaleString()}</div>
+              <div>{t('scriptDetail.createdAt')}: {new Date(script.createdAt).toLocaleString()}</div>
+              <div>{t('scriptDetail.updatedAt')}: {new Date(script.updatedAt).toLocaleString()}</div>
             </div>
           </>
         ) : (
           <div>
-            <h2>Edit Script</h2>
+            <h2>{t('scriptDetail.editScript')}</h2>
             <div style={{marginBottom: '1rem'}}>
-              <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>Name</label>
+              <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>{t('common.name')}</label>
               <input
                 type="text"
                 value={editData.name}
@@ -228,7 +230,7 @@ export const ScriptDetail = () => {
               />
             </div>
             <div style={{marginBottom: '1rem'}}>
-              <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>Description</label>
+              <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>{t('common.description')}</label>
               <textarea
                 value={editData.description}
                 onChange={(e) => setEditData({...editData, description: e.target.value})}
@@ -253,7 +255,7 @@ export const ScriptDetail = () => {
                   cursor: 'pointer'
                 }}
               >
-                Save
+                {t('common.save')}
               </button>
               <button
                 onClick={() => setIsEditing(false)}
@@ -266,7 +268,7 @@ export const ScriptDetail = () => {
                   cursor: 'pointer'
                 }}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
             </div>
           </div>
@@ -280,7 +282,7 @@ export const ScriptDetail = () => {
         boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
         marginBottom: '1rem'
       }}>
-        <h2>Script Code</h2>
+        <h2>{t('scriptDetail.script')}</h2>
         <pre style={{
           backgroundColor: '#f3f4f6',
           padding: '1rem',
@@ -300,7 +302,7 @@ export const ScriptDetail = () => {
           boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
           marginBottom: '1rem'
         }}>
-          <h2 style={{marginBottom: '1rem'}}>Performance Trends</h2>
+          <h2 style={{marginBottom: '1rem'}}>{t('testList.title')}</h2>
           <MetricsTrendChart tests={history}/>
         </div>
       )}
@@ -313,24 +315,24 @@ export const ScriptDetail = () => {
         marginBottom: '1rem'
       }}>
         <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem'}}>
-          <h2 style={{margin: 0}}>Execution History ({history.length})</h2>
+          <h2 style={{margin: 0}}>{t('testList.title')} ({history.length})</h2>
         </div>
 
         {history.length === 0 ? (
-          <p style={{color: '#6b7280'}}>No execution history yet. Run the script to see results here.</p>
+          <p style={{color: '#6b7280'}}>{t('folderDetail.noScripts')}</p>
         ) : (
           <div style={{overflowX: 'auto'}}>
             <table style={{width: '100%', borderCollapse: 'collapse'}}>
               <thead>
               <tr style={{backgroundColor: '#f3f4f6'}}>
-                <th style={{padding: '0.5rem', textAlign: 'left'}}>Test ID</th>
-                <th style={{padding: '0.5rem', textAlign: 'left'}}>Status</th>
+                <th style={{padding: '0.5rem', textAlign: 'left'}}>{t('testDetail.testId')}</th>
+                <th style={{padding: '0.5rem', textAlign: 'left'}}>{t('common.status')}</th>
                 <th style={{padding: '0.5rem', textAlign: 'right'}}>TPS</th>
                 <th style={{padding: '0.5rem', textAlign: 'right'}}>P90 (ms)</th>
                 <th style={{padding: '0.5rem', textAlign: 'right'}}>P95 (ms)</th>
                 <th style={{padding: '0.5rem', textAlign: 'right'}}>Error %</th>
-                <th style={{padding: '0.5rem', textAlign: 'left'}}>Started</th>
-                <th style={{padding: '0.5rem', textAlign: 'left'}}>Actions</th>
+                <th style={{padding: '0.5rem', textAlign: 'left'}}>{t('testDetail.startTime')}</th>
+                <th style={{padding: '0.5rem', textAlign: 'left'}}>{t('common.actions')}</th>
               </tr>
               </thead>
               <tbody>
@@ -368,7 +370,7 @@ export const ScriptDetail = () => {
                         to={`/tests/${test.testId}`}
                         style={{color: '#3b82f6', textDecoration: 'none'}}
                       >
-                        View
+                        {t('folderList.viewFolder')}
                       </Link>
                     </td>
                   </tr>
@@ -388,7 +390,7 @@ export const ScriptDetail = () => {
           boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
         }}>
           <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem'}}>
-            <h2 style={{margin: 0}}>Comparison Results</h2>
+            <h2 style={{margin: 0}}>{t('testDetail.summary')}</h2>
             <button
               onClick={() => setComparison(null)}
               style={{
@@ -401,7 +403,7 @@ export const ScriptDetail = () => {
                 fontSize: '0.875rem'
               }}
             >
-              Close
+              {t('common.close')}
             </button>
           </div>
 

@@ -1,9 +1,11 @@
 import {useEffect, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
+import {useTranslation} from 'react-i18next';
 import {folderApi} from '../apis/folderApi';
 import type {Folder} from '../types/script';
 
 export const FolderList = () => {
+  const {t} = useTranslation();
   const navigate = useNavigate();
   const [folders, setFolders] = useState<Folder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,19 +34,19 @@ export const FolderList = () => {
   }, [sortBy, sortOrder]);
 
   const handleDelete = async (folderId: string) => {
-    if (!confirm('Are you sure you want to delete this folder? All scripts must be removed first.')) return;
+    if (!confirm(t('folderList.confirmDelete'))) return;
 
     try {
       await folderApi.deleteFolder(folderId);
       fetchFolders();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to delete folder');
+      alert(err instanceof Error ? err.message : t('folderList.failedToDelete'));
     }
   };
 
   const handleCreate = async () => {
     if (!newFolderName.trim()) {
-      alert('Folder name is required');
+      alert(t('newTest.folderNameRequired'));
       return;
     }
 
@@ -58,12 +60,12 @@ export const FolderList = () => {
       setNewFolderDescription('');
       fetchFolders();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to create folder');
+      alert(err instanceof Error ? err.message : t('newTest.failedToCreateFolder'));
     }
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div style={{color: 'red'}}>Error: {error}</div>;
+  if (loading) return <div>{t('common.loading')}</div>;
+  if (error) return <div style={{color: 'red'}}>{t('common.error')}: {error}</div>;
 
   return (
     <div>
@@ -75,7 +77,7 @@ export const FolderList = () => {
         flexWrap: 'wrap',
         gap: '1rem'
       }}>
-        <h1 style={{margin: 0, fontSize: 'clamp(1.5rem, 5vw, 2rem)'}}>Script Folders</h1>
+        <h1 style={{margin: 0, fontSize: 'clamp(1.5rem, 5vw, 2rem)'}}>{t('folderList.title')}</h1>
         <button
           onClick={() => setShowCreateModal(true)}
           style={{
@@ -89,7 +91,7 @@ export const FolderList = () => {
             fontWeight: 'bold'
           }}
         >
-          + New Folder
+          + {t('folderList.newFolder')}
         </button>
       </div>
 
@@ -113,9 +115,9 @@ export const FolderList = () => {
             maxWidth: '500px',
             width: '90%'
           }}>
-            <h2 style={{marginTop: 0}}>Create New Folder</h2>
+            <h2 style={{marginTop: 0}}>{t('newTest.createNewFolder')}</h2>
             <div style={{marginBottom: '1rem'}}>
-              <label style={{display: 'block', marginBottom: '0.5rem'}}>Folder Name*</label>
+              <label style={{display: 'block', marginBottom: '0.5rem'}}>{t('newTest.folderName')}</label>
               <input
                 type="text"
                 value={newFolderName}
@@ -127,11 +129,11 @@ export const FolderList = () => {
                   borderRadius: '4px',
                   fontSize: '1rem'
                 }}
-                placeholder="Enter folder name"
+                placeholder={t('newTest.folderNamePlaceholder')}
               />
             </div>
             <div style={{marginBottom: '1rem'}}>
-              <label style={{display: 'block', marginBottom: '0.5rem'}}>Description</label>
+              <label style={{display: 'block', marginBottom: '0.5rem'}}>{t('newTest.folderDescription')}</label>
               <textarea
                 value={newFolderDescription}
                 onChange={(e) => setNewFolderDescription(e.target.value)}
@@ -143,7 +145,7 @@ export const FolderList = () => {
                   fontSize: '1rem',
                   minHeight: '80px'
                 }}
-                placeholder="Enter folder description"
+                placeholder={t('newTest.folderDescriptionPlaceholder')}
               />
             </div>
             <div style={{display: 'flex', gap: '0.5rem', justifyContent: 'flex-end'}}>
@@ -162,7 +164,7 @@ export const FolderList = () => {
                   cursor: 'pointer'
                 }}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleCreate}
@@ -175,7 +177,7 @@ export const FolderList = () => {
                   cursor: 'pointer'
                 }}
               >
-                Create
+                {t('common.create')}
               </button>
             </div>
           </div>
@@ -190,7 +192,7 @@ export const FolderList = () => {
           textAlign: 'center',
           boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
         }}>
-          <p>No folders found.</p>
+          <p>{t('folderList.noFolders')}</p>
           <button
             onClick={() => setShowCreateModal(true)}
             style={{
@@ -201,7 +203,7 @@ export const FolderList = () => {
               textDecoration: 'underline'
             }}
           >
-            Create your first folder
+            {t('folderList.createFirstFolder')}
           </button>
         </div>
       ) : (
@@ -253,7 +255,7 @@ export const FolderList = () => {
                     fontSize: '0.875rem'
                   }}
                 >
-                  View Scripts
+                  {t('folderList.viewFolder')}
                 </button>
                 <button
                   onClick={() => handleDelete(folder.folderId)}
@@ -267,7 +269,7 @@ export const FolderList = () => {
                     fontSize: '0.875rem'
                   }}
                 >
-                  Delete
+                  {t('common.delete')}
                 </button>
               </div>
             </div>

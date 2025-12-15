@@ -1,11 +1,13 @@
 import {useEffect, useState} from 'react';
 import {Link, useNavigate} from 'react-router-dom';
+import {useTranslation} from 'react-i18next';
 import {k6Api} from '../apis/testApi.ts';
 import type {Test} from '../types/test.ts';
 import {TestTable} from '../components/test-list';
 import {InfoBox} from '../components/common';
 
 export const TestList = () => {
+  const {t} = useTranslation();
   const navigate = useNavigate();
   const [allTests, setAllTests] = useState<Test[]>([]);
   const [nextCursor, setNextCursor] = useState<number | null>(null);
@@ -79,7 +81,7 @@ export const TestList = () => {
     const test = allTests.find(t => t.testId === testId);
 
     if (!test) {
-      alert('Test not found');
+      alert(t('testList.testNotFound'));
       return;
     }
 
@@ -89,15 +91,15 @@ export const TestList = () => {
         sessionStorage.setItem('rerunScript', result.script);
         navigate('/new-test');
       } else {
-        alert('No script available to re-run');
+        alert(t('testList.noScriptAvailable'));
       }
     } catch (err) {
-      alert('Failed to load test script');
+      alert(t('testList.failedToLoadScript'));
     }
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div style={{color: 'red'}}>Error: {error}</div>;
+  if (loading) return <div>{t('common.loading')}</div>;
+  if (error) return <div style={{color: 'red'}}>{t('common.error')}: {error}</div>;
 
   return (
     <div>
@@ -109,7 +111,7 @@ export const TestList = () => {
         flexWrap: 'wrap',
         gap: '1rem'
       }}>
-        <h1 style={{margin: 0, fontSize: 'clamp(1.5rem, 5vw, 2rem)'}}>Test History</h1>
+        <h1 style={{margin: 0, fontSize: 'clamp(1.5rem, 5vw, 2rem)'}}>{t('testList.title')}</h1>
         <div style={{display: 'flex', gap: '0.5rem', flexWrap: 'wrap'}}>
           <Link
             to="/new-test"
@@ -124,13 +126,13 @@ export const TestList = () => {
               fontWeight: 'bold'
             }}
           >
-            New Test
+            {t('testList.newTest')}
           </Link>
         </div>
       </div>
 
       <InfoBox variant="info">
-        ℹ️ Test history is kept up to a maximum of 500 tests in descending order.
+        ℹ️ {t('testList.infoMessage')}
       </InfoBox>
 
       {!allTests || allTests.length === 0 ? (
@@ -141,8 +143,8 @@ export const TestList = () => {
           textAlign: 'center',
           boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
         }}>
-          <p>No tests found.</p>
-          <Link to="/new-test" style={{color: '#3b82f6'}}>Create your first test</Link>
+          <p>{t('testList.noTests')}</p>
+          <Link to="/new-test" style={{color: '#3b82f6'}}>{t('testList.createFirstTest')}</Link>
         </div>
       ) : (
         <>
@@ -160,7 +162,7 @@ export const TestList = () => {
               color: '#6b7280',
               fontSize: '0.875rem'
             }}>
-              Loading more tests...
+              {t('testList.loadingMore')}
             </div>
           )}
 
@@ -171,7 +173,7 @@ export const TestList = () => {
               color: '#6b7280',
               fontSize: '0.875rem'
             }}>
-              Scroll down to load more tests
+              {t('testList.scrollToLoadMore')}
             </div>
           )}
 
@@ -182,7 +184,7 @@ export const TestList = () => {
               color: '#6b7280',
               fontSize: '0.875rem'
             }}>
-              All tests loaded
+              {t('testList.allLoaded')}
             </div>
           )}
         </>

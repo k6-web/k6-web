@@ -1,3 +1,4 @@
+import {useTranslation} from 'react-i18next';
 import {Light as SyntaxHighlighter} from 'react-syntax-highlighter';
 import {github} from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import {Card} from '../common';
@@ -7,8 +8,10 @@ interface ScriptDisplayProps {
 }
 
 export const ScriptDisplay = ({script}: ScriptDisplayProps) => {
+  const {t} = useTranslation();
+
   return (
-    <Card title="Script">
+    <Card title={t('testDetail.script')}>
       <SyntaxHighlighter
         language="javascript"
         style={github}

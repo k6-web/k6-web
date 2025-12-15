@@ -1,3 +1,4 @@
+import {useTranslation} from 'react-i18next';
 import type {LogEntry} from '../../types/log';
 import {Card} from '../common';
 
@@ -24,10 +25,12 @@ export const LiveLogsPanel = ({
   logsContainerRef,
   logsEndRef
 }: LiveLogsPanelProps) => {
+  const {t} = useTranslation();
+
   return (
     <Card>
       <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem'}}>
-        <h2 style={{margin: 0}}>Live Logs</h2>
+        <h2 style={{margin: 0}}>{t('testDetail.logs')}</h2>
         <div style={{display: 'flex', gap: '0.5rem', alignItems: 'center'}}>
           {(['all', 'stdout', 'stderr', 'error', 'system'] as const).map(filter => (
             <button
@@ -65,7 +68,7 @@ export const LiveLogsPanel = ({
               fontWeight: 'bold'
             }}
           >
-            ⬆️
+            ⬆
           </button>
 
           <button
@@ -82,7 +85,7 @@ export const LiveLogsPanel = ({
               fontWeight: 'bold'
             }}
           >
-            ⬇️
+            ⬇
           </button>
 
           <button
@@ -102,7 +105,7 @@ export const LiveLogsPanel = ({
               gap: '0.25rem'
             }}
           >
-            {autoScroll ? '🔴' : '⚪'} AUTO
+            AUTO
           </button>
         </div>
       </div>
