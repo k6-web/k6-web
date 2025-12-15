@@ -110,7 +110,7 @@ export const TestTableRow = ({test, isExpanded, onToggleExpand, onRerun}: TestTa
                 fontSize: '0.875rem'
               }}
             >
-              {t('folderList.viewFolder')}
+              {t('scriptDetail.viewDetails')}
             </Link>
             {test.status !== 'running' && (
               <button

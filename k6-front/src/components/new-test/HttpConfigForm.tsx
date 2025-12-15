@@ -63,29 +63,6 @@ export const HttpConfigForm = ({
 
       <div style={{marginBottom: '1rem'}}>
         <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
-          {t('httpConfig.testName')}
-        </label>
-        <input
-          type="text"
-          value={config.name}
-          onChange={(e) => onConfigChange({name: e.target.value.slice(0, 50)})}
-          placeholder={t('httpConfig.testNamePlaceholder')}
-          maxLength={50}
-          style={{
-            width: '100%',
-            padding: '0.5rem',
-            border: '1px solid #d1d5db',
-            borderRadius: '4px',
-            fontSize: '1rem'
-          }}
-        />
-        <div style={{fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem'}}>
-          {config.name?.length || 0}/50 characters
-        </div>
-      </div>
-
-      <div style={{marginBottom: '1rem'}}>
-        <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
           {t('httpConfig.url')} *
         </label>
         <input

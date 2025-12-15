@@ -1,9 +1,11 @@
 import {useNavigate} from 'react-router-dom';
+import {useTranslation} from 'react-i18next';
 import {k6Api} from '../apis/testApi';
 import type {Test} from '../types/test';
 
 export const useTestActions = (testId: string | undefined, testInfo: Test | null) => {
   const navigate = useNavigate();
+  const {t} = useTranslation();
 
   const handleStop = async () => {
     if (!testId || !confirm('Are you sure you want to stop this test?')) return;
@@ -43,9 +45,9 @@ export const useTestActions = (testId: string | undefined, testInfo: Test | null
   const handleCopyLink = () => {
     const url = window.location.href;
     navigator.clipboard.writeText(url).then(() => {
-      alert('Link copied to clipboard!');
+      alert(t('common.linkCopied'));
     }).catch(() => {
-      alert('Failed to copy link.');
+      alert(t('common.failedToCopyLink'));
     });
   };
 

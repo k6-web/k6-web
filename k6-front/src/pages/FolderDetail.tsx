@@ -19,6 +19,7 @@ export const FolderDetail = () => {
   const [isRunningAll, setIsRunningAll] = useState(false);
   const [folderTests, setFolderTests] = useState<Test[]>([]);
   const [expandedTests, setExpandedTests] = useState<Set<string>>(new Set());
+  const [showFirstScriptTooltip, setShowFirstScriptTooltip] = useState(false);
 
   const MAX_SCRIPTS_PER_FOLDER = 30;
 
@@ -92,6 +93,24 @@ export const FolderDetail = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRunningAll, folderData]);
 
+  // 첫 번째 스크립트에 툴팁 표시 (0.3초 후 표시, 1.5초 후 자동 숨김)
+  useEffect(() => {
+    if (folderData && folderData.scripts.length > 0) {
+      const showTimer = setTimeout(() => {
+        setShowFirstScriptTooltip(true);
+      }, 300);
+
+      const hideTimer = setTimeout(() => {
+        setShowFirstScriptTooltip(false);
+      }, 5000);
+
+      return () => {
+        clearTimeout(showTimer);
+        clearTimeout(hideTimer);
+      };
+    }
+  }, [folderData]);
+
   const handleDelete = async (scriptId: string) => {
     if (!folderId) return;
     if (!confirm(t('folderDetail.confirmDeleteScript'))) return;
@@ -105,6 +124,8 @@ export const FolderDetail = () => {
   };
 
   const handleRun = async (scriptId: string) => {
+    if (!confirm(t('folderDetail.confirmRunScript'))) return;
+
     try {
       const result = await scriptApi.runScript(scriptId);
       navigate(`/tests/${result.testId}`);
@@ -119,7 +140,7 @@ export const FolderDetail = () => {
       return;
     }
 
-    if (!confirm(`Run all ${folderData.scripts.length} scripts sequentially?`)) return;
+    if (!confirm(t('folderDetail.confirmRunAll', { count: folderData.scripts.length }))) return;
 
     try {
       setIsRunningAll(true);
@@ -152,6 +173,8 @@ export const FolderDetail = () => {
       alert(t('testList.noScriptAvailable'));
       return;
     }
+
+    if (!confirm(t('folderDetail.confirmRerunTest'))) return;
 
     try {
       const result = await scriptApi.runScript(test.scriptId);
@@ -223,7 +246,7 @@ export const FolderDetail = () => {
                 fontWeight: 'bold'
               }}
             >
-              {isRunningAll ? t('testList.loadingMore') : 'Run All Scripts'}
+              {isRunningAll ? t('testList.loadingMore') : t('folderDetail.runAllScripts')}
             </button>
           )}
         </div>
@@ -255,7 +278,12 @@ export const FolderDetail = () => {
           boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
           marginBottom: '1.5rem'
         }}>
-          <h2 style={{margin: '0 0 1rem 0', fontSize: '1.25rem'}}>{t('folderList.scriptsCount')}</h2>
+          <h2
+            style={{margin: '0 0 1rem 0', fontSize: '1.25rem', cursor: 'help'}}
+            title={t('folderDetail.scriptsTooltip')}
+          >
+            {t('folderList.scriptsCount')}
+          </h2>
           <div style={{overflowX: 'auto'}}>
             <table style={{width: '100%', borderCollapse: 'collapse'}}>
               <thead>
@@ -265,23 +293,58 @@ export const FolderDetail = () => {
                 <th style={{padding: '0.75rem', textAlign: 'left'}}>{t('common.description')}</th>
                 <th style={{padding: '0.75rem', textAlign: 'left'}}>{t('common.tags')}</th>
                 <th style={{padding: '0.75rem', textAlign: 'left'}}>{t('common.updatedAt')}</th>
-                <th style={{padding: '0.75rem', textAlign: 'center', width: '180px'}}>{t('common.actions')}</th>
+                <th style={{padding: '0.75rem', textAlign: 'center', width: '180px'}}>{t('folderDetail.scriptTableActions')}</th>
               </tr>
               </thead>
               <tbody>
-              {folderData.scripts.map(script => (
+              {folderData.scripts.map((script, index) => (
                 <tr
                   key={script.scriptId}
                   style={{
                     borderBottom: '1px solid #e5e7eb',
                     cursor: 'pointer',
-                    transition: 'background-color 0.2s'
+                    transition: 'background-color 0.2s',
+                    position: 'relative'
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   onClick={() => navigate(`/scripts/${script.scriptId}`)}
                 >
-                  <td style={{padding: '0.75rem', fontSize: '1.25rem'}}>📄</td>
+                  <td style={{padding: '0.75rem', fontSize: '1.25rem', position: 'relative'}}>
+                    📄
+                    {index === 0 && showFirstScriptTooltip && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: '-45px',
+                          left: '0',
+                          backgroundColor: '#1f2937',
+                          color: 'white',
+                          padding: '0.5rem 0.75rem',
+                          borderRadius: '6px',
+                          fontSize: '0.875rem',
+                          whiteSpace: 'nowrap',
+                          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                          zIndex: 1000,
+                          animation: 'fadeIn 0.3s ease-in'
+                        }}
+                      >
+                        {t('folderDetail.checkPerformanceChanges')}
+                        <div
+                          style={{
+                            position: 'absolute',
+                            bottom: '-6px',
+                            left: '20px',
+                            width: 0,
+                            height: 0,
+                            borderLeft: '6px solid transparent',
+                            borderRight: '6px solid transparent',
+                            borderTop: '6px solid #1f2937'
+                          }}
+                        />
+                      </div>
+                    )}
+                  </td>
                   <td style={{padding: '0.75rem', fontWeight: 'bold'}}>
                     {script.scriptId}
                   </td>
@@ -356,7 +419,7 @@ export const FolderDetail = () => {
       {/* 테스트 실행 이력 */}
       {folderTests.length > 0 && (
         <div>
-          <h2 style={{margin: '0 0 1rem 0', fontSize: '1.25rem'}}>{t('testList.title')}</h2>
+          <h2 style={{margin: '0 0 1rem 0', fontSize: '1.25rem'}}>{t('folderDetail.executionResults')}</h2>
           <TestTable
             tests={folderTests}
             expandedTests={expandedTests}

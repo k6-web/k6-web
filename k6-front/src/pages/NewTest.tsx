@@ -365,6 +365,38 @@ export const NewTest = () => {
           </InfoBox>
         )}
 
+        {/* 테스트 이름 - 공통 필드 */}
+        <div style={{
+          backgroundColor: 'white',
+          padding: '1.5rem',
+          borderRadius: '8px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+          marginBottom: '1.5rem'
+        }}>
+          <div>
+            <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', fontSize: '1rem'}}>
+              {t('httpConfig.testName')}
+            </label>
+            <input
+              type="text"
+              value={httpConfig.name}
+              onChange={(e) => handleConfigChange({name: e.target.value.slice(0, 50)})}
+              placeholder={t('httpConfig.testNamePlaceholder')}
+              maxLength={50}
+              style={{
+                width: '100%',
+                padding: '0.75rem',
+                border: '1px solid #d1d5db',
+                borderRadius: '4px',
+                fontSize: '1rem'
+              }}
+            />
+            <div style={{fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem'}}>
+              {httpConfig.name?.length || 0}/50 characters
+            </div>
+          </div>
+        </div>
+
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 400px), 1fr))',

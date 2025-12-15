@@ -23,7 +23,9 @@
     "description": "설명",
     "tags": "태그",
     "createdAt": "생성일",
-    "updatedAt": "수정일"
+    "updatedAt": "수정일",
+    "linkCopied": "링크가 클립보드에 복사되었습니다!",
+    "failedToCopyLink": "링크 복사에 실패했습니다."
   },
   "testList": {
     "title": "테스트 실행 이력",
@@ -155,13 +157,22 @@
     "createFirstScript": "첫 번째 스크립트 생성하기",
     "scriptName": "스크립트 이름",
     "lastRun": "마지막 실행",
-    "runScript": "스크립트 실행",
+    "runScript": "실행",
     "editScript": "스크립트 수정",
     "deleteScript": "스크립트 삭제",
     "copyScript": "스크립트 복사",
+    "viewResults": "결과 보기",
     "confirmDeleteScript": "이 스크립트를 삭제하시겠습니까?",
     "scriptDeleted": "스크립트가 삭제되었습니다",
-    "failedToDeleteScript": "스크립트 삭제에 실패했습니다"
+    "failedToDeleteScript": "스크립트 삭제에 실패했습니다",
+    "scriptsTooltip": "스크립트를 눌러서 스크립트의 최근 이력들로 성능 변화를 확인해보세요",
+    "runAllScripts": "전체 스크립트 실행",
+    "confirmRunAll": "전체 {count}개 스크립트를 순차적으로 실행하시겠습니까?",
+    "executionResults": "실행 결과",
+    "confirmRunScript": "이 스크립트를 실행하시겠습니까?",
+    "confirmRerunTest": "이 테스트를 재실행하시겠습니까?",
+    "checkPerformanceChanges": "스크립트를 눌러 API 성능 변화를 확인하세요",
+    "scriptTableActions": "실행 결과"
   },
   "scriptDetail": {
     "backToFolder": "← 폴더로 돌아가기",
@@ -184,13 +195,14 @@
     "scriptDeleted": "스크립트가 삭제되었습니다",
     "failedToDelete": "스크립트 삭제에 실패했습니다",
     "copiedToClipboard": "클립보드에 복사되었습니다!",
-    "scriptCopied": "스크립트가 복사되었습니다! 신규 테스트 페이지로 이동합니다..."
+    "scriptCopied": "스크립트가 복사되었습니다! 신규 테스트 페이지로 이동합니다...",
+    "viewDetails": "실행 결과 보기"
   },
   "recentTestsModal": {
     "title": "최근 테스트",
     "loadingTests": "최근 테스트 로딩 중...",
     "noTests": "최근 테스트가 없습니다.",
-    "loadScript": "스크립트 로드",
+    "loadScript": "스크립트 불러오기",
     "testId": "테스트 ID",
     "status": "상태",
     "startTime": "시작 시간"
