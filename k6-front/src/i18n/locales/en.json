@@ -2,7 +2,7 @@
   "nav": {
     "scripts": "Scripts",
     "newTest": "New Test",
-    "tests": "Tests"
+    "tests": "Recent Test Histories"
   },
   "common": {
     "loading": "Loading...",
@@ -30,7 +30,7 @@
   "testList": {
     "title": "Test History",
     "newTest": "New Test",
-    "infoMessage": "Test history is kept up to a maximum of 500 tests in descending order.",
+    "infoMessage": "Recent Test history is kept up to a maximum of 500 tests in descending order.",
     "noTests": "No tests found.",
     "createFirstTest": "Create your first test",
     "loadingMore": "Loading more tests...",
@@ -43,7 +43,7 @@
   },
   "newTest": {
     "title": "Create New Test",
-    "recentTests": "Load Recent Tests",
+    "recentTests": "Load Recent Test Scripts",
     "recentTestsTooltip": "View and load your 5 most recent test scripts to quickly re-run or modify them",
     "quickLoadTooltip": "Quickly load your recent test scripts!",
     "syntaxError": "Script has syntax errors. Please fix and try again.",
@@ -100,7 +100,7 @@
     "rampUpDescription": "Time to gradually reach target VUs",
     "failureThreshold": "Failure Threshold",
     "failureThresholdDescription": "Max allowed error rate (0.05 = 5%)",
-    "dynamicScriptNote": "Quick Setup settings are automatically applied to the k6 script",
+    "dynamicScriptNote": "Any behavior or logic beyond the options provided in Quick Start can be freely implemented using the script editor (e.g., dynamic parameters).",
     "remove": "Remove"
   },
   "scriptEditor": {
@@ -130,6 +130,7 @@
     "cancelled": "Cancelled",
     "unknown": "Unknown",
     "completed": "Completed",
+    "stopped": "Stopped",
     "performanceOverTime": "Performance Over Time",
     "transactionsPerSecond": "Transactions Per Second (TPS)"
   },
@@ -166,7 +167,7 @@
     "failedToDeleteScript": "Failed to delete script",
     "scriptsTooltip": "Click on scripts to check performance changes through their recent history",
     "runAllScripts": "Run All Scripts",
-    "confirmRunAll": "Run all {count} scripts sequentially?",
+    "confirmRunAll": "Run all scripts sequentially?",
     "executionResults": "Execution Results",
     "confirmRunScript": "Are you sure you want to run this script?",
     "confirmRerunTest": "Are you sure you want to re-run this test?",
@@ -178,7 +179,8 @@
     "runTest": "Run Test",
     "editScript": "Edit Script",
     "deleteScript": "Delete Script",
-    "copyScript": "Copy to New Test",
+    "shareScript": "Share",
+    "copyScript": "Copy Script",
     "scriptId": "Script ID",
     "scriptName": "Script Name",
     "folder": "Folder",
@@ -213,10 +215,10 @@
     "dataReceived": "Data Received",
     "dataSent": "Data Sent",
     "iterationDuration": "Iteration Duration",
-    "p50": "50th Percentile",
-    "p90": "90th Percentile",
-    "p95": "95th Percentile",
-    "p99": "99th Percentile",
+    "p50": "p50",
+    "p90": "p90",
+    "p95": "p95",
+    "p99": "p99",
     "avg": "Average",
     "min": "Minimum",
     "max": "Maximum",

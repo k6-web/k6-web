@@ -19,7 +19,7 @@ export const FolderDetail = () => {
   const [isRunningAll, setIsRunningAll] = useState(false);
   const [folderTests, setFolderTests] = useState<Test[]>([]);
   const [expandedTests, setExpandedTests] = useState<Set<string>>(new Set());
-  const [showFirstScriptTooltip, setShowFirstScriptTooltip] = useState(false);
+  const [showLastScriptTooltip, setShowLastScriptTooltip] = useState(false);
 
   const MAX_SCRIPTS_PER_FOLDER = 30;
 
@@ -93,15 +93,15 @@ export const FolderDetail = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRunningAll, folderData]);
 
-  // 첫 번째 스크립트에 툴팁 표시 (0.3초 후 표시, 1.5초 후 자동 숨김)
+  // 마지막 스크립트에 툴팁 표시 (0.3초 후 표시, 5초 후 자동 숨김)
   useEffect(() => {
     if (folderData && folderData.scripts.length > 0) {
       const showTimer = setTimeout(() => {
-        setShowFirstScriptTooltip(true);
+        setShowLastScriptTooltip(true);
       }, 300);
 
       const hideTimer = setTimeout(() => {
-        setShowFirstScriptTooltip(false);
+        setShowLastScriptTooltip(false);
       }, 5000);
 
       return () => {
@@ -140,7 +140,7 @@ export const FolderDetail = () => {
       return;
     }
 
-    if (!confirm(t('folderDetail.confirmRunAll', { count: folderData.scripts.length }))) return;
+    if (!confirm(t('folderDetail.confirmRunAll'))) return;
 
     try {
       setIsRunningAll(true);
@@ -276,7 +276,8 @@ export const FolderDetail = () => {
           padding: '1.5rem',
           borderRadius: '8px',
           boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          marginBottom: '1.5rem'
+          marginBottom: '1.5rem',
+          overflow: 'visible'
         }}>
           <h2
             style={{margin: '0 0 1rem 0', fontSize: '1.25rem', cursor: 'help'}}
@@ -284,8 +285,8 @@ export const FolderDetail = () => {
           >
             {t('folderList.scriptsCount')}
           </h2>
-          <div style={{overflowX: 'auto'}}>
-            <table style={{width: '100%', borderCollapse: 'collapse'}}>
+          <div style={{overflowX: 'auto', position: 'relative', overflow: 'visible'}}>
+            <table style={{width: '100%', borderCollapse: 'collapse', position: 'relative'}}>
               <thead>
               <tr style={{backgroundColor: '#f3f4f6'}}>
                 <th style={{padding: '0.75rem', textAlign: 'left', width: '40px'}}></th>
@@ -296,7 +297,7 @@ export const FolderDetail = () => {
                 <th style={{padding: '0.75rem', textAlign: 'center', width: '180px'}}>{t('folderDetail.scriptTableActions')}</th>
               </tr>
               </thead>
-              <tbody>
+              <tbody style={{position: 'relative'}}>
               {folderData.scripts.map((script, index) => (
                 <tr
                   key={script.scriptId}
@@ -312,11 +313,11 @@ export const FolderDetail = () => {
                 >
                   <td style={{padding: '0.75rem', fontSize: '1.25rem', position: 'relative'}}>
                     📄
-                    {index === 0 && showFirstScriptTooltip && (
+                    {index === folderData.scripts.length - 1 && showLastScriptTooltip && (
                       <div
                         style={{
                           position: 'absolute',
-                          top: '-45px',
+                          top: '40px',
                           left: '0',
                           backgroundColor: '#1f2937',
                           color: 'white',
@@ -325,21 +326,22 @@ export const FolderDetail = () => {
                           fontSize: '0.875rem',
                           whiteSpace: 'nowrap',
                           boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                          zIndex: 1000,
-                          animation: 'fadeIn 0.3s ease-in'
+                          zIndex: 9999,
+                          animation: 'fadeIn 0.3s ease-in',
+                          pointerEvents: 'none'
                         }}
                       >
                         {t('folderDetail.checkPerformanceChanges')}
                         <div
                           style={{
                             position: 'absolute',
-                            bottom: '-6px',
+                            top: '-6px',
                             left: '20px',
                             width: 0,
                             height: 0,
                             borderLeft: '6px solid transparent',
                             borderRight: '6px solid transparent',
-                            borderTop: '6px solid #1f2937'
+                            borderBottom: '6px solid #1f2937'
                           }}
                         />
                       </div>

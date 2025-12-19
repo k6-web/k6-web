@@ -27,7 +27,6 @@ export const MetricsGrid = ({summary}: MetricsGridProps) => {
       <MetricCard
         title={`TPS`}
         value={summary.metrics.http_reqs?.rate ? Math.round(summary.metrics.http_reqs.rate) : 'N/A'}
-        subtitle={`${t('metrics.httpReqs')}: ${summary.metrics.http_reqs?.count || 'N/A'}`}
         color="#3b82f6"
       />
 

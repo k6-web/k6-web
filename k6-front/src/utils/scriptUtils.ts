@@ -1,6 +1,22 @@
 import * as acorn from 'acorn';
 import type {K6TestConfig} from '../types/k6';
 
+export const hasDynamicParameters = (scriptCode: string): boolean => {
+  return (
+    /`[^`]*\$\{[^}]+\}[^`]*`/.test(scriptCode) ||
+    /http\.\w+\s*\(\s*[a-zA-Z_$][a-zA-Z0-9_$]*\s*[,)]/.test(scriptCode) ||
+    /const\s+url\s*=/.test(scriptCode) ||
+    /(let|var)\s+url\s*=/.test(scriptCode) ||
+    /(randomInt|Math\.random|Math\.floor.*Math\.random)/.test(scriptCode) ||
+    /Array\.(from|of|isArray)/.test(scriptCode) ||
+    /[a-zA-Z_$][a-zA-Z0-9_$]*\s*\+\s*["'`]/.test(scriptCode) ||
+    /["'`]\s*\+\s*[a-zA-Z_$][a-zA-Z0-9_$]*/.test(scriptCode) ||
+    /http\.\w+\s*\(\s*[a-zA-Z_$][a-zA-Z0-9_$]*\([^)]*\)/.test(scriptCode) ||
+    /\?[^'"`]*\$\{/.test(scriptCode) ||
+    /\.join\s*\(/.test(scriptCode)
+  );
+};
+
 export const validateScript = (code: string): { valid: boolean; error: string | null } => {
   try {
     acorn.parse(code, {
@@ -37,7 +53,6 @@ export const options = {
       scriptCode += `    { duration: '${maintainDuration}s', target: ${vusers} },\n`;
     }
   } else {
-    scriptCode += `    { duration: '0s', target: ${vusers} },\n`;
     scriptCode += `    { duration: '${duration}s', target: ${vusers} },\n`;
   }
 
@@ -111,18 +126,7 @@ export default function () {
 
 export const scriptToHttpConfig = (scriptCode: string): {config: Partial<K6TestConfig>; isDynamic: boolean} => {
   try {
-    const hasDynamicUrl =
-      /`[^`]*\$\{[^}]+\}[^`]*`/.test(scriptCode) ||
-      /http\.\w+\s*\(\s*[a-zA-Z_$][a-zA-Z0-9_$]*\s*[,)]/.test(scriptCode) ||
-      /const\s+url\s*=/.test(scriptCode) ||
-      /(let|var)\s+url\s*=/.test(scriptCode) ||
-      /(randomInt|Math\.random|Math\.floor.*Math\.random)/.test(scriptCode) ||
-      /Array\.(from|of|isArray)/.test(scriptCode) ||
-      /[a-zA-Z_$][a-zA-Z0-9_$]*\s*\+\s*["'`]/.test(scriptCode) ||
-      /["'`]\s*\+\s*[a-zA-Z_$][a-zA-Z0-9_$]*/.test(scriptCode) ||
-      /http\.\w+\s*\(\s*[a-zA-Z_$][a-zA-Z0-9_$]*\([^)]*\)/.test(scriptCode) ||
-      /\?[^'"`]*\$\{/.test(scriptCode) ||
-      /\.join\s*\(/.test(scriptCode);
+    const isDynamic = hasDynamicParameters(scriptCode);
 
     const config: Partial<K6TestConfig> = {};
 
@@ -199,7 +203,7 @@ export const scriptToHttpConfig = (scriptCode: string): {config: Partial<K6TestC
       }
     }
 
-    return {config, isDynamic: hasDynamicUrl};
+    return {config, isDynamic};
   } catch (err) {
     console.error('Failed to extract HTTP config from script:', err);
     return {config: {}, isDynamic: false};

@@ -2,7 +2,7 @@
   "nav": {
     "scripts": "스크립트",
     "newTest": "신규 테스트",
-    "tests": "테스트 실행 이력"
+    "tests": "최근 테스트 실행 이력"
   },
   "common": {
     "loading": "로딩 중...",
@@ -28,9 +28,9 @@
     "failedToCopyLink": "링크 복사에 실패했습니다."
   },
   "testList": {
-    "title": "테스트 실행 이력",
+    "title": "최근 테스트 실행 이력",
     "newTest": "신규 테스트",
-    "infoMessage": "테스트 실행 이력은 최대 500개까지 최신순으로 보관됩니다.",
+    "infoMessage": "최근 테스트 실행 이력은 최대 500개까지만 최신순으로 보관됩니다.",
     "noTests": "테스트가 없습니다.",
     "createFirstTest": "첫 번째 테스트 생성하기",
     "loadingMore": "더 많은 테스트 로딩 중...",
@@ -43,12 +43,12 @@
   },
   "newTest": {
     "title": "신규 테스트 생성",
-    "recentTests": "최근 테스트 불러오기",
+    "recentTests": "최근 사용 스크립트 불러오기",
     "recentTestsTooltip": "최근 5개의 테스트 스크립트를 보고 빠르게 재실행하거나 수정할 수 있습니다",
     "quickLoadTooltip": "최근 테스트 스크립트를 빠르게 불러오세요!",
     "syntaxError": "스크립트에 문법 오류가 있습니다. 수정 후 다시 시도해주세요.",
     "saveAsScript": "재사용 가능한 스크립트로 저장",
-    "saveAsScriptDescription": "이 스크립트를 저장하여 나중에 재사용할 수 있습니다.",
+    "saveAsScriptDescription": "이 스크립트를 저장하여 재사용할 수 있습니다.",
     "folder": "폴더",
     "required": "*",
     "selectFolder": "폴더를 선택하세요...",
@@ -100,7 +100,7 @@
     "rampUpDescription": "목표 VU에 점진적으로 도달하는 시간",
     "failureThreshold": "실패 임계값",
     "failureThresholdDescription": "최대 허용 오류율 (0.05 = 5%)",
-    "dynamicScriptNote": "빠른 설정으로 설정한 내용들은 K6 스크립트에 자동으로 반영됩니다.",
+    "dynamicScriptNote": "빠른 시작으로 제공되는 옵션 외의 동작이나 로직은 스크립트 편집기를 통해 자유롭게 구현할 수 있습니다 (e.g. 동적 파라미터 등)",
     "remove": "제거"
   },
   "scriptEditor": {
@@ -130,6 +130,7 @@
     "cancelled": "취소됨",
     "unknown": "알 수 없음",
     "completed": "완료",
+    "stopped": "중지됨",
     "performanceOverTime": "시간 경과에 따른 성능",
     "transactionsPerSecond": "초당 트랜잭션 수 (TPS)"
   },
@@ -167,7 +168,7 @@
     "failedToDeleteScript": "스크립트 삭제에 실패했습니다",
     "scriptsTooltip": "스크립트를 눌러서 스크립트의 최근 이력들로 성능 변화를 확인해보세요",
     "runAllScripts": "전체 스크립트 실행",
-    "confirmRunAll": "전체 {count}개 스크립트를 순차적으로 실행하시겠습니까?",
+    "confirmRunAll": "전체 스크립트를 순차적으로 실행하시겠습니까?",
     "executionResults": "실행 결과",
     "confirmRunScript": "이 스크립트를 실행하시겠습니까?",
     "confirmRerunTest": "이 테스트를 재실행하시겠습니까?",
@@ -179,6 +180,7 @@
     "runTest": "테스트 실행",
     "editScript": "스크립트 수정",
     "deleteScript": "스크립트 삭제",
+    "shareScript": "공유하기",
     "copyScript": "신규 테스트로 복사",
     "scriptId": "스크립트 ID",
     "scriptName": "스크립트 이름",
@@ -215,10 +217,10 @@
     "dataReceived": "수신 데이터",
     "dataSent": "전송 데이터",
     "iterationDuration": "반복 지속 시간",
-    "p50": "50번째 백분위수",
-    "p90": "90번째 백분위수",
-    "p95": "95번째 백분위수",
-    "p99": "99번째 백분위수",
+    "p50": "p50",
+    "p90": "p90",
+    "p95": "p95",
+    "p99": "p99",
     "avg": "평균",
     "min": "최소",
     "max": "최대",

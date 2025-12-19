@@ -6,6 +6,7 @@ import type {Script, TestComparison} from '../types/script';
 import type {Test} from '../types/test';
 import {MetricsTrendChart} from '../components/MetricsTrendChart';
 import {Button} from "../components/common";
+import {hasDynamicParameters} from '../utils/scriptUtils';
 
 export const ScriptDetail = () => {
   const {t} = useTranslation();
@@ -79,6 +80,9 @@ export const ScriptDetail = () => {
   const handleCopy = () => {
     if (!script) return;
 
+    // 동적 파라미터 체크
+    const isDynamic = hasDynamicParameters(script.script);
+
     // NewTest 페이지로 이동하면서 스크립트 내용을 state로 전달
     navigate('/new-test', {
       state: {
@@ -88,6 +92,7 @@ export const ScriptDetail = () => {
           description: script.description,
           tags: script.tags,
           folderId: script.folderId,
+          isDynamic,
         }
       }
     });
@@ -96,15 +101,16 @@ export const ScriptDetail = () => {
   const extractMetrics = (test: Test) => {
     const summary = test.summary;
     if (!summary?.metrics) {
-      return {tps: 0, p90: 0, p95: 0, errorRate: 0};
+      return {tps: 0, p90: 0, p95: 0, errorRate: 0, avg: 0};
     }
 
     const tps = summary.metrics.http_reqs?.rate || 0;
     const p90 = summary.metrics.http_req_duration?.['p(90)'] || 0;
     const p95 = summary.metrics.http_req_duration?.['p(95)'] || 0;
     const errorRate = summary.metrics.http_req_failed?.value || 0;
+    const avg = summary.metrics.http_req_duration?.avg || 0;
 
-    return {tps, p95, p90, errorRate};
+    return {tps, p95, p90, errorRate, avg};
   };
 
   if (loading) return <div>{t('common.loading')}</div>;
@@ -113,10 +119,12 @@ export const ScriptDetail = () => {
 
   return (
     <div>
-      <Link to="/folders"
-            style={{color: '#3b82f6', textDecoration: 'none', marginBottom: '1rem', display: 'inline-block'}}>
-        {t('scriptDetail.backToFolder')}
-      </Link>
+      {script.folderId && (
+        <Link to={`/folders/${script.folderId}`}
+              style={{color: '#3b82f6', textDecoration: 'none', marginBottom: '1rem', display: 'inline-block'}}>
+          {t('scriptDetail.backToFolder')}
+        </Link>
+      )}
 
       <div style={{
         backgroundColor: 'white',
@@ -138,7 +146,7 @@ export const ScriptDetail = () => {
                   onClick={handleShare}
                   style={{fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'}}
                 >
-                  🔗 {t('scriptDetail.copyScript')}
+                  🔗 {t('scriptDetail.shareScript')}
                 </Button>
                 <Button
                   variant="primary"
@@ -230,7 +238,8 @@ export const ScriptDetail = () => {
               />
             </div>
             <div style={{marginBottom: '1rem'}}>
-              <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>{t('common.description')}</label>
+              <label
+                style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>{t('common.description')}</label>
               <textarea
                 value={editData.description}
                 onChange={(e) => setEditData({...editData, description: e.target.value})}
@@ -328,6 +337,7 @@ export const ScriptDetail = () => {
                 <th style={{padding: '0.5rem', textAlign: 'left'}}>{t('testDetail.testId')}</th>
                 <th style={{padding: '0.5rem', textAlign: 'left'}}>{t('common.status')}</th>
                 <th style={{padding: '0.5rem', textAlign: 'right'}}>TPS</th>
+                <th style={{padding: '0.5rem', textAlign: 'right'}}>Avg (ms)</th>
                 <th style={{padding: '0.5rem', textAlign: 'right'}}>P90 (ms)</th>
                 <th style={{padding: '0.5rem', textAlign: 'right'}}>P95 (ms)</th>
                 <th style={{padding: '0.5rem', textAlign: 'right'}}>Error %</th>
@@ -354,6 +364,9 @@ export const ScriptDetail = () => {
                     </td>
                     <td style={{padding: '0.5rem', textAlign: 'right', fontFamily: 'monospace'}}>
                       {metrics.tps > 0 ? metrics.tps.toFixed(2) : '-'}
+                    </td>
+                    <td style={{padding: '0.5rem', textAlign: 'right', fontFamily: 'monospace'}}>
+                      {metrics.avg > 0 ? metrics.avg.toFixed(2) : '-'}
                     </td>
                     <td style={{padding: '0.5rem', textAlign: 'right', fontFamily: 'monospace'}}>
                       {metrics.p90 > 0 ? metrics.p90.toFixed(2) : '-'}

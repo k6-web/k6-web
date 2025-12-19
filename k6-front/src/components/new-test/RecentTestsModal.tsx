@@ -1,3 +1,4 @@
+import {useEffect} from 'react';
 import {useTranslation} from 'react-i18next';
 import type {Test} from '../../types/test';
 import {Light as SyntaxHighlighter} from 'react-syntax-highlighter';
@@ -13,6 +14,23 @@ interface RecentTestsModalProps {
 
 export const RecentTestsModal = ({show, tests, loading, onClose, onLoadTest}: RecentTestsModalProps) => {
   const {t} = useTranslation();
+
+  // ESC 키로 모달 닫기
+  useEffect(() => {
+    if (!show) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [show, onClose]);
 
   if (!show) return null;
 

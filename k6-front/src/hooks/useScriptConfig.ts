@@ -54,6 +54,7 @@ export const useScriptConfig = (initialScript: string) => {
     isDynamicScript,
     setScript,
     setHttpConfig,
+    setIsDynamicScript,
     handleConfigChange,
     handleScriptChange,
     updateConfigFromScript

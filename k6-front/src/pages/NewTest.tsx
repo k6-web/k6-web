@@ -11,11 +11,11 @@ import {useScriptValidation} from '../hooks/useScriptValidation';
 import {useTooltip} from '../hooks/useTooltip';
 
 const DEFAULT_SCRIPT = `import http from 'k6/http';
-import { check, sleep } from 'k6';
+import { check } from 'k6';
 
 export const options = {
   stages: [
-    { duration: '30s', target: 10 },
+    { duration: '30s', target: 1 },
   ],
   http: {
     timeout: '30s',
@@ -33,6 +33,7 @@ export const options = {
 
 export default function () {
   const res = http.get('https://test.k6.io');
+
   check(res, {
     'status is 2xx': (r) => r.status >= 200 && r.status < 300
   });
@@ -63,6 +64,7 @@ export const NewTest = () => {
     isDynamicScript,
     setScript,
     setHttpConfig,
+    setIsDynamicScript,
     handleConfigChange,
     handleScriptChange,
     updateConfigFromScript
@@ -86,13 +88,19 @@ export const NewTest = () => {
       description?: string;
       tags?: string[];
       folderId?: string;
+      isDynamic?: boolean;
     }} | null;
 
     if (state?.copiedScript) {
-      const { script: copiedScriptContent, config, description, tags, folderId: copiedFolderId } = state.copiedScript;
+      const { script: copiedScriptContent, config, description, tags, folderId: copiedFolderId, isDynamic } = state.copiedScript;
 
       setScript(copiedScriptContent);
       setSaveAsScript(true);
+
+      // 동적 스크립트 여부 설정
+      if (isDynamic !== undefined) {
+        setIsDynamicScript(isDynamic);
+      }
 
       if (description) {
         setScriptDescription(description);
@@ -125,7 +133,7 @@ export const NewTest = () => {
       // Clear the state to prevent re-applying on navigation
       window.history.replaceState({}, document.title);
     }
-  }, [location.state, setScript, setHttpConfig, updateConfigFromScript]);
+  }, [location.state, setScript, setHttpConfig, setIsDynamicScript, updateConfigFromScript]);
 
   // Load rerun script from session storage
   useEffect(() => {

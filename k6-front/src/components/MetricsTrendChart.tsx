@@ -6,13 +6,19 @@ interface MetricsTrendChartProps {
   tests: Test[];
 }
 
-type MetricType = 'tps' | 'p90' | 'p95' | 'errorRate';
+type MetricType = 'tps' | 'avg' | 'p90' | 'p95' | 'errorRate';
 
 const metricConfig = {
   tps: {
     label: 'TPS (Requests/sec)',
     color: '#3b82f6',
     unit: 'req/s',
+    format: (val: number) => val.toFixed(2),
+  },
+  avg: {
+    label: 'Avg Response Time',
+    color: '#8b5cf6',
+    unit: 'ms',
     format: (val: number) => val.toFixed(2),
   },
   p90: {
@@ -41,11 +47,12 @@ export const MetricsTrendChart = ({tests}: MetricsTrendChartProps) => {
   const extractMetrics = (test: Test) => {
     const summary = test.summary;
     if (!summary?.metrics) {
-      return {tps: 0, p90: 0, p95: 0, errorRate: 0};
+      return {tps: 0, avg: 0, p90: 0, p95: 0, errorRate: 0};
     }
 
     return {
       tps: summary.metrics.http_reqs?.rate || 0,
+      avg: summary.metrics.http_req_duration?.avg || 0,
       p90: summary.metrics.http_req_duration?.['p(90)'] || 0,
       p95: summary.metrics.http_req_duration?.['p(95)'] || 0,
       errorRate: summary.metrics.http_req_failed?.value || 0,
@@ -68,17 +75,6 @@ export const MetricsTrendChart = ({tests}: MetricsTrendChartProps) => {
     });
 
   const config = metricConfig[selectedMetric];
-
-  const calculateChangeRate = () => {
-    if (chartData.length < 2) return null;
-    const first = chartData[0].value;
-    const last = chartData[chartData.length - 1].value;
-    if (first === 0) return null;
-    const change = ((last - first) / first) * 100;
-    return change;
-  };
-
-  const changeRate = calculateChangeRate();
 
   if (tests.filter(t => t.status === 'completed').length === 0) {
     return (
@@ -110,25 +106,6 @@ export const MetricsTrendChart = ({tests}: MetricsTrendChartProps) => {
           </button>
         ))}
       </div>
-
-      {changeRate !== null && (
-        <div
-          style={{
-            padding: '0.75rem 1rem',
-            marginBottom: '1rem',
-            borderRadius: '4px',
-            backgroundColor: changeRate >= 0 ? '#d1fae5' : '#fee2e2',
-            color: changeRate >= 0 ? '#065f46' : '#991b1b',
-            fontSize: '0.875rem',
-            fontWeight: 'bold',
-          }}
-        >
-          Overall Change: {changeRate > 0 ? '+' : ''}{changeRate.toFixed(2)}%
-          {selectedMetric === 'tps' && changeRate > 0 && ' (Improved)'}
-          {(selectedMetric === 'p95' || selectedMetric === 'p90') && changeRate < 0 && ' (Improved)'}
-          {selectedMetric === 'errorRate' && changeRate < 0 && ' (Improved)'}
-        </div>
-      )}
 
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={chartData} margin={{top: 5, right: 30, left: 20, bottom: 5}}>

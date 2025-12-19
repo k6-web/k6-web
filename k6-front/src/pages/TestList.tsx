@@ -112,23 +112,6 @@ export const TestList = () => {
         gap: '1rem'
       }}>
         <h1 style={{margin: 0, fontSize: 'clamp(1.5rem, 5vw, 2rem)'}}>{t('testList.title')}</h1>
-        <div style={{display: 'flex', gap: '0.5rem', flexWrap: 'wrap'}}>
-          <Link
-            to="/new-test"
-            style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: '#3b82f6',
-              color: 'white',
-              textDecoration: 'none',
-              borderRadius: '4px',
-              display: 'inline-block',
-              fontSize: 'clamp(0.75rem, 2vw, 0.875rem)',
-              fontWeight: 'bold'
-            }}
-          >
-            {t('testList.newTest')}
-          </Link>
-        </div>
       </div>
 
       <InfoBox variant="info">
