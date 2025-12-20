@@ -57,11 +57,9 @@ export const options = {
   }
 
   scriptCode += `  ],
-  http: {
-    timeout: '30s',
-    reuseConnection: true,
-  },
-  noUsageReport: true,
+  setupTimeout: '60s',
+  teardownTimeout: '60s',
+  noConnectionReuse: false,
   batch: 20,
   batchPerHost: 20,
   thresholds: {
