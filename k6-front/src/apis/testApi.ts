@@ -18,7 +18,7 @@ export const k6Api = {
     return response.data;
   },
 
-  runTest: async (script: string, metadata?: { name?: string; config?: K6TestConfig }): Promise<RunTestResponse> => {
+  runTest: async (script: string, metadata?: { name?: string; config?: K6TestConfig; scriptId?: string }): Promise<RunTestResponse> => {
     const payload = metadata ? {script, ...metadata} : script;
     const response = await api.post<RunTestResponse>('/v1/tests', payload, {
       headers: {'Content-Type': metadata ? 'application/json' : 'text/plain'}

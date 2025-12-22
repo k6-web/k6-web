@@ -9,8 +9,8 @@ import {testService} from '@domains/test/test-service';
 const testRouter = express.Router();
 
 testRouter.post('/', asyncHandler(async (req, res) => {
-  const {script, name, config} = req.body as CreateTestRequest;
-  const testId = testService.createTest(script, {name, config});
+  const {script, name, config, scriptId} = req.body as CreateTestRequest;
+  const testId = testService.createTest(script, {name, config, scriptId});
   const response: RunTestResponse = {testId};
   res.json(response);
 }));

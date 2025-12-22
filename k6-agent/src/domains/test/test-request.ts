@@ -4,6 +4,7 @@ export interface CreateTestRequest {
   script: string;
   name?: string;
   config?: K6TestConfig;
+  scriptId?: string;
 }
 
 export interface PaginationRequest {
