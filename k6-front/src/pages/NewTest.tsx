@@ -47,6 +47,7 @@ export const NewTest = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [saveAsScript, setSaveAsScript] = useState(searchParams.get('saveScript') === 'true');
+  const [runTestAfterSave, setRunTestAfterSave] = useState(true);
   const [scriptId, setScriptId] = useState('');
   const [scriptDescription, setScriptDescription] = useState('');
   const [scriptTags, setScriptTags] = useState('');
@@ -81,13 +82,13 @@ export const NewTest = () => {
   // Load copied script from location state
   useEffect(() => {
     const state = location.state as { copiedScript?: {
-      script: string;
-      config?: any;
-      description?: string;
-      tags?: string[];
-      folderId?: string;
-      isDynamic?: boolean;
-    }} | null;
+        script: string;
+        config?: any;
+        description?: string;
+        tags?: string[];
+        folderId?: string;
+        isDynamic?: boolean;
+      }} | null;
 
     if (state?.copiedScript) {
       const { script: copiedScriptContent, config, description, tags, folderId: copiedFolderId, isDynamic } = state.copiedScript;
@@ -228,7 +229,7 @@ export const NewTest = () => {
     setError(null);
 
     try {
-      let savedScriptId = scriptId;
+      let savedScriptId: string | undefined;
 
       if (saveAsScript) {
         if (!folderId) {
@@ -250,17 +251,21 @@ export const NewTest = () => {
           ...(scriptTags && {tags: scriptTags.split(',').map(t => t.trim()).filter(t => t)})
         });
         savedScriptId = savedScript.scriptId;
+
+        // If not running test after save, navigate to script detail page
+        if (!runTestAfterSave) {
+          navigate(`/scripts/${savedScriptId}`);
+          return;
+        }
       }
 
-      if (saveAsScript) {
-        navigate(`/scripts/${savedScriptId}`);
-      } else {
-        const result = await k6Api.runTest(script, {
-          name: httpConfig.name,
-          config: httpConfig
-        });
-        navigate(`/tests/${result.testId}`);
-      }
+      // Run test after saving script (or directly if not saving)
+      const result = await k6Api.runTest(script, {
+        name: httpConfig.name,
+        config: httpConfig,
+        ...(savedScriptId && {scriptId: savedScriptId})
+      });
+      navigate(`/tests/${result.testId}`);
     } catch (err: any) {
       const errorMessage = err?.response?.data?.error || err?.message || 'Failed to start test';
       setError(errorMessage);
@@ -565,6 +570,27 @@ export const NewTest = () => {
                   }}
                 />
               </div>
+
+              <div style={{
+                marginTop: '1rem',
+                paddingTop: '1rem',
+                borderTop: '1px solid #e5e7eb'
+              }}>
+                <label style={{display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer'}}>
+                  <input
+                    type="checkbox"
+                    checked={runTestAfterSave}
+                    onChange={(e) => setRunTestAfterSave(e.target.checked)}
+                    style={{width: '16px', height: '16px'}}
+                  />
+                  <span style={{fontSize: '0.875rem', fontWeight: 'bold'}}>
+                    {t('newTest.runTestAfterSave')}
+                  </span>
+                </label>
+                <p style={{margin: '0.25rem 0 0 1.5rem', fontSize: '0.75rem', color: '#6b7280'}}>
+                  {t('newTest.runTestAfterSaveDescription')}
+                </p>
+              </div>
             </div>
           )}
 
@@ -678,10 +704,20 @@ export const NewTest = () => {
               boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
             }}
           >
-            {loading ? `🚀 ${t('newTest.startingTest')}` : saveAsScript ? `💾 ${t('newTest.saveScript')}` : `🚀 ${t('newTest.startTest')}`}
+            {loading
+              ? `🚀 ${t('newTest.startingTest')}`
+              : saveAsScript
+                ? runTestAfterSave
+                  ? `💾 ${t('newTest.saveScriptAndRunTest')}`
+                  : `💾 ${t('newTest.saveScriptOnly')}`
+                : `🚀 ${t('newTest.startTest')}`}
           </Button>
           <div style={{marginTop: '0.75rem', fontSize: 'clamp(0.75rem, 2vw, 0.875rem)', color: '#6b7280'}}>
-            {saveAsScript ? t('newTest.saveScriptDescription') : t('newTest.startTestDescription')}
+            {saveAsScript
+              ? runTestAfterSave
+                ? t('newTest.saveScriptAndRunTestDescription')
+                : t('newTest.saveScriptOnlyDescription')
+              : t('newTest.startTestDescription')}
           </div>
         </div>
       </form>
