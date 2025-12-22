@@ -39,18 +39,6 @@ export const scriptApi = {
     return response.data;
   },
 
-  updateScript: async (scriptId: string, data: {
-    name?: string;
-    script?: string;
-    config?: K6TestConfig;
-    description?: string;
-    tags?: string[];
-    folderId?: string;
-  }): Promise<Script> => {
-    const response = await api.put<Script>(`/v1/scripts/${scriptId}`, data);
-    return response.data;
-  },
-
   deleteScript: async (scriptId: string): Promise<void> => {
     await api.delete(`/v1/scripts/${scriptId}`);
   },

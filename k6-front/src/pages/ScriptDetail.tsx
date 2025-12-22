@@ -17,8 +17,6 @@ export const ScriptDetail = () => {
   const [comparison, setComparison] = useState<TestComparison | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState({name: '', description: ''});
 
   useEffect(() => {
     if (!scriptId) return;
@@ -32,7 +30,6 @@ export const ScriptDetail = () => {
         ]);
         setScript(scriptData);
         setHistory(historyData.tests);
-        setEditData({name: scriptData.scriptId, description: scriptData.description || ''});
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch script');
@@ -46,25 +43,13 @@ export const ScriptDetail = () => {
 
   const handleRun = async () => {
     if (!scriptId) return;
+    if (!confirm(t('folderDetail.confirmRunScript'))) return;
+
     try {
       const result = await scriptApi.runScript(scriptId);
       navigate(`/tests/${result.testId}`);
     } catch (err) {
-      alert(t('folderDetail.failedToDeleteScript'));
-    }
-  };
-
-  const handleUpdate = async () => {
-    if (!scriptId) return;
-    try {
-      const updated = await scriptApi.updateScript(scriptId, {
-        name: editData.name,
-        description: editData.description
-      });
-      setScript(updated);
-      setIsEditing(false);
-    } catch (err) {
-      alert(t('scriptDetail.failedToDelete'));
+      alert(t('folderDetail.failedToRunScript'));
     }
   };
 
@@ -73,7 +58,7 @@ export const ScriptDetail = () => {
     navigator.clipboard.writeText(url).then(() => {
       alert(t('scriptDetail.copiedToClipboard'));
     }).catch(() => {
-      alert(t('scriptDetail.failedToDelete'));
+      alert(t('scriptDetail.failedToShare'));
     });
   };
 
@@ -133,155 +118,77 @@ export const ScriptDetail = () => {
         boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
         marginBottom: '1rem'
       }}>
-        {!isEditing ? (
-          <>
-            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem'}}>
-              <div>
-                <h1 style={{margin: '0 0 0.5rem 0'}}>{script.scriptId}</h1>
-                <p style={{margin: 0, color: '#6b7280'}}>{script.description || 'No description'}</p>
-              </div>
-              <div style={{display: 'flex', gap: '0.5rem'}}>
-                <Button
-                  variant="purple"
-                  onClick={handleShare}
-                  style={{fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'}}
-                >
-                  🔗 {t('scriptDetail.shareScript')}
-                </Button>
-                <Button
-                  variant="primary"
-                  onClick={handleCopy}
-                  style={{fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'}}
-                >
-                  📋 {t('scriptDetail.copyScript')}
-                </Button>
-                <button
-                  onClick={() => setIsEditing(true)}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    backgroundColor: '#6b7280',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  {t('common.edit')}
-                </button>
-                <button
-                  onClick={handleRun}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    backgroundColor: '#10b981',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  {t('scriptDetail.runTest')}
-                </button>
-              </div>
-            </div>
-
-            {script.tags && script.tags.length > 0 && (
-              <div style={{display: 'flex', gap: '0.25rem', flexWrap: 'wrap', marginBottom: '1rem'}}>
-                {script.tags.map(tag => (
-                  <span
-                    key={tag}
-                    style={{
-                      backgroundColor: '#dbeafe',
-                      color: '#1e40af',
-                      padding: '0.25rem 0.75rem',
-                      borderRadius: '9999px',
-                      fontSize: '0.875rem'
-                    }}
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
-
-            <div style={{fontSize: '0.875rem', color: '#9ca3af'}}>
-              {script.folderId && (
-                <div style={{marginBottom: '0.5rem'}}>
-                  <span style={{color: '#6b7280'}}>{t('scriptDetail.folder')}: </span>
-                  <Link
-                    to={`/folders/${script.folderId}`}
-                    style={{color: '#8b5cf6', textDecoration: 'none', fontWeight: '600'}}
-                  >
-                    {script.folderId}
-                  </Link>
-                </div>
-              )}
-              <div>{t('scriptDetail.createdAt')}: {new Date(script.createdAt).toLocaleString()}</div>
-              <div>{t('scriptDetail.updatedAt')}: {new Date(script.updatedAt).toLocaleString()}</div>
-            </div>
-          </>
-        ) : (
+        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem'}}>
           <div>
-            <h2>{t('scriptDetail.editScript')}</h2>
-            <div style={{marginBottom: '1rem'}}>
-              <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>{t('common.name')}</label>
-              <input
-                type="text"
-                value={editData.name}
-                onChange={(e) => setEditData({...editData, name: e.target.value})}
+            <h1 style={{margin: '0 0 0.5rem 0'}}>{script.scriptId}</h1>
+            <p style={{margin: 0, color: '#6b7280'}}>{script.description || 'No description'}</p>
+          </div>
+          <div style={{display: 'flex', gap: '0.5rem'}}>
+            <Button
+              variant="purple"
+              onClick={handleShare}
+              style={{fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'}}
+            >
+              🔗 {t('scriptDetail.shareScript')}
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleCopy}
+              style={{fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'}}
+            >
+              📋 {t('scriptDetail.copyScript')}
+            </Button>
+            <button
+              onClick={handleRun}
+              style={{
+                padding: '0.5rem 1rem',
+                backgroundColor: '#10b981',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontWeight: 'bold'
+              }}
+            >
+              {t('scriptDetail.runTest')}
+            </button>
+          </div>
+        </div>
+
+        {script.tags && script.tags.length > 0 && (
+          <div style={{display: 'flex', gap: '0.25rem', flexWrap: 'wrap', marginBottom: '1rem'}}>
+            {script.tags.map(tag => (
+              <span
+                key={tag}
                 style={{
-                  width: '100%',
-                  padding: '0.5rem',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '4px'
-                }}
-              />
-            </div>
-            <div style={{marginBottom: '1rem'}}>
-              <label
-                style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>{t('common.description')}</label>
-              <textarea
-                value={editData.description}
-                onChange={(e) => setEditData({...editData, description: e.target.value})}
-                rows={3}
-                style={{
-                  width: '100%',
-                  padding: '0.5rem',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '4px'
-                }}
-              />
-            </div>
-            <div style={{display: 'flex', gap: '0.5rem'}}>
-              <button
-                onClick={handleUpdate}
-                style={{
-                  padding: '0.5rem 1rem',
-                  backgroundColor: '#3b82f6',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
-              >
-                {t('common.save')}
-              </button>
-              <button
-                onClick={() => setIsEditing(false)}
-                style={{
-                  padding: '0.5rem 1rem',
-                  backgroundColor: '#6b7280',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
+                  backgroundColor: '#dbeafe',
+                  color: '#1e40af',
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '9999px',
+                  fontSize: '0.875rem'
                 }}
               >
-                {t('common.cancel')}
-              </button>
-            </div>
+                {tag}
+              </span>
+            ))}
           </div>
         )}
+
+        <div style={{fontSize: '0.875rem', color: '#9ca3af'}}>
+          {script.folderId && (
+            <div style={{marginBottom: '0.5rem'}}>
+              <span style={{color: '#6b7280'}}>{t('scriptDetail.folder')}: </span>
+              <Link
+                to={`/folders/${script.folderId}`}
+                style={{color: '#8b5cf6', textDecoration: 'none', fontWeight: '600'}}
+              >
+                {script.folderId}
+              </Link>
+            </div>
+          )}
+          <div>{t('scriptDetail.createdAt')}: {new Date(script.createdAt).toLocaleString()}</div>
+          <div>{t('scriptDetail.updatedAt')}: {new Date(script.updatedAt).toLocaleString()}</div>
+        </div>
       </div>
 
       <div style={{
@@ -383,7 +290,7 @@ export const ScriptDetail = () => {
                         to={`/tests/${test.testId}`}
                         style={{color: '#3b82f6', textDecoration: 'none'}}
                       >
-                        {t('folderList.viewFolder')}
+                        {t('testList.viewDetails')}
                       </Link>
                     </td>
                   </tr>
