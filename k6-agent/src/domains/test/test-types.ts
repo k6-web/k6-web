@@ -44,6 +44,7 @@ export interface TestResult {
   name?: string;
   config?: K6TestConfig;
   summary: unknown;
+  logs?: LogEntry[];
 }
 
 export interface Script {

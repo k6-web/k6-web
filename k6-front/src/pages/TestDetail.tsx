@@ -73,6 +73,60 @@ export const TestDetail = () => {
         />
       )}
 
+      {testInfo.status === 'failed' && testInfo.logs && testInfo.logs.length > 0 && (
+        <div style={{
+          backgroundColor: 'white',
+          padding: '1.5rem',
+          borderRadius: '8px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+          marginBottom: '1.5rem'
+        }}>
+          <h2 style={{
+            marginTop: 0,
+            marginBottom: '1rem',
+            color: '#dc2626',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            ⚠️ {t('testDetail.errorLogs')}
+          </h2>
+          <div style={{
+            backgroundColor: '#1f2937',
+            color: '#f3f4f6',
+            padding: '1rem',
+            borderRadius: '4px',
+            maxHeight: '400px',
+            overflow: 'auto',
+            fontFamily: 'Monaco, Consolas, "Courier New", monospace',
+            fontSize: '0.875rem',
+            lineHeight: '1.5'
+          }}>
+            {testInfo.logs.map((log, index) => (
+              <div
+                key={index}
+                style={{
+                  padding: '0.25rem 0',
+                  color: log.type === 'stderr' || log.type === 'error' ? '#fca5a5' : '#d1d5db'
+                }}
+              >
+                <span style={{color: '#9ca3af', marginRight: '0.5rem'}}>
+                  {new Date(log.timestamp).toLocaleTimeString()}
+                </span>
+                <span style={{
+                  color: log.type === 'stderr' || log.type === 'error' ? '#fca5a5' : '#60a5fa',
+                  marginRight: '0.5rem',
+                  fontWeight: 'bold'
+                }}>
+                  [{log.type}]
+                </span>
+                <span>{log.message}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {testInfo?.summary && (
         <>
           <MetricsGrid summary={testInfo.summary}/>

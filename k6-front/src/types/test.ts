@@ -1,4 +1,5 @@
 import type {K6Summary} from "./k6.ts";
+import type {LogEntry} from "./log.ts";
 
 export type TestStatus = 'running' | 'completed' | 'failed' | 'stopped';
 
@@ -11,6 +12,7 @@ export interface Test {
   endTime?: number;
   script: string;
   summary?: K6Summary;
+  logs?: LogEntry[];
 }
 
 export interface TestListResponse {

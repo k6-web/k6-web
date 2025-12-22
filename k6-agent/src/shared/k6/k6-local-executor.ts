@@ -213,6 +213,10 @@ export class K6LocalExecutor implements K6Executor {
       name: testInfo.name,
       config: testInfo.config,
       summary,
+      // Include only stderr logs when test fails for debugging
+      logs: status === TestStatus.FAILED
+        ? testInfo.logs.filter(log => log.type === 'stderr' || log.type === 'error')
+        : undefined,
     };
 
     // Save test result and cleanup history asynchronously
