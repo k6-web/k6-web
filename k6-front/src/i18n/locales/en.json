@@ -13,10 +13,6 @@
     "delete": "Delete",
     "edit": "Edit",
     "close": "Close",
-    "confirm": "Confirm",
-    "search": "Search",
-    "filter": "Filter",
-    "sort": "Sort",
     "actions": "Actions",
     "status": "Status",
     "name": "Name",
@@ -29,7 +25,6 @@
   },
   "testList": {
     "title": "Test History",
-    "newTest": "New Test",
     "infoMessage": "Recent Test history is kept up to a maximum of 500 tests in descending order.",
     "noTests": "No tests found.",
     "createFirstTest": "Create your first test",
@@ -39,7 +34,8 @@
     "rerun": "Re-run",
     "testNotFound": "Test not found",
     "noScriptAvailable": "No script available to re-run",
-    "failedToLoadScript": "Failed to load test script"
+    "failedToLoadScript": "Failed to load test script",
+    "viewDetails": "View Details"
   },
   "newTest": {
     "title": "Create New Test",
@@ -62,11 +58,17 @@
     "descriptionPlaceholder": "Describe what this script tests...",
     "tagsOptional": "Tags (optional)",
     "tagsPlaceholder": "api, production, critical (comma-separated)",
+    "runTestAfterSave": "Also run load test",
+    "runTestAfterSaveDescription": "Save the script and immediately start a load test",
     "startTest": "Start Load Test",
     "startingTest": "Starting Test...",
-    "saveScript": "Save Script",
+    "saveScript": "Start Load Test",
+    "saveScriptAndRunTest": "Save Script & Run Test",
+    "saveScriptOnly": "Save Script Only",
     "startTestDescription": "Run load test with the configured script above",
     "saveScriptDescription": "Save script and run load test",
+    "saveScriptAndRunTestDescription": "Save script and run load test",
+    "saveScriptOnlyDescription": "Save script without running a test",
     "folderRequired": "Please select a folder to save the script",
     "folderNameRequired": "Folder name is required",
     "createNewFolder": "Create New Folder",
@@ -107,9 +109,11 @@
     "title": "Configure with a k6 Script",
     "placeholder": "Write your k6 test script here...",
     "syntaxError": "Syntax Error",
-    "invalidSyntax": "Invalid JavaScript syntax. Please check your code."
+    "invalidSyntax": "Invalid JavaScript syntax. Please check your code.",
+    "guideLink": "View k6 Official Documentation"
   },
   "testDetail": {
+    "copyScript": "Copy Script",
     "backToTests": "← Back to Tests",
     "testId": "Test ID",
     "status": "Status",
@@ -132,10 +136,11 @@
     "completed": "Completed",
     "stopped": "Stopped",
     "performanceOverTime": "Performance Over Time",
-    "transactionsPerSecond": "Transactions Per Second (TPS)"
+    "transactionsPerSecond": "Transactions Per Second (TPS)",
+    "errorLogs": "Error Logs"
   },
   "folderList": {
-    "title": "Script Library",
+    "title": "Script Folders",
     "newFolder": "New Folder",
     "infoMessage": "Organize your test scripts into folders for better management.",
     "noFolders": "No folders found.",
@@ -164,7 +169,10 @@
     "copyScript": "Copy Script",
     "confirmDeleteScript": "Are you sure you want to delete this script?",
     "scriptDeleted": "Script deleted successfully",
+    "failedToRunScript": "Failed to run script (only one script can be run at a time)",
+    "failedToUpdateScript": "Failed to update script",
     "failedToDeleteScript": "Failed to delete script",
+    "failedToShare": "Failed to share",
     "scriptsTooltip": "Click on scripts to check performance changes through their recent history",
     "runAllScripts": "Run All Scripts",
     "confirmRunAll": "Run all scripts sequentially?",
@@ -172,7 +180,7 @@
     "confirmRunScript": "Are you sure you want to run this script?",
     "confirmRerunTest": "Are you sure you want to re-run this test?",
     "checkPerformanceChanges": "Check the performance changes of the API over time by clicking on each script.",
-    "scriptTableActions": "Execution Results"
+    "actions": "Actions"
   },
   "scriptDetail": {
     "backToFolder": "← Back to Folder",
@@ -196,7 +204,7 @@
     "scriptDeleted": "Script deleted successfully",
     "failedToDelete": "Failed to delete script",
     "copiedToClipboard": "Copied to clipboard!",
-    "scriptCopied": "Script copied! Redirecting to New Test page..."
+    "viewDetails": "View Details"
   },
   "recentTestsModal": {
     "title": "Recent Tests",

@@ -130,7 +130,7 @@ export const FolderDetail = () => {
       const result = await scriptApi.runScript(scriptId);
       navigate(`/tests/${result.testId}`);
     } catch (err) {
-      alert(t('folderDetail.failedToDeleteScript'));
+      alert(t('folderDetail.failedToRunScript'));
     }
   };
 
@@ -149,7 +149,7 @@ export const FolderDetail = () => {
       // 실행 완료 후 테스트 목록 새로고침
       await fetchFolderTests();
     } catch (err) {
-      alert(err instanceof Error ? err.message : t('folderDetail.failedToDeleteScript'));
+      alert(err instanceof Error ? err.message : t('folderDetail.failedToRunScript'));
     } finally {
       setIsRunningAll(false);
     }
@@ -180,7 +180,7 @@ export const FolderDetail = () => {
       const result = await scriptApi.runScript(test.scriptId);
       navigate(`/tests/${result.testId}`);
     } catch (err) {
-      alert(t('folderDetail.failedToDeleteScript'));
+      alert(t('folderDetail.failedToRunScript'));
     }
   };
 
@@ -294,7 +294,11 @@ export const FolderDetail = () => {
                 <th style={{padding: '0.75rem', textAlign: 'left'}}>{t('common.description')}</th>
                 <th style={{padding: '0.75rem', textAlign: 'left'}}>{t('common.tags')}</th>
                 <th style={{padding: '0.75rem', textAlign: 'left'}}>{t('common.updatedAt')}</th>
-                <th style={{padding: '0.75rem', textAlign: 'center', width: '180px'}}>{t('folderDetail.scriptTableActions')}</th>
+                <th style={{
+                  padding: '0.75rem',
+                  textAlign: 'center',
+                  width: '180px'
+                }}>{t('folderDetail.actions')}</th>
               </tr>
               </thead>
               <tbody style={{position: 'relative'}}>
@@ -350,29 +354,30 @@ export const FolderDetail = () => {
                   <td style={{padding: '0.75rem', fontWeight: 'bold'}}>
                     {script.scriptId}
                   </td>
-                  <td style={{padding: '0.75rem', color: '#6b7280'}}>
-                    {script.description || 'No description'}
+                  <td style={{padding: '0.75rem', fontSize: '0.875rem', color: '#6b7280', maxWidth: '300px'}}>
+                    {script.description || '-'}
                   </td>
-                  <td style={{padding: '0.75rem'}}>
+                  <td style={{padding: '0.75rem', fontSize: '0.875rem'}}>
                     {script.tags && script.tags.length > 0 ? (
                       <div style={{display: 'flex', gap: '0.25rem', flexWrap: 'wrap'}}>
-                        {script.tags.map(tag => (
+                        {script.tags.map((tag, idx) => (
                           <span
-                            key={tag}
+                            key={idx}
                             style={{
-                              backgroundColor: '#dbeafe',
-                              color: '#1e40af',
+                              backgroundColor: '#e0e7ff',
+                              color: '#3730a3',
                               padding: '0.125rem 0.5rem',
                               borderRadius: '9999px',
-                              fontSize: '0.75rem'
+                              fontSize: '0.75rem',
+                              fontWeight: '500'
                             }}
                           >
-                              {tag}
-                            </span>
+                            {tag}
+                          </span>
                         ))}
                       </div>
                     ) : (
-                      <span style={{color: '#9ca3af', fontSize: '0.875rem'}}>-</span>
+                      <span style={{color: '#9ca3af'}}>-</span>
                     )}
                   </td>
                   <td style={{padding: '0.75rem', fontSize: '0.875rem', color: '#6b7280'}}>

@@ -69,7 +69,7 @@ export const TestHeader = ({
               onClick={onRerun}
               style={{fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'}}
             >
-              {t('testList.rerun')}
+              {t('testDetail.copyScript')}
             </Button>
             <Button
               variant="gray"

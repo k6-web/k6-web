@@ -13,10 +13,6 @@
     "delete": "삭제",
     "edit": "수정",
     "close": "닫기",
-    "confirm": "확인",
-    "search": "검색",
-    "filter": "필터",
-    "sort": "정렬",
     "actions": "작업",
     "status": "상태",
     "name": "이름",
@@ -29,7 +25,6 @@
   },
   "testList": {
     "title": "최근 테스트 실행 이력",
-    "newTest": "신규 테스트",
     "infoMessage": "최근 테스트 실행 이력은 최대 500개까지만 최신순으로 보관됩니다.",
     "noTests": "테스트가 없습니다.",
     "createFirstTest": "첫 번째 테스트 생성하기",
@@ -39,7 +34,8 @@
     "rerun": "재실행",
     "testNotFound": "테스트를 찾을 수 없습니다",
     "noScriptAvailable": "재실행할 스크립트가 없습니다",
-    "failedToLoadScript": "테스트 스크립트를 불러오는데 실패했습니다"
+    "failedToLoadScript": "테스트 스크립트를 불러오는데 실패했습니다",
+    "viewDetails": "상세 보기"
   },
   "newTest": {
     "title": "신규 테스트 생성",
@@ -62,15 +58,21 @@
     "descriptionPlaceholder": "이 스크립트가 테스트하는 내용을 설명하세요...",
     "tagsOptional": "태그 (선택사항)",
     "tagsPlaceholder": "api, production, critical (쉼표로 구분)",
+    "runTestAfterSave": "테스트도 함께 실행",
+    "runTestAfterSaveDescription": "스크립트를 저장하고 바로 부하 테스트를 시작합니다",
     "startTest": "부하 테스트 시작",
     "startingTest": "테스트 시작 중...",
-    "saveScript": "스크립트 저장",
+    "saveScript": "부하 테스트 시작",
+    "saveScriptAndRunTest": "스크립트 저장 및 테스트 시작",
+    "saveScriptOnly": "스크립트만 저장",
     "startTestDescription": "위에 설정된 스크립트로 부하 테스트 실행",
     "saveScriptDescription": "스크립트를 저장하고 부하 테스트 실행",
+    "saveScriptAndRunTestDescription": "스크립트를 저장하고 부하 테스트 실행",
+    "saveScriptOnlyDescription": "테스트 실행 없이 스크립트만 저장",
     "folderRequired": "스크립트를 저장할 폴더를 선택해주세요",
     "folderNameRequired": "폴더 이름은 필수입니다",
     "createNewFolder": "새 폴더 생성",
-    "folderName": "폴더 이름*",
+    "folderName": "폴더 이름",
     "folderNamePlaceholder": "폴더 이름을 입력하세요",
     "folderDescription": "설명",
     "folderDescriptionPlaceholder": "폴더 설명을 입력하세요",
@@ -107,9 +109,11 @@
     "title": "K6 스크립트로 설정하기",
     "placeholder": "여기에 k6 테스트 스크립트를 작성하세요...",
     "syntaxError": "문법 오류",
-    "invalidSyntax": "유효하지 않은 JavaScript 문법입니다. 코드를 확인해주세요."
+    "invalidSyntax": "유효하지 않은 JavaScript 문법입니다. 코드를 확인해주세요.",
+    "guideLink": "k6 공식 가이드 문서 보기"
   },
   "testDetail": {
+    "copyScript": "스크립트 복사",
     "backToTests": "← 테스트 목록으로",
     "testId": "테스트 ID",
     "status": "상태",
@@ -132,7 +136,8 @@
     "completed": "완료",
     "stopped": "중지됨",
     "performanceOverTime": "시간 경과에 따른 성능",
-    "transactionsPerSecond": "초당 트랜잭션 수 (TPS)"
+    "transactionsPerSecond": "초당 트랜잭션 수 (TPS)",
+    "errorLogs": "오류 로그"
   },
   "folderList": {
     "title": "스크립트 폴더",
@@ -162,10 +167,12 @@
     "editScript": "스크립트 수정",
     "deleteScript": "스크립트 삭제",
     "copyScript": "스크립트 복사",
-    "viewResults": "결과 보기",
     "confirmDeleteScript": "이 스크립트를 삭제하시겠습니까?",
     "scriptDeleted": "스크립트가 삭제되었습니다",
+    "failedToRunScript": "스크립트 실행에 실패했습니다 (동시에 하나의 스크립트만 실행할 수 있습니다)",
+    "failedToUpdateScript": "스크립트 업데이트에 실패했습니다",
     "failedToDeleteScript": "스크립트 삭제에 실패했습니다",
+    "failedToShare": "공유에 실패했습니다",
     "scriptsTooltip": "스크립트를 눌러서 스크립트의 최근 이력들로 성능 변화를 확인해보세요",
     "runAllScripts": "전체 스크립트 실행",
     "confirmRunAll": "전체 스크립트를 순차적으로 실행하시겠습니까?",
@@ -173,7 +180,7 @@
     "confirmRunScript": "이 스크립트를 실행하시겠습니까?",
     "confirmRerunTest": "이 테스트를 재실행하시겠습니까?",
     "checkPerformanceChanges": "스크립트를 눌러 API 성능 변화를 확인하세요",
-    "scriptTableActions": "실행 결과"
+    "actions": "작업"
   },
   "scriptDetail": {
     "backToFolder": "← 폴더로 돌아가기",
@@ -197,8 +204,7 @@
     "scriptDeleted": "스크립트가 삭제되었습니다",
     "failedToDelete": "스크립트 삭제에 실패했습니다",
     "copiedToClipboard": "클립보드에 복사되었습니다!",
-    "scriptCopied": "스크립트가 복사되었습니다! 신규 테스트 페이지로 이동합니다...",
-    "viewDetails": "실행 결과 보기"
+    "viewDetails": "상세 보기"
   },
   "recentTestsModal": {
     "title": "최근 테스트",

@@ -46,7 +46,7 @@ export const ScriptList = () => {
       const result = await scriptApi.runScript(scriptId);
       navigate(`/tests/${result.testId}`);
     } catch (err) {
-      alert(t('folderDetail.failedToDeleteScript'));
+      alert(t('folderDetail.failedToRunScript'));
     }
   };
 
@@ -112,15 +112,6 @@ export const ScriptList = () => {
               onMouseLeave={(e) => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)'}
             >
               <h3 style={{margin: '0 0 0.5rem 0', fontSize: '1.125rem'}}>{script.scriptId}</h3>
-              <p style={{
-                margin: '0 0 1rem 0',
-                fontSize: '0.875rem',
-                color: '#6b7280',
-                minHeight: '2.5rem'
-              }}>
-                {script.description || 'No description'}
-              </p>
-
               {script.tags && script.tags.length > 0 && (
                 <div style={{display: 'flex', gap: '0.25rem', flexWrap: 'wrap', marginBottom: '1rem'}}>
                   {script.tags.map(tag => (
