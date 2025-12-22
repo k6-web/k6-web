@@ -13,6 +13,10 @@ export const FolderList = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [newFolderDescription, setNewFolderDescription] = useState('');
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingFolder, setEditingFolder] = useState<Folder | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
   const [sortBy] = useState<'createdAt' | 'updatedAt' | 'name'>('updatedAt');
   const [sortOrder] = useState<'asc' | 'desc'>('desc');
 
@@ -41,6 +45,34 @@ export const FolderList = () => {
       fetchFolders();
     } catch (err) {
       alert(err instanceof Error ? err.message : t('folderList.failedToDelete'));
+    }
+  };
+
+  const handleEdit = (folder: Folder) => {
+    setEditingFolder(folder);
+    setEditName(folder.name);
+    setEditDescription(folder.description || '');
+    setShowEditModal(true);
+  };
+
+  const handleUpdate = async () => {
+    if (!editingFolder || !editName.trim()) {
+      alert(t('newTest.folderNameRequired'));
+      return;
+    }
+
+    try {
+      await folderApi.updateFolder(editingFolder.folderId, {
+        name: editName,
+        description: editDescription,
+      });
+      setShowEditModal(false);
+      setEditingFolder(null);
+      setEditName('');
+      setEditDescription('');
+      fetchFolders();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : t('newTest.failedToCreateFolder'));
     }
   };
 
@@ -184,6 +216,100 @@ export const FolderList = () => {
         </div>
       )}
 
+      {showEditModal && editingFolder && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: '2rem',
+            borderRadius: '8px',
+            maxWidth: '500px',
+            width: '90%'
+          }}>
+            <h2 style={{marginTop: 0}}>{t('folderDetail.editFolder')}</h2>
+            <div style={{marginBottom: '1rem'}}>
+              <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
+                {t('newTest.folderName')}*
+              </label>
+              <input
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.5rem',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '4px',
+                  fontSize: '1rem'
+                }}
+                placeholder={t('newTest.folderNamePlaceholder')}
+              />
+            </div>
+            <div style={{marginBottom: '1rem'}}>
+              <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
+                {t('newTest.folderDescription')}
+              </label>
+              <textarea
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.5rem',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '4px',
+                  fontSize: '1rem',
+                  minHeight: '80px'
+                }}
+                placeholder={t('newTest.folderDescriptionPlaceholder')}
+              />
+            </div>
+            <div style={{display: 'flex', gap: '0.5rem', justifyContent: 'flex-end'}}>
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingFolder(null);
+                  setEditName('');
+                  setEditDescription('');
+                }}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: '#6b7280',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                onClick={handleUpdate}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: '#10b981',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                {t('common.save')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {folders.length === 0 ? (
         <div style={{
           backgroundColor: 'white',
@@ -256,6 +382,20 @@ export const FolderList = () => {
                   }}
                 >
                   {t('folderList.viewFolder')}
+                </button>
+                <button
+                  onClick={() => handleEdit(folder)}
+                  style={{
+                    padding: '0.5rem 0.75rem',
+                    backgroundColor: '#6b7280',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '0.875rem'
+                  }}
+                >
+                  {t('common.edit')}
                 </button>
                 <button
                   onClick={() => handleDelete(folder.folderId)}
