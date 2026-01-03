@@ -14,9 +14,13 @@ const DEFAULT_SCRIPT = `import http from 'k6/http';
 import { check } from 'k6';
 
 export const options = {
-  stages: [
-    { duration: '30s', target: 1 },
-  ],
+  scenarios: {
+    test: {
+      executor: 'constant-vus',
+      vus: 1,
+      duration: '30s',
+    },
+  },
   setupTimeout: '60s',
   teardownTimeout: '60s',
   noConnectionReuse: false,

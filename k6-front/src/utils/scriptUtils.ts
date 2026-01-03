@@ -43,20 +43,33 @@ export const httpConfigToScript = (config: K6TestConfig): string => {
 import { check } from 'k6';
 
 export const options = {
-  stages: [
+  scenarios: {
+    test: {
 `;
 
+  // Use ramping-vus if rampUp is specified, otherwise constant-vus
   if (rampUp && rampUp > 0) {
-    scriptCode += `    { duration: '${rampUp}s', target: ${vusers} },\n`;
+    scriptCode += `      executor: 'ramping-vus',
+      startVUs: 0,
+      stages: [
+        { duration: '${rampUp}s', target: ${vusers} },
+`;
     const maintainDuration = duration - rampUp;
     if (maintainDuration > 0) {
-      scriptCode += `    { duration: '${maintainDuration}s', target: ${vusers} },\n`;
+      scriptCode += `        { duration: '${maintainDuration}s', target: ${vusers} },
+`;
     }
+    scriptCode += `      ],
+`;
   } else {
-    scriptCode += `    { duration: '${duration}s', target: ${vusers} },\n`;
+    scriptCode += `      executor: 'constant-vus',
+      vus: ${vusers},
+      duration: '${duration}s',
+`;
   }
 
-  scriptCode += `  ],
+  scriptCode += `    },
+  },
   setupTimeout: '60s',
   teardownTimeout: '60s',
   noConnectionReuse: false,
@@ -148,27 +161,42 @@ export const scriptToHttpConfig = (scriptCode: string): {config: Partial<K6TestC
         }
       }
 
-      const vusMatch = /target:\s*(\d+)/.exec(scriptCode);
-      if (vusMatch) {
-        config.vusers = Number.parseInt(vusMatch[1]);
-      }
-
-      const durationMatches = scriptCode.matchAll(/duration:\s*['"`](\d+)s['"`]/g);
-      let totalDuration = 0;
-      let firstDuration = 0;
-      let index = 0;
-      for (const match of durationMatches) {
-        const dur = Number.parseInt(match[1]);
-        if (index === 0) {
-          firstDuration = dur;
+      // Check for constant-vus executor
+      const constantVusMatch = /executor:\s*['"`]constant-vus['"`]/.exec(scriptCode);
+      if (constantVusMatch) {
+        const vusMatch = /vus:\s*(\d+)/.exec(scriptCode);
+        if (vusMatch) {
+          config.vusers = Number.parseInt(vusMatch[1]);
         }
-        totalDuration += dur;
-        index++;
-      }
-      if (totalDuration > 0) {
-        config.duration = totalDuration;
-        if (firstDuration > 0 && index > 1) {
-          config.rampUp = firstDuration;
+        const durationMatch = /duration:\s*['"`](\d+)s['"`]/.exec(scriptCode);
+        if (durationMatch) {
+          config.duration = Number.parseInt(durationMatch[1]);
+        }
+        config.rampUp = 0;
+      } else {
+        // Check for ramping-vus executor or stages
+        const targetMatch = /target:\s*(\d+)/.exec(scriptCode);
+        if (targetMatch) {
+          config.vusers = Number.parseInt(targetMatch[1]);
+        }
+
+        const durationMatches = scriptCode.matchAll(/duration:\s*['"`](\d+)s['"`]/g);
+        let totalDuration = 0;
+        let firstDuration = 0;
+        let index = 0;
+        for (const match of durationMatches) {
+          const dur = Number.parseInt(match[1]);
+          if (index === 0) {
+            firstDuration = dur;
+          }
+          totalDuration += dur;
+          index++;
+        }
+        if (totalDuration > 0) {
+          config.duration = totalDuration;
+          if (firstDuration > 0 && index > 1) {
+            config.rampUp = firstDuration;
+          }
         }
       }
 
