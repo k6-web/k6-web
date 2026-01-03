@@ -37,7 +37,10 @@ export const TestDetail = () => {
   if (error) return <div style={{color: 'red'}}>{t('common.error')}: {error}</div>;
   if (!testInfo || !testId) return <div>{t('testList.testNotFound')}</div>;
 
-  const timeSeriesData = testInfo.status === 'running' ? livePerformanceData : [];
+  // Use live data for running tests, snapshot for completed tests
+  const timeSeriesData = testInfo.status === 'running'
+    ? livePerformanceData
+    : (testInfo.timeSeriesSnapshot || []);
 
   return (
     <div>

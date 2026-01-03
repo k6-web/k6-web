@@ -7,6 +7,7 @@ import {TestStatus} from '@domains/test/test-enums';
 import {TestResultRepository} from '@domains/results';
 import {LogEntry, LogListener, TestInfo, TestMetadata} from '@domains/test/test-types';
 import {K6Executor} from './k6-executor';
+import {parseK6StatusLine, calculateTPS, sampleDataPoints} from './k6-parser';
 
 /**
  * Local k6 executor that runs tests on the same machine using the k6 CLI.
@@ -61,6 +62,7 @@ export class K6LocalExecutor implements K6Executor {
       logListeners: [],
       name: metadata.name,
       config: metadata.config,
+      timeSeriesData: [],
     };
 
     this.runningTests.set(testId, testInfo);
@@ -131,12 +133,22 @@ export class K6LocalExecutor implements K6Executor {
     const {process: k6Process} = testInfo;
 
     k6Process.stdout?.on('data', (data: Buffer) => {
+      const message = data.toString();
       const logEntry: LogEntry = {
         type: 'stdout',
         timestamp: Date.now(),
-        message: data.toString(),
+        message,
       };
       testInfo.logs.push(logEntry);
+
+      // Parse time-series data from k6 status lines
+      const lines = message.split('\n');
+      for (const line of lines) {
+        const dataPoint = parseK6StatusLine(line);
+        if (dataPoint) {
+          testInfo.timeSeriesData.push(dataPoint);
+        }
+      }
 
       for (const listener of testInfo.logListeners) {
         listener(logEntry);
@@ -201,6 +213,16 @@ export class K6LocalExecutor implements K6Executor {
       logger.error(`Failed to read summary JSON: ${(err as Error).message}`);
     }
 
+    // Create time-series snapshot by sampling collected data
+    let timeSeriesSnapshot;
+    if (testInfo.timeSeriesData.length > 0) {
+      // Calculate TPS from completed iterations
+      const dataWithTPS = calculateTPS(testInfo.timeSeriesData);
+      // Sample to max 100 points to save storage
+      timeSeriesSnapshot = sampleDataPoints(dataWithTPS, 100);
+      logger.info(`Time-series snapshot created: ${timeSeriesSnapshot.length} points from ${testInfo.timeSeriesData.length} total`);
+    }
+
     const result = {
       testId,
       scriptId: testInfo.scriptId,
@@ -217,6 +239,7 @@ export class K6LocalExecutor implements K6Executor {
       logs: status === TestStatus.FAILED
         ? testInfo.logs.filter(log => log.type === 'stderr' || log.type === 'error')
         : undefined,
+      timeSeriesSnapshot,
     };
 
     // Save test result and cleanup history asynchronously
