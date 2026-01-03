@@ -47,7 +47,6 @@ export const NewTest = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [saveAsScript, setSaveAsScript] = useState(searchParams.get('saveScript') === 'true');
-  const [runTestAfterSave, setRunTestAfterSave] = useState(true);
   const [scriptId, setScriptId] = useState('');
   const [scriptDescription, setScriptDescription] = useState('');
   const [scriptTags, setScriptTags] = useState('');
@@ -85,17 +84,26 @@ export const NewTest = () => {
 
   // Load copied script from location state
   useEffect(() => {
-    const state = location.state as { copiedScript?: {
+    const state = location.state as {
+      copiedScript?: {
         script: string;
         config?: any;
         description?: string;
         tags?: string[];
         folderId?: string;
         isDynamic?: boolean;
-      }} | null;
+      }
+    } | null;
 
     if (state?.copiedScript) {
-      const { script: copiedScriptContent, config, description, tags, folderId: copiedFolderId, isDynamic } = state.copiedScript;
+      const {
+        script: copiedScriptContent,
+        config,
+        description,
+        tags,
+        folderId: copiedFolderId,
+        isDynamic
+      } = state.copiedScript;
 
       setScript(copiedScriptContent);
       setSaveAsScript(true);
@@ -255,12 +263,6 @@ export const NewTest = () => {
           ...(scriptTags && {tags: scriptTags.split(',').map(t => t.trim()).filter(t => t)})
         });
         savedScriptId = savedScript.scriptId;
-
-        // If not running test after save, navigate to script detail page
-        if (!runTestAfterSave) {
-          navigate(`/scripts/${savedScriptId}`);
-          return;
-        }
       }
 
       // Run test after saving script (or directly if not saving)
@@ -741,7 +743,11 @@ export const NewTest = () => {
                 >
                   {loading ? `🚀 ${t('newTest.startingTest')}` : `💾 ${t('newTest.saveScriptAndRunTest')}`}
                 </Button>
-                <div style={{fontSize: 'clamp(0.7rem, 1.8vw, 0.8rem)', color: '#6b7280', textAlign: 'center', paddingX: '0.5rem'}}>
+                <div style={{
+                  fontSize: 'clamp(0.7rem, 1.8vw, 0.8rem)',
+                  color: '#6b7280',
+                  textAlign: 'center',
+                }}>
                   {t('newTest.saveScriptAndRunTestDescription')}
                 </div>
               </div>
@@ -761,7 +767,11 @@ export const NewTest = () => {
                 >
                   {loading ? `🚀 ${t('newTest.startingTest')}` : `💾 ${t('newTest.saveScriptOnly')}`}
                 </Button>
-                <div style={{fontSize: 'clamp(0.7rem, 1.8vw, 0.8rem)', color: '#6b7280', textAlign: 'center', paddingX: '0.5rem'}}>
+                <div style={{
+                  fontSize: 'clamp(0.7rem, 1.8vw, 0.8rem)',
+                  color: '#6b7280',
+                  textAlign: 'center',
+                }}>
                   {t('newTest.saveScriptOnlyDescription')}
                 </div>
               </div>
