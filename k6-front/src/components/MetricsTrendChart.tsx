@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import {CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
+import {CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, YAxis} from 'recharts';
 import type {Test} from '../types/test';
 
 interface MetricsTrendChartProps {
@@ -110,10 +110,6 @@ export const MetricsTrendChart = ({tests}: MetricsTrendChartProps) => {
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={chartData} margin={{top: 5, right: 30, left: 20, bottom: 5}}>
           <CartesianGrid strokeDasharray="3 3"/>
-          <XAxis
-            dataKey="name"
-            label={{value: 'Test Execution', position: 'insideBottom', offset: -5}}
-          />
           <YAxis
             label={{value: `${config.label} (${config.unit})`, angle: -90, position: 'insideLeft'}}
           />

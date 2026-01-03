@@ -83,6 +83,24 @@ export const ScriptDetail = () => {
     });
   };
 
+  const handleDelete = async () => {
+    if (!scriptId || !script) return;
+    if (!confirm(t('scriptDetail.confirmDelete'))) return;
+
+    try {
+      await scriptApi.deleteScript(scriptId);
+      alert(t('scriptDetail.scriptDeleted'));
+      // 폴더가 있으면 폴더 페이지로, 없으면 스크립트 목록 페이지로 이동
+      if (script.folderId) {
+        navigate(`/folders/${script.folderId}`);
+      } else {
+        navigate('/scripts');
+      }
+    } catch (err) {
+      alert(t('scriptDetail.failedToDelete'));
+    }
+  };
+
   const extractMetrics = (test: Test) => {
     const summary = test.summary;
     if (!summary?.metrics) {
@@ -123,7 +141,7 @@ export const ScriptDetail = () => {
             <h1 style={{margin: '0 0 0.5rem 0'}}>{script.scriptId}</h1>
             <p style={{margin: 0, color: '#6b7280'}}>{script.description || 'No description'}</p>
           </div>
-          <div style={{display: 'flex', gap: '0.5rem'}}>
+          <div style={{display: 'flex', gap: '0.5rem', flexWrap: 'wrap'}}>
             <Button
               variant="purple"
               onClick={handleShare}
@@ -147,10 +165,26 @@ export const ScriptDetail = () => {
                 border: 'none',
                 borderRadius: '4px',
                 cursor: 'pointer',
-                fontWeight: 'bold'
+                fontWeight: 'bold',
+                fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'
               }}
             >
               {t('scriptDetail.runTest')}
+            </button>
+            <button
+              onClick={handleDelete}
+              style={{
+                padding: '0.5rem 1rem',
+                backgroundColor: '#ef4444',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'
+              }}
+            >
+              🗑️ {t('scriptDetail.deleteScript')}
             </button>
           </div>
         </div>

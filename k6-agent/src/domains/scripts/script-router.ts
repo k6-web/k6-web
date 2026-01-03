@@ -48,4 +48,10 @@ scriptRouter.get('/:scriptId/history', asyncHandler(async (req, res) => {
   res.json(response);
 }));
 
+scriptRouter.delete('/:scriptId', asyncHandler(async (req, res) => {
+  const {scriptId} = req.params;
+  scriptService.deleteScript(scriptId);
+  res.status(204).send();
+}));
+
 export default scriptRouter;

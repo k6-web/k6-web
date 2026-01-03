@@ -13,6 +13,7 @@
     "delete": "Delete",
     "edit": "Edit",
     "close": "Close",
+    "start": "Start",
     "actions": "Actions",
     "status": "Status",
     "name": "Name",
@@ -38,7 +39,7 @@
     "viewDetails": "View Details"
   },
   "newTest": {
-    "title": "Create New Test",
+    "title": "New Test",
     "recentTests": "Load Recent Test Scripts",
     "recentTestsTooltip": "View and load your 5 most recent test scripts to quickly re-run or modify them",
     "quickLoadTooltip": "Quickly load your recent test scripts!",
@@ -82,6 +83,7 @@
   "httpConfig": {
     "title": "Quick Start",
     "testName": "Test Name (optional)",
+    "testNameOptionalInfo": "If you don't enter a test name, it will be generated automatically.",
     "testNamePlaceholder": "e.g., Homepage Load Test",
     "url": "Target URL",
     "urlPlaceholder": "https://api.example.com/endpoint",
@@ -163,7 +165,8 @@
     "createFirstScript": "Create your first script",
     "scriptName": "Script Name",
     "lastRun": "Last Run",
-    "runScript": "Run Script",
+    "runScript": "Run",
+    "viewDetails": "Details",
     "editScript": "Edit Script",
     "deleteScript": "Delete Script",
     "copyScript": "Copy Script",

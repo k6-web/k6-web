@@ -6,7 +6,7 @@ interface TestTableProps {
   tests: Test[];
   expandedTests: Set<string>;
   onToggleExpand: (testId: string) => void;
-  onRerun: (testId: string) => void;
+  onRerun?: (testId: string) => void;
 }
 
 export const TestTable = ({tests, expandedTests, onToggleExpand, onRerun}: TestTableProps) => {

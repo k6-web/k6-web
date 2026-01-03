@@ -43,8 +43,8 @@ export const scriptApi = {
     await api.delete(`/v1/scripts/${scriptId}`);
   },
 
-  runScript: async (scriptId: string, config?: K6TestConfig): Promise<RunTestResponse> => {
-    const response = await api.post<RunTestResponse>(`/v1/scripts/${scriptId}/run`, {config});
+  runScript: async (scriptId: string, options?: { config?: K6TestConfig; name?: string }): Promise<RunTestResponse> => {
+    const response = await api.post<RunTestResponse>(`/v1/scripts/${scriptId}/run`, options);
     return response.data;
   },
 

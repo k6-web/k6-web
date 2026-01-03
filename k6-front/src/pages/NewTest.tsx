@@ -76,6 +76,10 @@ export const NewTest = () => {
   const [recentTests, setRecentTests] = useState<Test[]>([]);
   const [loadingRecentTests, setLoadingRecentTests] = useState(false);
 
+  const [showTestNameModal, setShowTestNameModal] = useState(false);
+  const [testNameInput, setTestNameInput] = useState('');
+  const [pendingAction, setPendingAction] = useState<boolean | null>(null);
+
   const [headerKey, setHeaderKey] = useState('');
   const [headerValue, setHeaderValue] = useState('');
 
@@ -275,6 +279,80 @@ export const NewTest = () => {
     }
   };
 
+  const handleButtonClick = (shouldRunTest: boolean) => {
+    // 테스트를 실행하는 경우에만 테스트 이름 입력 모달 표시
+    if (!saveAsScript || shouldRunTest) {
+      setPendingAction(shouldRunTest);
+      setTestNameInput(httpConfig.name || '');
+      setShowTestNameModal(true);
+    } else {
+      // 스크립트만 저장하는 경우 바로 실행
+      handleSubmitWithAction(shouldRunTest);
+    }
+  };
+
+  const handleTestNameConfirm = () => {
+    setShowTestNameModal(false);
+    // 입력받은 테스트 이름을 직접 전달
+    handleSubmitWithAction(pendingAction === true, testNameInput);
+  };
+
+  const handleSubmitWithAction = async (shouldRunTest: boolean, testName?: string) => {
+    if (!validate(script)) {
+      setError(t('newTest.syntaxError'));
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      let savedScriptId: string | undefined;
+
+      if (saveAsScript) {
+        if (!folderId) {
+          setError(t('newTest.folderRequired'));
+          setLoading(false);
+          return;
+        }
+
+        const trimmedScriptId = scriptId.trim();
+        const trimmedDescription = scriptDescription.trim();
+        const scriptName = httpConfig.name || `Script ${new Date().toLocaleString()}`;
+
+        const savedScript = await folderApi.createScript(folderId, {
+          ...(trimmedScriptId && {scriptId: trimmedScriptId}),
+          name: scriptName,
+          script: script,
+          config: httpConfig,
+          ...(trimmedDescription && {description: trimmedDescription}),
+          ...(scriptTags && {tags: scriptTags.split(',').map(t => t.trim()).filter(t => t)})
+        });
+        savedScriptId = savedScript.scriptId;
+
+        // If not running test after save, navigate to script detail page
+        if (!shouldRunTest) {
+          navigate(`/scripts/${savedScriptId}`);
+          return;
+        }
+      }
+
+      // Run test after saving script (or directly if not saving)
+      const result = await k6Api.runTest(script, {
+        name: testName || httpConfig.name,
+        config: httpConfig,
+        ...(savedScriptId && {scriptId: savedScriptId})
+      });
+      navigate(`/tests/${result.testId}`);
+    } catch (err: any) {
+      const errorMessage = err?.response?.data?.error || err?.message || 'Failed to start test';
+      setError(errorMessage);
+      window.scrollTo({top: 0, behavior: 'smooth'});
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleAddHeader = () => {
     if (headerKey && headerValue) {
       const newHeaders = {...httpConfig.headers, [headerKey]: headerValue};
@@ -376,37 +454,6 @@ export const NewTest = () => {
           </InfoBox>
         )}
 
-        {/* 테스트 이름 - 공통 필드 */}
-        <div style={{
-          backgroundColor: 'white',
-          padding: '1.5rem',
-          borderRadius: '8px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          marginBottom: '1.5rem'
-        }}>
-          <div>
-            <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', fontSize: '1rem'}}>
-              {t('httpConfig.testName')}
-            </label>
-            <input
-              type="text"
-              value={httpConfig.name}
-              onChange={(e) => handleConfigChange({name: e.target.value.slice(0, 50)})}
-              placeholder={t('httpConfig.testNamePlaceholder')}
-              maxLength={50}
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                border: '1px solid #d1d5db',
-                borderRadius: '4px',
-                fontSize: '1rem'
-              }}
-            />
-            <div style={{fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem'}}>
-              {httpConfig.name?.length || 0}/50 characters
-            </div>
-          </div>
-        </div>
 
         <div style={{
           display: 'grid',
@@ -571,26 +618,6 @@ export const NewTest = () => {
                 />
               </div>
 
-              <div style={{
-                marginTop: '1rem',
-                paddingTop: '1rem',
-                borderTop: '1px solid #e5e7eb'
-              }}>
-                <label style={{display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer'}}>
-                  <input
-                    type="checkbox"
-                    checked={runTestAfterSave}
-                    onChange={(e) => setRunTestAfterSave(e.target.checked)}
-                    style={{width: '16px', height: '16px'}}
-                  />
-                  <span style={{fontSize: '0.875rem', fontWeight: 'bold'}}>
-                    {t('newTest.runTestAfterSave')}
-                  </span>
-                </label>
-                <p style={{margin: '0.25rem 0 0 1.5rem', fontSize: '0.75rem', color: '#6b7280'}}>
-                  {t('newTest.runTestAfterSaveDescription')}
-                </p>
-              </div>
             </div>
           )}
 
@@ -693,32 +720,72 @@ export const NewTest = () => {
           boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
           textAlign: 'center'
         }}>
-          <Button
-            type="submit"
-            disabled={loading}
-            style={{
-              padding: '1rem 2rem',
-              fontSize: 'clamp(1rem, 3vw, 1.125rem)',
-              width: '100%',
-              maxWidth: '300px',
-              boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-            }}
-          >
-            {loading
-              ? `🚀 ${t('newTest.startingTest')}`
-              : saveAsScript
-                ? runTestAfterSave
-                  ? `💾 ${t('newTest.saveScriptAndRunTest')}`
-                  : `💾 ${t('newTest.saveScriptOnly')}`
-                : `🚀 ${t('newTest.startTest')}`}
-          </Button>
-          <div style={{marginTop: '0.75rem', fontSize: 'clamp(0.75rem, 2vw, 0.875rem)', color: '#6b7280'}}>
-            {saveAsScript
-              ? runTestAfterSave
-                ? t('newTest.saveScriptAndRunTestDescription')
-                : t('newTest.saveScriptOnlyDescription')
-              : t('newTest.startTestDescription')}
-          </div>
+          {saveAsScript ? (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+              gap: '1rem',
+              width: '100%'
+            }}>
+              <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
+                <Button
+                  type="button"
+                  onClick={() => handleButtonClick(true)}
+                  disabled={loading}
+                  style={{
+                    padding: '1rem 1.5rem',
+                    fontSize: 'clamp(0.875rem, 2.5vw, 1rem)',
+                    width: '100%',
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                  }}
+                >
+                  {loading ? `🚀 ${t('newTest.startingTest')}` : `💾 ${t('newTest.saveScriptAndRunTest')}`}
+                </Button>
+                <div style={{fontSize: 'clamp(0.7rem, 1.8vw, 0.8rem)', color: '#6b7280', textAlign: 'center', paddingX: '0.5rem'}}>
+                  {t('newTest.saveScriptAndRunTestDescription')}
+                </div>
+              </div>
+
+              <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
+                <Button
+                  type="button"
+                  onClick={() => handleButtonClick(false)}
+                  disabled={loading}
+                  variant="secondary"
+                  style={{
+                    padding: '1rem 1.5rem',
+                    fontSize: 'clamp(0.875rem, 2.5vw, 1rem)',
+                    width: '100%',
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                  }}
+                >
+                  {loading ? `🚀 ${t('newTest.startingTest')}` : `💾 ${t('newTest.saveScriptOnly')}`}
+                </Button>
+                <div style={{fontSize: 'clamp(0.7rem, 1.8vw, 0.8rem)', color: '#6b7280', textAlign: 'center', paddingX: '0.5rem'}}>
+                  {t('newTest.saveScriptOnlyDescription')}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div style={{width: '100%'}}>
+              <Button
+                type="button"
+                onClick={() => handleButtonClick(true)}
+                disabled={loading}
+                style={{
+                  padding: '1rem 2rem',
+                  fontSize: 'clamp(1rem, 3vw, 1.125rem)',
+                  width: '100%',
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                }}
+              >
+                {loading ? `🚀 ${t('newTest.startingTest')}` : `🚀 ${t('newTest.startTest')}`}
+              </Button>
+              <div style={{marginTop: '0.75rem', fontSize: 'clamp(0.75rem, 2vw, 0.875rem)', color: '#6b7280'}}>
+                {t('newTest.startTestDescription')}
+              </div>
+            </div>
+          )}
         </div>
       </form>
 
@@ -729,6 +796,91 @@ export const NewTest = () => {
         onClose={() => setShowRecentTests(false)}
         onLoadTest={handleLoadRecentTest}
       />
+
+      {/* 테스트 이름 입력 모달 */}
+      {showTestNameModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: '2rem',
+            borderRadius: '8px',
+            maxWidth: '500px',
+            width: '90%'
+          }}>
+            <h2 style={{marginTop: 0}}>{t('httpConfig.testName')}</h2>
+            <p style={{margin: '0 0 1rem 0', fontSize: '0.875rem', color: '#6b7280'}}>
+              {t('httpConfig.testNameOptionalInfo')}
+            </p>
+            <div style={{marginBottom: '1.5rem'}}>
+              <input
+                type="text"
+                value={testNameInput}
+                onChange={(e) => setTestNameInput(e.target.value.slice(0, 50))}
+                placeholder={t('httpConfig.testNamePlaceholder')}
+                maxLength={50}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '4px',
+                  fontSize: '1rem'
+                }}
+                autoFocus
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleTestNameConfirm();
+                  }
+                }}
+              />
+              <div style={{fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem'}}>
+                {testNameInput?.length || 0}/50 characters
+              </div>
+            </div>
+            <div style={{display: 'flex', gap: '0.5rem', justifyContent: 'flex-end'}}>
+              <button
+                type="button"
+                onClick={() => setShowTestNameModal(false)}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: '#6b7280',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={handleTestNameConfirm}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: '#3b82f6',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontWeight: 'bold'
+                }}
+              >
+                {t('common.start')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

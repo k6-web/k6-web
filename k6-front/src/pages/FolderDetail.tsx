@@ -20,6 +20,9 @@ export const FolderDetail = () => {
   const [folderTests, setFolderTests] = useState<Test[]>([]);
   const [expandedTests, setExpandedTests] = useState<Set<string>>(new Set());
   const [showLastScriptTooltip, setShowLastScriptTooltip] = useState(false);
+  const [showTestNameModal, setShowTestNameModal] = useState(false);
+  const [testNameInput, setTestNameInput] = useState('');
+  const [pendingScriptId, setPendingScriptId] = useState<string | null>(null);
 
   const MAX_SCRIPTS_PER_FOLDER = 30;
 
@@ -111,26 +114,29 @@ export const FolderDetail = () => {
     }
   }, [folderData]);
 
-  const handleDelete = async (scriptId: string) => {
-    if (!folderId) return;
-    if (!confirm(t('folderDetail.confirmDeleteScript'))) return;
-
-    try {
-      await folderApi.deleteScript(folderId, scriptId);
-      fetchFolderData();
-    } catch (err) {
-      alert(t('folderDetail.failedToDeleteScript'));
-    }
+  const handleRun = (scriptId: string) => {
+    setPendingScriptId(scriptId);
+    setTestNameInput('');
+    setShowTestNameModal(true);
   };
 
-  const handleRun = async (scriptId: string) => {
-    if (!confirm(t('folderDetail.confirmRunScript'))) return;
+  const handleTestNameConfirm = async () => {
+    if (!pendingScriptId) return;
+
+    setShowTestNameModal(false);
+
+    if (!confirm(t('folderDetail.confirmRunScript'))) {
+      setPendingScriptId(null);
+      return;
+    }
 
     try {
-      const result = await scriptApi.runScript(scriptId);
+      const result = await scriptApi.runScript(pendingScriptId, testNameInput ? {name: testNameInput} : undefined);
       navigate(`/tests/${result.testId}`);
     } catch (err) {
       alert(t('folderDetail.failedToRunScript'));
+    } finally {
+      setPendingScriptId(null);
     }
   };
 
@@ -165,23 +171,6 @@ export const FolderDetail = () => {
       }
       return newSet;
     });
-  };
-
-  const handleRerun = async (testId: string) => {
-    const test = folderTests.find(t => t.testId === testId);
-    if (!test?.scriptId) {
-      alert(t('testList.noScriptAvailable'));
-      return;
-    }
-
-    if (!confirm(t('folderDetail.confirmRerunTest'))) return;
-
-    try {
-      const result = await scriptApi.runScript(test.scriptId);
-      navigate(`/tests/${result.testId}`);
-    } catch (err) {
-      alert(t('folderDetail.failedToRunScript'));
-    }
   };
 
   if (loading) return <div>{t('common.loading')}</div>;
@@ -384,34 +373,43 @@ export const FolderDetail = () => {
                     {new Date(script.updatedAt).toLocaleString()}
                   </td>
                   <td style={{padding: '0.75rem'}} onClick={(e) => e.stopPropagation()}>
-                    <div style={{display: 'flex', gap: '0.5rem', justifyContent: 'center'}}>
+                    <div style={{
+                      display: 'flex',
+                      gap: '0.25rem',
+                      justifyContent: 'center',
+                      flexWrap: 'wrap'
+                    }}>
+                      <Link
+                        to={`/scripts/${script.scriptId}`}
+                        style={{
+                          padding: '0.25rem 0.5rem',
+                          backgroundColor: '#8b5cf6',
+                          color: 'white',
+                          textDecoration: 'none',
+                          borderRadius: '4px',
+                          fontSize: '0.75rem',
+                          display: 'inline-block',
+                          whiteSpace: 'nowrap'
+                        }}
+                        title={t('scriptDetail.viewDetails')}
+                      >
+                        {t('scriptDetail.viewDetails')}
+                      </Link>
                       <button
                         onClick={() => handleRun(script.scriptId)}
                         style={{
-                          padding: '0.375rem 0.75rem',
+                          padding: '0.25rem 0.5rem',
                           backgroundColor: '#3b82f6',
                           color: 'white',
                           border: 'none',
                           borderRadius: '4px',
                           cursor: 'pointer',
-                          fontSize: '0.875rem'
+                          fontSize: '0.75rem',
+                          whiteSpace: 'nowrap'
                         }}
+                        title={t('folderDetail.runScript')}
                       >
                         {t('folderDetail.runScript')}
-                      </button>
-                      <button
-                        onClick={() => handleDelete(script.scriptId)}
-                        style={{
-                          padding: '0.375rem 0.75rem',
-                          backgroundColor: '#ef4444',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          fontSize: '0.875rem'
-                        }}
-                      >
-                        {t('common.delete')}
                       </button>
                     </div>
                   </td>
@@ -431,8 +429,95 @@ export const FolderDetail = () => {
             tests={folderTests}
             expandedTests={expandedTests}
             onToggleExpand={handleToggleExpand}
-            onRerun={handleRerun}
           />
+        </div>
+      )}
+
+      {/* 테스트 이름 입력 모달 */}
+      {showTestNameModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: '2rem',
+            borderRadius: '8px',
+            maxWidth: '500px',
+            width: '90%'
+          }}>
+            <h2 style={{marginTop: 0}}>{t('httpConfig.testName')}</h2>
+            <p style={{margin: '0 0 1rem 0', fontSize: '0.875rem', color: '#6b7280'}}>
+              {t('httpConfig.testNameOptionalInfo')}
+            </p>
+            <div style={{marginBottom: '1.5rem'}}>
+              <input
+                type="text"
+                value={testNameInput}
+                onChange={(e) => setTestNameInput(e.target.value.slice(0, 50))}
+                placeholder={t('httpConfig.testNamePlaceholder')}
+                maxLength={50}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '4px',
+                  fontSize: '1rem'
+                }}
+                autoFocus
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleTestNameConfirm();
+                  }
+                }}
+              />
+              <div style={{fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem'}}>
+                {testNameInput?.length || 0}/50 characters
+              </div>
+            </div>
+            <div style={{display: 'flex', gap: '0.5rem', justifyContent: 'flex-end'}}>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowTestNameModal(false);
+                  setPendingScriptId(null);
+                }}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: '#6b7280',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={handleTestNameConfirm}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: '#3b82f6',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontWeight: 'bold'
+                }}
+              >
+                {t('common.start')}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

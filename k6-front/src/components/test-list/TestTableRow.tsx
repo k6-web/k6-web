@@ -8,7 +8,7 @@ interface TestTableRowProps {
   test: Test;
   isExpanded: boolean;
   onToggleExpand: (testId: string) => void;
-  onRerun: (testId: string) => void;
+  onRerun?: (testId: string) => void;
 }
 
 const getTPS = (summary?: K6Summary): string => {
@@ -112,7 +112,7 @@ export const TestTableRow = ({test, isExpanded, onToggleExpand, onRerun}: TestTa
             >
               {t('scriptDetail.viewDetails')}
             </Link>
-            {test.status !== 'running' && (
+            {onRerun && test.status !== 'running' && (
               <button
                 onClick={() => onRerun(test.testId)}
                 style={{
@@ -199,20 +199,22 @@ export const TestTableRow = ({test, isExpanded, onToggleExpand, onRerun}: TestTa
               >
                 {t('folderList.viewFolder')}
               </Link>
-              <button
-                onClick={() => onRerun(test.testId)}
-                style={{
-                  padding: '0.5rem 1rem',
-                  backgroundColor: '#10b981',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  fontSize: '0.875rem',
-                  cursor: 'pointer'
-                }}
-              >
-                {t('testList.rerun')}
-              </button>
+              {onRerun && (
+                <button
+                  onClick={() => onRerun(test.testId)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: '#10b981',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    fontSize: '0.875rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {t('testList.rerun')}
+                </button>
+              )}
             </div>
           </td>
         </tr>
