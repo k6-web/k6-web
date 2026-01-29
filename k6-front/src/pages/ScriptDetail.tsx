@@ -55,11 +55,32 @@ export const ScriptDetail = () => {
 
   const handleShare = () => {
     const url = window.location.href;
-    navigator.clipboard.writeText(url).then(() => {
+
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(url).then(() => {
+        alert(t('scriptDetail.copiedToClipboard'));
+      }).catch(() => {
+        fallbackCopy(url);
+      });
+    } else {
+      fallbackCopy(url);
+    }
+  };
+
+  const fallbackCopy = (text: string) => {
+    try {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
       alert(t('scriptDetail.copiedToClipboard'));
-    }).catch(() => {
+    } catch {
       alert(t('scriptDetail.failedToShare'));
-    });
+    }
   };
 
   const handleCopy = () => {
