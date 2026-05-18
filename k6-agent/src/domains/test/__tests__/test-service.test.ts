@@ -28,6 +28,7 @@ describe('TestService', () => {
       getAllRunningTests: jest.fn(() => new Map()),
       addLogListener: jest.fn(),
       removeLogListener: jest.fn(),
+      waitForTest: jest.fn(),
     } as jest.Mocked<K6Executor>;
 
     testService = new TestService(mockRepository, mockExecutor);

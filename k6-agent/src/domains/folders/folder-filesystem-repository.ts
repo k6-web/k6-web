@@ -14,7 +14,7 @@ export class FolderFilesystemRepository implements FolderRepository {
 
   async save(folder: Folder): Promise<void> {
     const folderFile = path.join(this.foldersDir, `${folder.folderId}.json`);
-    await fs.writeFile(folderFile, JSON.stringify(folder, null, 2));
+    await fs.writeFile(folderFile, JSON.stringify(folder));
     logger.info(`Saved folder: ${folder.folderId}`);
   }
 

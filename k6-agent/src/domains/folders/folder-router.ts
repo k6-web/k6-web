@@ -85,6 +85,7 @@ folderRouter.post('/:folderId/run-all', asyncHandler(async (req, res) => {
 
   // 백그라운드에서 순차 실행
   setImmediate(async () => {
+    const logger = require('@shared/logger/logger').default;
     for (const script of scripts) {
       try {
         const testId = testService.createTest(script.script, {
@@ -92,24 +93,8 @@ folderRouter.post('/:folderId/run-all', asyncHandler(async (req, res) => {
           scriptId: script.scriptId,
           name: `${script.scriptId}`,
         });
-
-        // 테스트 완료 대기
-        await new Promise(resolve => {
-          const checkInterval = setInterval(() => {
-            try {
-              const test = testService.getTest(testId);
-              if (test.status === 'completed' || test.status === 'failed' || test.status === 'stopped') {
-                clearInterval(checkInterval);
-                resolve(null);
-              }
-            } catch (err) {
-              clearInterval(checkInterval);
-              resolve(null);
-            }
-          }, 1000);
-        });
+        await testService.waitForTest(testId);
       } catch (err) {
-        const logger = require('@shared/logger/logger').default;
         logger.error(`Failed to run test for script ${script.scriptId}: ${(err as Error).message}`);
       }
     }

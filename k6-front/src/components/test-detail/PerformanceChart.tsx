@@ -8,7 +8,7 @@ interface PerformanceChartProps {
   isLive?: boolean;
 }
 
-const timeLabel = (t: (k: string) => string) => ({
+const timeLabel = () => ({
   value: `Time (s)`,
   position: 'insideBottomRight' as const,
   offset: -10,
@@ -45,7 +45,7 @@ export const PerformanceChart = ({data, isLive = false}: PerformanceChartProps) 
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={data} margin={chartMargin}>
             <CartesianGrid strokeDasharray="3 3"/>
-            <XAxis dataKey="time" label={timeLabel(t)}/>
+            <XAxis dataKey="time" label={timeLabel()}/>
             <YAxis label={{value: t('testDetail.vus'), angle: -90, position: 'insideLeft'}}/>
             <Tooltip formatter={(v: number) => [v, t('testDetail.vus')]} labelFormatter={(l) => `Time: ${l}s`}/>
             <Legend/>
@@ -59,7 +59,7 @@ export const PerformanceChart = ({data, isLive = false}: PerformanceChartProps) 
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={data} margin={chartMargin}>
             <CartesianGrid strokeDasharray="3 3"/>
-            <XAxis dataKey="time" label={timeLabel(t)}/>
+            <XAxis dataKey="time" label={timeLabel()}/>
             <YAxis label={{value: 'TPS', angle: -90, position: 'insideLeft'}}/>
             <Tooltip formatter={(v: number) => [v, 'TPS']} labelFormatter={(l) => `Time: ${l}s`}/>
             <Legend/>
@@ -74,9 +74,9 @@ export const PerformanceChart = ({data, isLive = false}: PerformanceChartProps) 
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={data} margin={chartMargin}>
               <CartesianGrid strokeDasharray="3 3"/>
-              <XAxis dataKey="time" label={timeLabel(t)}/>
+              <XAxis dataKey="time" label={timeLabel()}/>
               <YAxis label={{value: 'ms', angle: -90, position: 'insideLeft'}}/>
-              <Tooltip formatter={(v: number) => [`${v}ms`]} labelFormatter={(l) => `Time: ${l}s`}/>
+              <Tooltip formatter={(v: number, name: string) => [`${v}ms`, name]} labelFormatter={(l) => `Time: ${l}s`}/>
               <Legend/>
               <Line type="monotone" dataKey="latencyAvg" stroke="#3b82f6" strokeWidth={2} name="avg" dot={false} isAnimationActive={false}/>
             </LineChart>
@@ -90,7 +90,7 @@ export const PerformanceChart = ({data, isLive = false}: PerformanceChartProps) 
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={data.map(d => ({...d, errorRatePct: d.errorRate !== undefined ? Math.round(d.errorRate * 10000) / 100 : undefined}))} margin={chartMargin}>
               <CartesianGrid strokeDasharray="3 3"/>
-              <XAxis dataKey="time" label={timeLabel(t)}/>
+              <XAxis dataKey="time" label={timeLabel()}/>
               <YAxis unit="%" domain={[0, 'auto']} label={{value: '%', angle: -90, position: 'insideLeft'}}/>
               <Tooltip formatter={(v: number) => [`${v}%`, 'Error Rate']} labelFormatter={(l) => `Time: ${l}s`}/>
               <Legend/>

@@ -6,22 +6,25 @@ import {MAX_RESULT_FILES, RESULTS_DIR} from '@shared/configs';
 import {TestResult} from '@domains/test/test-types';
 import {TestResultRepository} from './test-result-repository';
 
-/**
- * FileSystem-base implementation of the test result repository.
- */
 export class TestResultFilesystemRepository implements TestResultRepository {
   private readonly resultsDir: string;
   private readonly maxResultFiles: number;
+  private saveCount = 0;
+  private readonly cleanupInterval: number;
 
-  constructor(resultsDir: string = RESULTS_DIR, maxResultFiles: number = MAX_RESULT_FILES) {
+  constructor(resultsDir: string = RESULTS_DIR, maxResultFiles: number = MAX_RESULT_FILES, cleanupInterval: number = 10) {
     this.resultsDir = resultsDir;
     this.maxResultFiles = maxResultFiles;
+    this.cleanupInterval = cleanupInterval;
   }
 
   async save(testId: string, result: TestResult): Promise<void> {
     const resultFile = path.join(this.resultsDir, `${testId}.json`);
-    await fs.writeFile(resultFile, JSON.stringify(result, null, 2));
-    await this.cleanupOldResults();
+    await fs.writeFile(resultFile, JSON.stringify(result));
+    this.saveCount++;
+    if (this.saveCount % this.cleanupInterval === 0) {
+      await this.cleanupOldResults();
+    }
   }
 
   findById(testId: string): TestResult | null {
@@ -71,10 +74,26 @@ export class TestResultFilesystemRepository implements TestResultRepository {
   }
 
   findByScriptId(scriptId: string): TestResult[] {
-    const allResults = this.findAll();
-    return allResults
-      .filter(result => result.scriptId === scriptId)
-      .sort((a, b) => b.startTime - a.startTime);
+    const results: TestResult[] = [];
+    try {
+      const files = fsSync.readdirSync(this.resultsDir);
+      for (const file of files) {
+        if (!file.endsWith('.json')) continue;
+        const resultFile = path.join(this.resultsDir, file);
+        try {
+          const content = fsSync.readFileSync(resultFile, 'utf8');
+          const result = JSON.parse(content) as TestResult;
+          if (result.scriptId === scriptId) {
+            results.push(result);
+          }
+        } catch {
+          // skip unreadable files
+        }
+      }
+    } catch (err) {
+      logger.error(`Failed to read test results: ${(err as Error).message}`);
+    }
+    return results.sort((a, b) => b.startTime - a.startTime);
   }
 
   async cleanupScriptHistory(scriptId: string, limit: number): Promise<void> {
@@ -93,30 +112,21 @@ export class TestResultFilesystemRepository implements TestResultRepository {
   private async cleanupOldResults(): Promise<void> {
     try {
       const files = await fs.readdir(this.resultsDir);
-      const fileStats = await Promise.all(
-        files
-          .filter(file => file.endsWith('.json'))
-          .map(async (file) => {
-            const filePath = path.join(this.resultsDir, file);
-            const stats = await fs.stat(filePath);
-            return {
-              name: file,
-              path: filePath,
-              mtime: stats.mtime.getTime(),
-            };
-          })
-      );
+      // Extract timestamp from filename pattern: test-{timestamp}-{random}.json
+      const jsonFiles = files
+        .filter(file => file.endsWith('.json'))
+        .map(file => {
+          const match = /^test-(\d+)-/.exec(file);
+          return {name: file, path: path.join(this.resultsDir, file), ts: match ? parseInt(match[1], 10) : 0};
+        })
+        .sort((a, b) => b.ts - a.ts);
 
-      const sortedFiles = fileStats.sort((a, b) => b.mtime - a.mtime);
-
-      if (sortedFiles.length > this.maxResultFiles) {
-        const filesToDelete = sortedFiles.slice(this.maxResultFiles);
-        await Promise.all(
-          filesToDelete.map(async (file) => {
-            await fs.unlink(file.path);
-            logger.info(`Deleted old result file: ${file.name}`);
-          })
-        );
+      if (jsonFiles.length > this.maxResultFiles) {
+        const filesToDelete = jsonFiles.slice(this.maxResultFiles);
+        await Promise.all(filesToDelete.map(async (file) => {
+          await fs.unlink(file.path);
+          logger.info(`Deleted old result file: ${file.name}`);
+        }));
         logger.info(`Cleaned up ${filesToDelete.length} old result file(s)`);
       }
     } catch (err) {

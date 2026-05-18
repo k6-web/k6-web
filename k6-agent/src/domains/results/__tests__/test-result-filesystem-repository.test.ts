@@ -80,7 +80,7 @@ describe('TestResultFilesystemRepository', () => {
     });
 
     it('should cleanup old results when max limit is reached', async () => {
-      const smallRepo = new TestResultFilesystemRepository(testResultsDir, 3);
+      const smallRepo = new TestResultFilesystemRepository(testResultsDir, 3, 1);
 
       for (let i = 1; i <= 5; i++) {
         const testResult: TestResult = {

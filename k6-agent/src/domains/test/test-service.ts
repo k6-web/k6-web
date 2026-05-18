@@ -128,6 +128,10 @@ export class TestService {
     }
   }
 
+  waitForTest(testId: string) {
+    return this.executor.waitForTest(testId);
+  }
+
   getExecutor(): K6Executor {
     return this.executor;
   }

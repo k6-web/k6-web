@@ -30,7 +30,7 @@ export class ScriptFilesystemRepository implements ScriptRepository {
 
     this.ensureFolderDir(script.folderId);
     const scriptFile = this.getFolderScriptPath(script.folderId, script.scriptId);
-    await fs.writeFile(scriptFile, JSON.stringify(script, null, 2));
+    await fs.writeFile(scriptFile, JSON.stringify(script));
     logger.info(`Saved script: ${script.scriptId} in folder: ${script.folderId}`);
   }
 
