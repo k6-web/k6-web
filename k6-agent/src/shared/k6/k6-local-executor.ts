@@ -1,4 +1,5 @@
 import {ChildProcess, spawn} from 'child_process';
+import {EventEmitter} from 'events';
 import fs from 'fs';
 import path from 'path';
 import logger from '@shared/logger/logger';
@@ -7,7 +8,9 @@ import {TestStatus} from '@domains/test/test-enums';
 import {TestResultRepository} from '@domains/results';
 import {LogEntry, LogListener, TestInfo, TestMetadata} from '@domains/test/test-types';
 import {K6Executor} from './k6-executor';
-import {parseK6StatusLine, calculateTPS, sampleDataPoints, parseK6JsonlFile} from './k6-parser';
+import {sampleDataPoints, parseK6JsonlFile} from './k6-parser';
+
+const MAX_LOG_ENTRIES = 500;
 
 /**
  * Local k6 executor that runs tests on the same machine using the k6 CLI.
@@ -17,6 +20,7 @@ export class K6LocalExecutor implements K6Executor {
   private readonly runningTests: Map<string, TestInfo>;
   private readonly repository: TestResultRepository;
   private readonly scriptsDir: string;
+  private readonly completionEmitter = new EventEmitter();
 
   constructor(repository: TestResultRepository, scriptsDir: string = SCRIPTS_DIR) {
     this.runningTests = new Map();
@@ -64,7 +68,6 @@ export class K6LocalExecutor implements K6Executor {
       logListeners: [],
       name: metadata.name,
       config: metadata.config,
-      timeSeriesData: [],
     };
 
     this.runningTests.set(testId, testInfo);
@@ -119,6 +122,16 @@ export class K6LocalExecutor implements K6Executor {
     return false;
   }
 
+  waitForTest(testId: string): Promise<TestStatus> {
+    const running = this.runningTests.get(testId);
+    if (!running) {
+      return Promise.resolve(TestStatus.COMPLETED);
+    }
+    return new Promise(resolve => {
+      this.completionEmitter.once(`done:${testId}`, resolve);
+    });
+  }
+
   removeLogListener(testId: string, listener: LogListener): boolean {
     const test = this.runningTests.get(testId);
     if (test) {
@@ -135,22 +148,15 @@ export class K6LocalExecutor implements K6Executor {
     const {process: k6Process} = testInfo;
 
     k6Process.stdout?.on('data', (data: Buffer) => {
-      const message = data.toString();
       const logEntry: LogEntry = {
         type: 'stdout',
         timestamp: Date.now(),
-        message,
+        message: data.toString(),
       };
-      testInfo.logs.push(logEntry);
-
-      // Parse time-series data from k6 status lines
-      const lines = message.split('\n');
-      for (const line of lines) {
-        const dataPoint = parseK6StatusLine(line);
-        if (dataPoint) {
-          testInfo.timeSeriesData.push(dataPoint);
-        }
+      if (testInfo.logs.length >= MAX_LOG_ENTRIES) {
+        testInfo.logs.shift();
       }
+      testInfo.logs.push(logEntry);
 
       for (const listener of testInfo.logListeners) {
         listener(logEntry);
@@ -163,6 +169,9 @@ export class K6LocalExecutor implements K6Executor {
         timestamp: Date.now(),
         message: data.toString(),
       };
+      if (testInfo.logs.length >= MAX_LOG_ENTRIES) {
+        testInfo.logs.shift();
+      }
       testInfo.logs.push(logEntry);
 
       for (const listener of testInfo.logListeners) {
@@ -228,16 +237,10 @@ export class K6LocalExecutor implements K6Executor {
     endTime: number,
     duration: number,
   ): Promise<void> {
-    // Create time-series snapshot: prefer JSONL metrics (includes latency/errorRate), fallback to stdout parsing
-    let timeSeriesSnapshot;
     const jsonlData = await parseK6JsonlFile(testInfo.metricsPath);
-    if (jsonlData.length > 0) {
-      timeSeriesSnapshot = sampleDataPoints(jsonlData, 100);
-      logger.info(`Time-series snapshot from JSONL: ${timeSeriesSnapshot.length} points`);
-    } else if (testInfo.timeSeriesData.length > 0) {
-      const dataWithTPS = calculateTPS(testInfo.timeSeriesData);
-      timeSeriesSnapshot = sampleDataPoints(dataWithTPS, 100);
-      logger.info(`Time-series snapshot from stdout: ${timeSeriesSnapshot.length} points`);
+    const timeSeriesSnapshot = jsonlData.length > 0 ? sampleDataPoints(jsonlData, 100) : undefined;
+    if (timeSeriesSnapshot) {
+      logger.info(`Time-series snapshot: ${timeSeriesSnapshot.length} points`);
     }
 
     const result = {
@@ -273,6 +276,7 @@ export class K6LocalExecutor implements K6Executor {
     this.repository.save(testId, result)
       .then(async () => {
         this.runningTests.delete(testId);
+        this.completionEmitter.emit(`done:${testId}`, status);
         this.cleanupTestFiles(scriptPath, testInfo.summaryPath, testInfo.metricsPath);
         if (result.scriptId) {
           await this.repository.cleanupScriptHistory(result.scriptId, 50);
@@ -281,6 +285,7 @@ export class K6LocalExecutor implements K6Executor {
       .catch(err => {
         logger.error(`Failed to save test result: ${(err as Error).message}`);
         this.runningTests.delete(testId);
+        this.completionEmitter.emit(`done:${testId}`, TestStatus.FAILED);
         this.cleanupTestFiles(scriptPath, testInfo.summaryPath, testInfo.metricsPath);
       });
   }
