@@ -4,9 +4,11 @@ import type {LogEntry} from "./log.ts";
 export type TestStatus = 'running' | 'completed' | 'failed' | 'stopped';
 
 export interface TimeSeriesDataPoint {
-  time: number;  // elapsed time in seconds
-  vus: number;   // virtual users
-  tps: number;   // transactions per second
+  time: number;
+  vus: number;
+  tps: number;
+  latencyAvg?: number;
+  errorRate?: number;
 }
 
 export interface Test {

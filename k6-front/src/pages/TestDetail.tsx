@@ -7,7 +7,6 @@ import {
   PerformanceChart,
   LiveLogsPanel,
   MetricsGrid,
-  SummaryDetails
 } from '../components/test-detail';
 import {useTestDetail} from '../hooks/useTestDetail';
 import {useLiveLogs} from '../hooks/useLiveLogs';
@@ -131,10 +130,7 @@ export const TestDetail = () => {
       )}
 
       {testInfo?.summary && (
-        <>
-          <MetricsGrid summary={testInfo.summary}/>
-          <SummaryDetails summary={testInfo.summary}/>
-        </>
+        <MetricsGrid summary={testInfo.summary}/>
       )}
     </div>
   );

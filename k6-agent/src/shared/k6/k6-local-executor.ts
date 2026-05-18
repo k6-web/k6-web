@@ -7,7 +7,7 @@ import {TestStatus} from '@domains/test/test-enums';
 import {TestResultRepository} from '@domains/results';
 import {LogEntry, LogListener, TestInfo, TestMetadata} from '@domains/test/test-types';
 import {K6Executor} from './k6-executor';
-import {parseK6StatusLine, calculateTPS, sampleDataPoints} from './k6-parser';
+import {parseK6StatusLine, calculateTPS, sampleDataPoints, parseK6JsonlFile} from './k6-parser';
 
 /**
  * Local k6 executor that runs tests on the same machine using the k6 CLI.
@@ -28,6 +28,7 @@ export class K6LocalExecutor implements K6Executor {
     const testId = `test-${Date.now()}-${Math.random().toString(36).substring(7)}`;
     const scriptPath = path.join(this.scriptsDir, `k6-script-${testId}.js`);
     const summaryPath = path.join(this.scriptsDir, `k6-summary-${testId}.json`);
+    const metricsPath = path.join(this.scriptsDir, `k6-metrics-${testId}.jsonl`);
 
     try {
       fs.writeFileSync(scriptPath, script);
@@ -38,7 +39,7 @@ export class K6LocalExecutor implements K6Executor {
 
     let k6Process: ChildProcess;
     try {
-      k6Process = spawn('k6', ['run', '--summary-export', summaryPath, scriptPath]);
+      k6Process = spawn('k6', ['run', '--summary-export', summaryPath, '--out', `json=${metricsPath}`, scriptPath]);
     } catch (err) {
       logger.error(`Failed to spawn k6 process: ${(err as Error).message}`);
       try {
@@ -58,6 +59,7 @@ export class K6LocalExecutor implements K6Executor {
       script,
       scriptPath,
       summaryPath,
+      metricsPath,
       logs: [],
       logListeners: [],
       name: metadata.name,
@@ -213,14 +215,29 @@ export class K6LocalExecutor implements K6Executor {
       logger.error(`Failed to read summary JSON: ${(err as Error).message}`);
     }
 
-    // Create time-series snapshot by sampling collected data
+    this.buildTimeSeriesAndSave(testId, testInfo, code, scriptPath, status, summary, endTime, duration);
+  }
+
+  private async buildTimeSeriesAndSave(
+    testId: string,
+    testInfo: TestInfo,
+    code: number | null,
+    scriptPath: string,
+    status: TestStatus,
+    summary: unknown,
+    endTime: number,
+    duration: number,
+  ): Promise<void> {
+    // Create time-series snapshot: prefer JSONL metrics (includes latency/errorRate), fallback to stdout parsing
     let timeSeriesSnapshot;
-    if (testInfo.timeSeriesData.length > 0) {
-      // Calculate TPS from completed iterations
+    const jsonlData = await parseK6JsonlFile(testInfo.metricsPath);
+    if (jsonlData.length > 0) {
+      timeSeriesSnapshot = sampleDataPoints(jsonlData, 100);
+      logger.info(`Time-series snapshot from JSONL: ${timeSeriesSnapshot.length} points`);
+    } else if (testInfo.timeSeriesData.length > 0) {
       const dataWithTPS = calculateTPS(testInfo.timeSeriesData);
-      // Sample to max 100 points to save storage
       timeSeriesSnapshot = sampleDataPoints(dataWithTPS, 100);
-      logger.info(`Time-series snapshot created: ${timeSeriesSnapshot.length} points from ${testInfo.timeSeriesData.length} total`);
+      logger.info(`Time-series snapshot from stdout: ${timeSeriesSnapshot.length} points`);
     }
 
     const result = {
@@ -242,17 +259,6 @@ export class K6LocalExecutor implements K6Executor {
       timeSeriesSnapshot,
     };
 
-    // Save test result and cleanup history asynchronously
-    this.repository.save(testId, result)
-      .then(async () => {
-        if (result.scriptId) {
-          await this.repository.cleanupScriptHistory(result.scriptId, 50);
-        }
-      })
-      .catch(err => {
-        logger.error(`Failed to save test result: ${(err as Error).message}`);
-      });
-
     const logEntry: LogEntry = {
       type: 'system',
       timestamp: Date.now(),
@@ -262,12 +268,24 @@ export class K6LocalExecutor implements K6Executor {
       listener(logEntry);
     }
 
-    // Cleanup files
-    this.cleanupTestFiles(scriptPath, testInfo.summaryPath);
-    this.runningTests.delete(testId);
+    // Save must complete before removing from runningTests to avoid a race
+    // where the frontend polls and finds neither running nor persisted result.
+    this.repository.save(testId, result)
+      .then(async () => {
+        this.runningTests.delete(testId);
+        this.cleanupTestFiles(scriptPath, testInfo.summaryPath, testInfo.metricsPath);
+        if (result.scriptId) {
+          await this.repository.cleanupScriptHistory(result.scriptId, 50);
+        }
+      })
+      .catch(err => {
+        logger.error(`Failed to save test result: ${(err as Error).message}`);
+        this.runningTests.delete(testId);
+        this.cleanupTestFiles(scriptPath, testInfo.summaryPath, testInfo.metricsPath);
+      });
   }
 
-  private cleanupTestFiles(scriptPath: string, summaryPath: string): void {
+  private cleanupTestFiles(scriptPath: string, summaryPath: string, metricsPath: string): void {
     try {
       fs.unlinkSync(scriptPath);
     } catch (err) {
@@ -280,6 +298,14 @@ export class K6LocalExecutor implements K6Executor {
       }
     } catch (err) {
       logger.error(`Failed to delete summary file: ${(err as Error).message}`);
+    }
+
+    try {
+      if (fs.existsSync(metricsPath)) {
+        fs.unlinkSync(metricsPath);
+      }
+    } catch (err) {
+      logger.error(`Failed to delete metrics file: ${(err as Error).message}`);
     }
   }
 }

@@ -5,4 +5,3 @@ export {MetricCard} from './MetricCard';
 export {TestHeader} from './TestHeader';
 export {ScriptDisplay} from './ScriptDisplay';
 export {MetricsGrid} from './MetricsGrid';
-export {SummaryDetails} from './SummaryDetails';

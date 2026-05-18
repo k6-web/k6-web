@@ -1,6 +1,13 @@
 import {LogListener, TestInfo, TestMetadata} from '@domains/test/test-types';
+import {TestStatus} from '@domains/test/test-enums';
 
 export interface K6Executor {
+  /**
+   * Subscribe to test completion events
+   * @param testId - The test identifier
+   * @returns Promise that resolves when the test reaches a terminal status
+   */
+  waitForTest(testId: string): Promise<TestStatus>;
 
   /**
    * Execute a k6 test script

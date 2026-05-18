@@ -18,9 +18,11 @@ export interface LogEntry {
 export type LogListener = (log: LogEntry) => void;
 
 export interface TimeSeriesDataPoint {
-  time: number;  // elapsed time in seconds
-  vus: number;   // virtual users
-  tps: number;   // transactions per second
+  time: number;         // elapsed time in seconds
+  vus: number;          // virtual users
+  tps: number;          // transactions per second
+  latencyAvg?: number;  // avg response time in ms
+  errorRate?: number;   // error rate 0~1
 }
 
 export interface TestInfo {
@@ -32,11 +34,11 @@ export interface TestInfo {
   script: string;
   scriptPath: string;
   summaryPath: string;
+  metricsPath: string;
   logs: LogEntry[];
   logListeners: LogListener[];
   name?: string;
   config?: K6TestConfig;
-  timeSeriesData: TimeSeriesDataPoint[];  // Collect during execution
 }
 
 export interface TestResult {
