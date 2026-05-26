@@ -52,4 +52,9 @@ export const scriptApi = {
     const response = await api.get<ScriptHistoryResponse>(`/v1/scripts/${scriptId}/history?limit=${limit}`);
     return response.data;
   },
+
+  convertPostman: async (collection: unknown, environment?: unknown): Promise<string> => {
+    const response = await api.post<{script: string}>('/v1/scripts/convert/postman', {collection, environment});
+    return response.data.script;
+  },
 };

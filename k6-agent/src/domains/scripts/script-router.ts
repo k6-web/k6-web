@@ -1,12 +1,18 @@
 import express from 'express';
 import {asyncHandler} from '@shared/http/async-handler';
 import {scriptService} from './script-service';
+import {scriptConverterService} from './script-converter-service';
 import {testService} from '@domains/test/test-service';
 import {RunScriptRequest} from './script-request';
 import {ScriptHistoryResponse, ScriptResponse} from './script-response';
 import {RunTestResponse} from '@domains/test/test-response';
 
 const scriptRouter = express.Router();
+
+scriptRouter.post('/convert/postman', asyncHandler(async (req, res) => {
+  const script = await scriptConverterService.convertPostman(req.body);
+  res.json({script});
+}));
 
 scriptRouter.get('/:scriptId', asyncHandler(async (req, res) => {
   const {scriptId} = req.params;
