@@ -36,6 +36,11 @@ export const useTestActions = (testId: string | undefined, testInfo: Test | null
 
     if (scriptToRerun) {
       sessionStorage.setItem('rerunScript', scriptToRerun);
+      if (testInfo.config) {
+        sessionStorage.setItem('rerunConfig', JSON.stringify(testInfo.config));
+      } else {
+        sessionStorage.removeItem('rerunConfig');
+      }
       navigate('/new-test');
     } else {
       alert('No script available to re-run');

@@ -258,7 +258,30 @@ export const NewTest = () => {
       const test = await k6Api.getTest(testId);
       if (test.script) {
         setScript(test.script);
-        updateConfigFromScript(test.script);
+        if (test.config) {
+          setHttpConfig({
+            url: test.config.url || '',
+            method: test.config.method || 'GET',
+            headers: test.config.headers || {},
+            body: test.config.body || '',
+            vusers: test.config.vusers || 1,
+            duration: test.config.duration || 10,
+            rampUp: test.config.rampUp || 0,
+            stages: test.config.stages || [
+              {duration: 30, target: 10},
+              {duration: 60, target: 10},
+              {duration: 30, target: 0}
+            ],
+            targetTps: test.config.targetTps || 10,
+            preAllocatedVUs: test.config.preAllocatedVUs || 10,
+            maxVUs: test.config.maxVUs || 20,
+            name: test.config.name || '',
+            failureThreshold: test.config.failureThreshold ?? 0.05,
+            template: test.config.template || 'constant-vus'
+          });
+        } else {
+          updateConfigFromScript(test.script);
+        }
         validate(test.script);
         setShowRecentTests(false);
         window.scrollTo({top: 0, behavior: 'smooth'});

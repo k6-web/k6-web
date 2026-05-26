@@ -76,11 +76,16 @@ export const TestList = () => {
       const result = await k6Api.getTest(testId);
       if (result?.script) {
         sessionStorage.setItem('rerunScript', result.script);
+        if (result.config) {
+          sessionStorage.setItem('rerunConfig', JSON.stringify(result.config));
+        } else {
+          sessionStorage.removeItem('rerunConfig');
+        }
         navigate('/new-test');
       } else {
         alert(t('testList.noScriptAvailable'));
       }
-    } catch (err) {
+    } catch {
       alert(t('testList.failedToLoadScript'));
     }
   };

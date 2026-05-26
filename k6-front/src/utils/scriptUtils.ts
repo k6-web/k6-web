@@ -199,7 +199,6 @@ export default function () {
   check(res, {
     'status is 2xx': (r) => r.status >= 200 && r.status < 300
   });
-  sleep(1);
 }
 `;
 
@@ -440,7 +439,6 @@ export const postmanCollectionToScript = (collection: PostmanCollection, config:
     check(res, {
       'status is 2xx': (r) => r.status >= 200 && r.status < 300,
     });
-    sleep(1);
   });`).join('\n\n');
 
   return `import http from 'k6/http';
