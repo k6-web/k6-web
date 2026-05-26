@@ -3,12 +3,15 @@ import {useLocation, useNavigate, useSearchParams} from 'react-router-dom';
 import {useTranslation} from 'react-i18next';
 import {k6Api} from '../apis/testApi.ts';
 import {folderApi} from '../apis/folderApi';
+import {scriptApi} from '../apis/scriptApi';
 import type {Test} from '../types/test.ts';
 import {HttpConfigForm, RecentTestsModal, ScriptEditor} from '../components/new-test';
 import {Button, InfoBox} from '../components/common';
 import {useScriptConfig} from '../hooks/useScriptConfig';
 import {useScriptValidation} from '../hooks/useScriptValidation';
 import {useTooltip} from '../hooks/useTooltip';
+import {curlToHttpConfig, getTemplateDefaults, httpConfigToScript, postmanCollectionToScript} from '../utils/scriptUtils';
+import type {K6ScriptTemplate, K6TestConfig} from '../types/k6';
 
 const DEFAULT_SCRIPT = `import http from 'k6/http';
 import { check } from 'k6';
@@ -41,6 +44,20 @@ export default function () {
   });
 }
 `;
+
+type ApiError = {
+  response?: {
+    data?: {
+      error?: string;
+    };
+  };
+  message?: string;
+};
+
+const getErrorMessage = (err: unknown, fallback: string) => {
+  const apiError = err as ApiError;
+  return apiError.response?.data?.error || apiError.message || fallback;
+};
 
 export const NewTest = () => {
   const {t} = useTranslation();
@@ -91,7 +108,7 @@ export const NewTest = () => {
     const state = location.state as {
       copiedScript?: {
         script: string;
-        config?: any;
+        config?: Partial<K6TestConfig>;
         description?: string;
         tags?: string[];
         folderId?: string;
@@ -138,8 +155,17 @@ export const NewTest = () => {
           vusers: config.vusers || 1,
           duration: config.duration || 10,
           rampUp: config.rampUp || 0,
+          stages: config.stages || [
+            {duration: 30, target: 10},
+            {duration: 60, target: 10},
+            {duration: 30, target: 0}
+          ],
+          targetTps: config.targetTps || 10,
+          preAllocatedVUs: config.preAllocatedVUs || 10,
+          maxVUs: config.maxVUs || 20,
           name: config.name || '',
-          failureThreshold: config.failureThreshold ?? 0.05
+          failureThreshold: config.failureThreshold ?? 0.05,
+          template: config.template || 'constant-vus'
         });
       } else {
         updateConfigFromScript(copiedScriptContent);
@@ -170,8 +196,17 @@ export const NewTest = () => {
             vusers: rerunConfig.vusers || 1,
             duration: rerunConfig.duration || 10,
             rampUp: rerunConfig.rampUp || 0,
+            stages: rerunConfig.stages || [
+              {duration: 30, target: 10},
+              {duration: 60, target: 10},
+              {duration: 30, target: 0}
+            ],
+            targetTps: rerunConfig.targetTps || 10,
+            preAllocatedVUs: rerunConfig.preAllocatedVUs || 10,
+            maxVUs: rerunConfig.maxVUs || 20,
             name: rerunConfig.name || '',
-            failureThreshold: rerunConfig.failureThreshold ?? 0.05
+            failureThreshold: rerunConfig.failureThreshold ?? 0.05,
+            template: rerunConfig.template || 'constant-vus'
           });
           sessionStorage.removeItem('rerunConfig');
         } catch (err) {
@@ -228,7 +263,7 @@ export const NewTest = () => {
         setShowRecentTests(false);
         window.scrollTo({top: 0, behavior: 'smooth'});
       }
-    } catch (err) {
+    } catch {
       alert(t('newTest.failedToLoadScript'));
     }
   };
@@ -276,8 +311,8 @@ export const NewTest = () => {
         ...(savedScriptId && {scriptId: savedScriptId})
       });
       navigate(`/tests/${result.testId}`);
-    } catch (err: any) {
-      const errorMessage = err?.response?.data?.error || err?.message || 'Failed to start test';
+    } catch (err: unknown) {
+      const errorMessage = getErrorMessage(err, 'Failed to start test');
       setError(errorMessage);
       window.scrollTo({top: 0, behavior: 'smooth'});
     } finally {
@@ -350,8 +385,8 @@ export const NewTest = () => {
         ...(savedScriptId && {scriptId: savedScriptId})
       });
       navigate(`/tests/${result.testId}`);
-    } catch (err: any) {
-      const errorMessage = err?.response?.data?.error || err?.message || 'Failed to start test';
+    } catch (err: unknown) {
+      const errorMessage = getErrorMessage(err, 'Failed to start test');
       setError(errorMessage);
       window.scrollTo({top: 0, behavior: 'smooth'});
     } finally {
@@ -369,13 +404,57 @@ export const NewTest = () => {
   };
 
   const handleRemoveHeader = (key: string) => {
-    const {[key]: _, ...rest} = httpConfig.headers || {};
+    const rest = Object.fromEntries(
+      Object.entries(httpConfig.headers || {}).filter(([headerKey]) => headerKey !== key)
+    );
     handleConfigChange({headers: rest});
   };
 
   const handleScriptChangeWithValidation = (newScript: string) => {
     handleScriptChange(newScript);
     validate(newScript);
+  };
+
+  const handleTemplateChange = (template: K6ScriptTemplate) => {
+    handleConfigChange(getTemplateDefaults(template, httpConfig));
+  };
+
+  const handleConvertCurl = (curlCommand: string) => {
+    try {
+      const nextConfig = {
+        ...curlToHttpConfig(curlCommand, httpConfig),
+        template: 'constant-vus' as const,
+        rampUp: 0,
+      };
+      const generatedScript = httpConfigToScript(nextConfig);
+      setHttpConfig(nextConfig);
+      setScript(generatedScript);
+      validate(generatedScript);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to convert curl command');
+    }
+  };
+
+  const handleImportPostman = async (collection: unknown) => {
+    try {
+      const nextConfig = {
+        ...httpConfig,
+        template: 'constant-vus' as const,
+        rampUp: 0,
+      };
+      let generatedScript: string;
+      try {
+        generatedScript = await scriptApi.convertPostman(collection);
+      } catch {
+        generatedScript = postmanCollectionToScript(collection as Parameters<typeof postmanCollectionToScript>[0], nextConfig);
+      }
+      setScript(generatedScript);
+      updateConfigFromScript(generatedScript);
+      setHttpConfig(nextConfig);
+      validate(generatedScript);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to convert Postman collection');
+    }
   };
 
   const handleCreateNewFolder = async () => {
@@ -473,6 +552,9 @@ export const NewTest = () => {
             headerKey={headerKey}
             headerValue={headerValue}
             onConfigChange={handleConfigChange}
+            onTemplateChange={handleTemplateChange}
+            onConvertCurl={handleConvertCurl}
+            onImportPostman={handleImportPostman}
             onHeaderKeyChange={setHeaderKey}
             onHeaderValueChange={setHeaderValue}
             onAddHeader={handleAddHeader}

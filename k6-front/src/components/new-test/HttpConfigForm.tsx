@@ -1,5 +1,6 @@
 import {useTranslation} from 'react-i18next';
-import type {K6TestConfig} from '../../types/k6';
+import {useState} from 'react';
+import type {K6ScriptTemplate, K6TestConfig} from '../../types/k6';
 
 interface HttpConfigFormProps {
   config: K6TestConfig;
@@ -7,6 +8,9 @@ interface HttpConfigFormProps {
   headerKey: string;
   headerValue: string;
   onConfigChange: (config: Partial<K6TestConfig>) => void;
+  onTemplateChange: (template: K6ScriptTemplate) => void;
+  onConvertCurl: (curlCommand: string) => void;
+  onImportPostman: (collection: unknown) => void;
   onHeaderKeyChange: (key: string) => void;
   onHeaderValueChange: (value: string) => void;
   onAddHeader: () => void;
@@ -19,12 +23,34 @@ export const HttpConfigForm = ({
   headerKey,
   headerValue,
   onConfigChange,
+  onTemplateChange,
+  onConvertCurl,
+  onImportPostman,
   onHeaderKeyChange,
   onHeaderValueChange,
   onAddHeader,
   onRemoveHeader
 }: HttpConfigFormProps) => {
   const {t} = useTranslation();
+  const [curlCommand, setCurlCommand] = useState('');
+  const stages = config.stages && config.stages.length > 0 ? config.stages : [
+    {duration: 30, target: 10},
+    {duration: 60, target: 10},
+    {duration: 30, target: 0}
+  ];
+  const updateStage = (index: number, changes: Partial<(typeof stages)[number]>) => {
+    onConfigChange({
+      stages: stages.map((stage, stageIndex) => stageIndex === index ? {...stage, ...changes} : stage)
+    });
+  };
+  const addStage = () => {
+    const lastTarget = stages[stages.length - 1]?.target ?? 10;
+    onConfigChange({stages: [...stages, {duration: 30, target: lastTarget}]});
+  };
+  const removeStage = (index: number) => {
+    if (stages.length <= 1) return;
+    onConfigChange({stages: stages.filter((_, stageIndex) => stageIndex !== index)});
+  };
 
   return (
     <div style={{
@@ -60,6 +86,115 @@ export const HttpConfigForm = ({
           {t('httpConfig.dynamicScriptNote')}
         </div>
       )}
+
+      <div style={{
+        border: '1px solid #e5e7eb',
+        borderRadius: '4px',
+        padding: '1rem',
+        marginBottom: '1rem',
+        backgroundColor: '#f9fafb'
+      }}>
+        <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
+          {t('httpConfig.curlImport')}
+        </label>
+        <textarea
+          value={curlCommand}
+          onChange={(e) => setCurlCommand(e.target.value)}
+          placeholder={t('httpConfig.curlPlaceholder')}
+          rows={4}
+          style={{
+            width: '100%',
+            padding: '0.5rem',
+            border: '1px solid #d1d5db',
+            borderRadius: '4px',
+            fontSize: '0.875rem',
+            fontFamily: 'monospace',
+            marginBottom: '0.5rem'
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => onConvertCurl(curlCommand)}
+          disabled={!curlCommand.trim()}
+          style={{
+            padding: '0.5rem 0.75rem',
+            backgroundColor: curlCommand.trim() ? '#6366f1' : '#9ca3af',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: curlCommand.trim() ? 'pointer' : 'not-allowed',
+            fontSize: '0.875rem',
+            fontWeight: 'bold'
+          }}
+        >
+          {t('httpConfig.convertCurl')}
+        </button>
+      </div>
+
+      <div style={{
+        border: '1px solid #e5e7eb',
+        borderRadius: '4px',
+        padding: '1rem',
+        marginBottom: '1rem',
+        backgroundColor: '#f9fafb'
+      }}>
+        <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
+          {t('httpConfig.postmanImport')}
+        </label>
+        <input
+          type="file"
+          accept=".json,application/json"
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            try {
+              onImportPostman(JSON.parse(await file.text()));
+            } catch {
+              alert(t('httpConfig.invalidPostmanFile'));
+            } finally {
+              e.target.value = '';
+            }
+          }}
+          style={{
+            width: '100%',
+            padding: '0.5rem',
+            border: '1px solid #d1d5db',
+            borderRadius: '4px',
+            backgroundColor: 'white'
+          }}
+        />
+        <div style={{fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem'}}>
+          {t('httpConfig.postmanDescription')}
+        </div>
+      </div>
+
+      <div style={{marginBottom: '1rem'}}>
+        <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
+          {t('httpConfig.template')}
+        </label>
+        <select
+          value={config.template || 'constant-vus'}
+          disabled={isDynamic}
+          onChange={(e) => onTemplateChange(e.target.value as K6ScriptTemplate)}
+          style={{
+            width: '100%',
+            padding: '0.5rem',
+            border: '1px solid #d1d5db',
+            borderRadius: '4px',
+            fontSize: '1rem',
+            backgroundColor: isDynamic ? '#f3f4f6' : 'white',
+            cursor: isDynamic ? 'not-allowed' : 'pointer',
+            color: isDynamic ? '#6b7280' : '#000'
+          }}
+        >
+          <option value="constant-vus">{t('httpConfig.templateConstantVus')}</option>
+          <option value="constant-tps">{t('httpConfig.templateConstantTps')}</option>
+          <option value="ramp-up">{t('httpConfig.templateRampUp')}</option>
+        </select>
+        <div style={{fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem'}}>
+          {t('httpConfig.templateDescription')}
+        </div>
+      </div>
 
       <div style={{marginBottom: '1rem'}}>
         <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
@@ -238,71 +373,248 @@ export const HttpConfigForm = ({
         gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))',
         gap: '1rem'
       }}>
-        <div>
-          <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
-            {t('httpConfig.vusers')} *
-          </label>
-          <input
-            type="number"
-            required
-            min="1"
-            value={config.vusers}
-            disabled={isDynamic}
-            onChange={(e) => onConfigChange({vusers: Number.parseInt(e.target.value)})}
-            style={{
-              width: '100%',
-              padding: '0.5rem',
-              border: '1px solid #d1d5db',
-              borderRadius: '4px',
-              backgroundColor: isDynamic ? '#f3f4f6' : 'white',
-              cursor: isDynamic ? 'not-allowed' : 'text',
-              color: isDynamic ? '#6b7280' : '#000'
-            }}
-          />
-        </div>
-        <div>
-          <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
-            {t('httpConfig.duration')} *
-          </label>
-          <input
-            type="number"
-            required
-            min="1"
-            value={config.duration}
-            disabled={isDynamic}
-            onChange={(e) => onConfigChange({duration: Number.parseInt(e.target.value)})}
-            style={{
-              width: '100%',
-              padding: '0.5rem',
-              border: '1px solid #d1d5db',
-              borderRadius: '4px',
-              backgroundColor: isDynamic ? '#f3f4f6' : 'white',
-              cursor: isDynamic ? 'not-allowed' : 'text',
-              color: isDynamic ? '#6b7280' : '#000'
-            }}
-          />
-        </div>
-        <div>
-          <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
-            {t('httpConfig.rampUp')}
-          </label>
-          <input
-            type="number"
-            min="0"
-            value={config.rampUp}
-            disabled={isDynamic}
-            onChange={(e) => onConfigChange({rampUp: Number.parseInt(e.target.value)})}
-            style={{
-              width: '100%',
-              padding: '0.5rem',
-              border: '1px solid #d1d5db',
-              borderRadius: '4px',
-              backgroundColor: isDynamic ? '#f3f4f6' : 'white',
-              cursor: isDynamic ? 'not-allowed' : 'text',
-              color: isDynamic ? '#6b7280' : '#000'
-            }}
-          />
-        </div>
+        {config.template !== 'constant-tps' && config.template !== 'ramp-up' && (
+          <div>
+            <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
+              {t('httpConfig.vusers')} *
+            </label>
+            <input
+              type="number"
+              required
+              min="1"
+              value={config.vusers}
+              disabled={isDynamic}
+              onChange={(e) => onConfigChange({vusers: Number.parseInt(e.target.value)})}
+              style={{
+                width: '100%',
+                padding: '0.5rem',
+                border: '1px solid #d1d5db',
+                borderRadius: '4px',
+                backgroundColor: isDynamic ? '#f3f4f6' : 'white',
+                cursor: isDynamic ? 'not-allowed' : 'text',
+                color: isDynamic ? '#6b7280' : '#000'
+              }}
+            />
+          </div>
+        )}
+        {config.template !== 'ramp-up' && config.template !== 'constant-tps' && (
+          <div>
+            <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
+              {t('httpConfig.duration')} *
+            </label>
+            <input
+              type="number"
+              required
+              min="1"
+              value={config.duration}
+              disabled={isDynamic}
+              onChange={(e) => onConfigChange({duration: Number.parseInt(e.target.value)})}
+              style={{
+                width: '100%',
+                padding: '0.5rem',
+                border: '1px solid #d1d5db',
+                borderRadius: '4px',
+                backgroundColor: isDynamic ? '#f3f4f6' : 'white',
+                cursor: isDynamic ? 'not-allowed' : 'text',
+                color: isDynamic ? '#6b7280' : '#000'
+              }}
+            />
+          </div>
+        )}
+        {config.template === 'constant-tps' && (
+          <>
+            <div>
+              <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
+                {t('httpConfig.targetTps')} *
+              </label>
+              <input
+                type="number"
+                required
+                min="1"
+                value={config.targetTps || 1}
+                disabled={isDynamic}
+                onChange={(e) => onConfigChange({targetTps: Number.parseInt(e.target.value)})}
+                style={{
+                  width: '100%',
+                  padding: '0.5rem',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '4px',
+                  backgroundColor: isDynamic ? '#f3f4f6' : 'white',
+                  cursor: isDynamic ? 'not-allowed' : 'text',
+                  color: isDynamic ? '#6b7280' : '#000'
+                }}
+              />
+            </div>
+            <div>
+              <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
+                {t('httpConfig.duration')} *
+              </label>
+              <input
+                type="number"
+                required
+                min="1"
+                value={config.duration}
+                disabled={isDynamic}
+                onChange={(e) => onConfigChange({duration: Number.parseInt(e.target.value)})}
+                style={{
+                  width: '100%',
+                  padding: '0.5rem',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '4px',
+                  backgroundColor: isDynamic ? '#f3f4f6' : 'white',
+                  cursor: isDynamic ? 'not-allowed' : 'text',
+                  color: isDynamic ? '#6b7280' : '#000'
+                }}
+              />
+            </div>
+            <div>
+              <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
+                {t('httpConfig.preAllocatedVUs')} *
+              </label>
+              <input
+                type="number"
+                required
+                min="1"
+                value={config.preAllocatedVUs || 1}
+                disabled={isDynamic}
+                onChange={(e) => onConfigChange({preAllocatedVUs: Number.parseInt(e.target.value)})}
+                style={{
+                  width: '100%',
+                  padding: '0.5rem',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '4px',
+                  backgroundColor: isDynamic ? '#f3f4f6' : 'white',
+                  cursor: isDynamic ? 'not-allowed' : 'text',
+                  color: isDynamic ? '#6b7280' : '#000'
+                }}
+              />
+            </div>
+            <div>
+              <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
+                {t('httpConfig.maxVUs')} *
+              </label>
+              <input
+                type="number"
+                required
+                min={config.preAllocatedVUs || 1}
+                value={config.maxVUs || config.preAllocatedVUs || 1}
+                disabled={isDynamic}
+                onChange={(e) => onConfigChange({maxVUs: Number.parseInt(e.target.value)})}
+                style={{
+                  width: '100%',
+                  padding: '0.5rem',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '4px',
+                  backgroundColor: isDynamic ? '#f3f4f6' : 'white',
+                  cursor: isDynamic ? 'not-allowed' : 'text',
+                  color: isDynamic ? '#6b7280' : '#000'
+                }}
+              />
+            </div>
+          </>
+        )}
+        {config.template === 'ramp-up' && (
+          <div style={{gridColumn: '1 / -1'}}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: '1rem',
+              marginBottom: '0.5rem'
+            }}>
+              <label style={{fontWeight: 'bold'}}>
+                {t('httpConfig.stages')}
+              </label>
+              <button
+                type="button"
+                disabled={isDynamic}
+                onClick={addStage}
+                style={{
+                  padding: '0.375rem 0.75rem',
+                  backgroundColor: isDynamic ? '#9ca3af' : '#10b981',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: isDynamic ? 'not-allowed' : 'pointer',
+                  fontSize: '0.875rem'
+                }}
+              >
+                {t('httpConfig.addStage')}
+              </button>
+            </div>
+            <div style={{display: 'grid', gap: '0.5rem'}}>
+              {stages.map((stage, index) => (
+                <div
+                  key={index}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) auto',
+                    gap: '0.5rem',
+                    alignItems: 'end'
+                  }}
+                >
+                  <div>
+                    <label style={{display: 'block', marginBottom: '0.25rem', fontSize: '0.75rem', color: '#4b5563'}}>
+                      {t('httpConfig.stageDuration')}
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={stage.duration}
+                      disabled={isDynamic}
+                      onChange={(e) => updateStage(index, {duration: Number.parseInt(e.target.value)})}
+                      style={{
+                        width: '100%',
+                        padding: '0.5rem',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '4px',
+                        backgroundColor: isDynamic ? '#f3f4f6' : 'white',
+                        cursor: isDynamic ? 'not-allowed' : 'text',
+                        color: isDynamic ? '#6b7280' : '#000'
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{display: 'block', marginBottom: '0.25rem', fontSize: '0.75rem', color: '#4b5563'}}>
+                      {t('httpConfig.stageTarget')}
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={stage.target}
+                      disabled={isDynamic}
+                      onChange={(e) => updateStage(index, {target: Number.parseInt(e.target.value)})}
+                      style={{
+                        width: '100%',
+                        padding: '0.5rem',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '4px',
+                        backgroundColor: isDynamic ? '#f3f4f6' : 'white',
+                        cursor: isDynamic ? 'not-allowed' : 'text',
+                        color: isDynamic ? '#6b7280' : '#000'
+                      }}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    disabled={isDynamic || stages.length <= 1}
+                    onClick={() => removeStage(index)}
+                    style={{
+                      padding: '0.5rem 0.75rem',
+                      backgroundColor: isDynamic || stages.length <= 1 ? '#9ca3af' : '#ef4444',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: isDynamic || stages.length <= 1 ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    {t('httpConfig.remove')}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         <div>
           <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
             {t('httpConfig.failureThreshold')}

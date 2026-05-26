@@ -6,9 +6,24 @@ export interface K6TestConfig {
   vusers: number;
   duration: number;
   rampUp?: number;
+  stages?: K6RampUpStage[];
+  targetTps?: number;
+  preAllocatedVUs?: number;
+  maxVUs?: number;
   name?: string;
   failureThreshold?: number;
+  template?: K6ScriptTemplate;
 }
+
+export interface K6RampUpStage {
+  duration: number;
+  target: number;
+}
+
+export type K6ScriptTemplate =
+  | 'constant-vus'
+  | 'constant-tps'
+  | 'ramp-up';
 
 export interface K6Summary {
   metrics: {

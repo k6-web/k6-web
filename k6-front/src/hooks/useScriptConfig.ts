@@ -12,8 +12,17 @@ export const useScriptConfig = (initialScript: string) => {
     vusers: 1,
     duration: 10,
     rampUp: 0,
+    stages: [
+      {duration: 30, target: 10},
+      {duration: 60, target: 10},
+      {duration: 30, target: 0}
+    ],
+    targetTps: 10,
+    preAllocatedVUs: 10,
+    maxVUs: 20,
     name: '',
-    failureThreshold: 0.05
+    failureThreshold: 0.05,
+    template: 'constant-vus'
   });
   const [isDynamicScript, setIsDynamicScript] = useState(false);
 
@@ -35,8 +44,7 @@ export const useScriptConfig = (initialScript: string) => {
     const newConfig = {...httpConfig, ...changes};
     setHttpConfig(newConfig);
 
-    const {name, ...otherChanges} = changes;
-    const hasNonNameChanges = Object.keys(otherChanges).length > 0;
+    const hasNonNameChanges = Object.keys(changes).some(key => key !== 'name');
 
     if (hasNonNameChanges) {
       updateScriptFromConfig(newConfig);
