@@ -10,7 +10,7 @@ import {Button, InfoBox} from '../components/common';
 import {useScriptConfig} from '../hooks/useScriptConfig';
 import {useScriptValidation} from '../hooks/useScriptValidation';
 import {useTooltip} from '../hooks/useTooltip';
-import {curlToHttpConfig, getTemplateDefaults, httpConfigToScript, postmanCollectionToScript} from '../utils/scriptUtils';
+import {curlToHttpConfig, getTemplateDefaults, httpConfigToScript, postmanCollectionToScript, updateScriptOptionsFromConfig} from '../utils/scriptUtils';
 import type {K6ScriptTemplate, K6TestConfig} from '../types/k6';
 
 const DEFAULT_SCRIPT = `import http from 'k6/http';
@@ -416,7 +416,11 @@ export const NewTest = () => {
   };
 
   const handleTemplateChange = (template: K6ScriptTemplate) => {
-    handleConfigChange(getTemplateDefaults(template, httpConfig));
+    const nextConfig = getTemplateDefaults(template, httpConfig);
+    const nextScript = updateScriptOptionsFromConfig(script, nextConfig);
+    setHttpConfig(nextConfig);
+    setScript(nextScript);
+    validate(nextScript);
   };
 
   const handleConvertCurl = (curlCommand: string) => {

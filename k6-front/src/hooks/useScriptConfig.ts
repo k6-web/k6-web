@@ -1,6 +1,18 @@
 import {useState, useCallback} from 'react';
 import type {K6TestConfig} from '../types/k6';
-import {httpConfigToScript, scriptToHttpConfig} from '../utils/scriptUtils';
+import {httpConfigToScript, scriptToHttpConfig, updateScriptOptionsFromConfig} from '../utils/scriptUtils';
+
+const optionConfigKeys = new Set<keyof K6TestConfig>([
+  'vusers',
+  'duration',
+  'rampUp',
+  'stages',
+  'targetTps',
+  'preAllocatedVUs',
+  'maxVUs',
+  'failureThreshold',
+  'template'
+]);
 
 export const useScriptConfig = (initialScript: string) => {
   const [script, setScript] = useState(initialScript);
@@ -47,7 +59,13 @@ export const useScriptConfig = (initialScript: string) => {
     const hasNonNameChanges = Object.keys(changes).some(key => key !== 'name');
 
     if (hasNonNameChanges) {
-      updateScriptFromConfig(newConfig);
+      const changedKeys = Object.keys(changes) as Array<keyof K6TestConfig>;
+      const onlyOptionsChanged = changedKeys.every(key => key === 'name' || optionConfigKeys.has(key));
+      if (onlyOptionsChanged) {
+        setScript(prevScript => updateScriptOptionsFromConfig(prevScript, newConfig));
+      } else {
+        updateScriptFromConfig(newConfig);
+      }
     }
   }, [httpConfig, updateScriptFromConfig]);
 

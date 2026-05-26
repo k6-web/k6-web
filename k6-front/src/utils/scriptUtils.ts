@@ -36,12 +36,8 @@ export const validateScript = (code: string): { valid: boolean; error: string | 
   }
 };
 
-export const httpConfigToScript = (config: K6TestConfig): string => {
+const k6OptionsToScript = (config: K6TestConfig): string => {
   const {
-    url,
-    method,
-    headers,
-    body,
     vusers,
     duration,
     rampUp,
@@ -53,11 +49,7 @@ export const httpConfigToScript = (config: K6TestConfig): string => {
     template = 'constant-vus'
   } = config;
 
-  let scriptCode = `import http from 'k6/http';
-import { check } from 'k6';
-import { sleep } from 'k6';
-
-export const options = {
+  let optionsCode = `export const options = {
   scenarios: {
     test: {
 `;
@@ -65,7 +57,7 @@ export const options = {
   if (template === 'constant-tps') {
     const allocatedVUs = Math.max(preAllocatedVUs || 1, 1);
     const maximumVUs = Math.max(maxVUs || allocatedVUs, allocatedVUs);
-    scriptCode += `      executor: 'constant-arrival-rate',
+    optionsCode += `      executor: 'constant-arrival-rate',
       rate: ${Math.max(targetTps || 1, 1)},
       timeUnit: '1s',
       duration: '${Math.max(duration, 1)}s',
@@ -81,20 +73,20 @@ export const options = {
       target: Math.max(stage.target || 0, 0)
     }));
 
-    scriptCode += `      executor: 'ramping-vus',
+    optionsCode += `      executor: 'ramping-vus',
       startVUs: 0,
       stages: [
 ${rampStages.map(stage => `        { duration: '${stage.duration}s', target: ${stage.target} },`).join('\n')}
       ],
 `;
   } else {
-    scriptCode += `      executor: 'constant-vus',
+    optionsCode += `      executor: 'constant-vus',
       vus: ${vusers},
       duration: '${duration}s',
 `;
   }
 
-  scriptCode += `    },
+  optionsCode += `    },
   },
   setupTimeout: '60s',
   teardownTimeout: '60s',
@@ -107,6 +99,47 @@ ${rampStages.map(stage => `        { duration: '${stage.duration}s', target: ${s
     ],
   },
 };
+`;
+
+  return optionsCode.trimEnd();
+};
+
+export const updateScriptOptionsFromConfig = (scriptCode: string, config: K6TestConfig): string => {
+  try {
+    const ast = acorn.parse(scriptCode, {
+      ecmaVersion: 2020,
+      sourceType: 'module'
+    }) as any;
+    const optionsNode = ast.body.find((node: any) => {
+      if (node.type !== 'ExportNamedDeclaration') return false;
+      const declaration = node.declaration;
+      if (declaration?.type !== 'VariableDeclaration') return false;
+      return declaration.declarations.some((item: any) => item.id?.name === 'options');
+    });
+
+    if (!optionsNode) return httpConfigToScript(config);
+
+    const prefix = scriptCode.slice(0, optionsNode.start).replace(/[ \t]+$/, '');
+    const suffix = scriptCode.slice(optionsNode.end).replace(/^[\r\n\t ]+/, '');
+    return `${prefix}${k6OptionsToScript(config)}\n\n${suffix}`;
+  } catch {
+    return httpConfigToScript(config);
+  }
+};
+
+export const httpConfigToScript = (config: K6TestConfig): string => {
+  const {
+    url,
+    method,
+    headers,
+    body,
+  } = config;
+
+  let scriptCode = `import http from 'k6/http';
+import { check } from 'k6';
+import { sleep } from 'k6';
+
+${k6OptionsToScript(config)}
 `;
 
   if (headers && Object.keys(headers).length > 0) {
