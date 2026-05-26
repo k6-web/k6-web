@@ -63,7 +63,12 @@ export const ScriptList = () => {
         flexWrap: 'wrap',
         gap: '1rem'
       }}>
-        <h1 style={{margin: 0, fontSize: 'clamp(1.5rem, 5vw, 2rem)'}}>{t('folderList.title')}</h1>
+        <div>
+          <h1 style={{margin: 0, fontSize: 'clamp(1.5rem, 5vw, 2rem)'}}>{t('nav.scripts')}</h1>
+          <p style={{margin: '0.5rem 0 0 0', color: '#6b7280', fontSize: '0.875rem'}}>
+            {t('scriptList.description')}
+          </p>
+        </div>
         <div style={{display: 'flex', gap: '0.5rem', flexWrap: 'wrap'}}>
           <Link
             to="/new-test?saveScript=true"

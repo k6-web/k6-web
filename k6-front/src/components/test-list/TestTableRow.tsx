@@ -6,8 +6,6 @@ import {StatusBadge} from '../common';
 
 interface TestTableRowProps {
   test: Test;
-  isExpanded: boolean;
-  onToggleExpand: (testId: string) => void;
   onRerun?: (testId: string) => void;
 }
 
@@ -30,27 +28,11 @@ const getSuccessRate = (summary?: K6Summary): string => {
   return `${rate.toFixed(1)}%`;
 };
 
-export const TestTableRow = ({test, isExpanded, onToggleExpand, onRerun}: TestTableRowProps) => {
+export const TestTableRow = ({test, onRerun}: TestTableRowProps) => {
   const {t} = useTranslation();
 
   return (
-    <>
-      <tr style={{borderBottom: '1px solid #e5e7eb'}}>
-        <td style={{padding: '1rem', textAlign: 'center'}}>
-          <button
-            onClick={() => onToggleExpand(test.testId)}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '1.25rem',
-              color: '#6b7280'
-            }}
-            title={isExpanded ? t('common.close') : 'Expand'}
-          >
-            {isExpanded ? '▼' : '▶'}
-          </button>
-        </td>
+    <tr style={{borderBottom: '1px solid #e5e7eb'}}>
         <td style={{padding: '1rem', borderBottom: '1px solid #e5e7eb'}}>
           <Link to={`/tests/${test.testId}`} style={{color: '#3b82f6', textDecoration: 'none'}}>
             {test.name ? (
@@ -131,94 +113,6 @@ export const TestTableRow = ({test, isExpanded, onToggleExpand, onRerun}: TestTa
             )}
           </div>
         </td>
-      </tr>
-      {isExpanded && test.summary && (
-        <tr key={`${test.testId}-expanded`}>
-          <td colSpan={10} style={{padding: '1rem', backgroundColor: '#f9fafb'}}>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: '1rem'
-            }}>
-              <div style={{
-                padding: '1rem',
-                backgroundColor: 'white',
-                borderRadius: '8px',
-                borderLeft: '4px solid #3b82f6'
-              }}>
-                <div style={{fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.5rem'}}>TPS</div>
-                <div style={{fontSize: '1.5rem', fontWeight: 'bold', color: '#3b82f6'}}>
-                  {getTPS(test.summary)}
-                </div>
-              </div>
-              <div style={{
-                padding: '1rem',
-                backgroundColor: 'white',
-                borderRadius: '8px',
-                borderLeft: '4px solid #8b5cf6'
-              }}>
-                <div style={{fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.5rem'}}>Latency (Avg)</div>
-                <div style={{fontSize: '1.5rem', fontWeight: 'bold', color: '#8b5cf6'}}>
-                  {getLatency(test.summary)}
-                </div>
-              </div>
-              <div style={{
-                padding: '1rem',
-                backgroundColor: 'white',
-                borderRadius: '8px',
-                borderLeft: '4px solid #22c55e'
-              }}>
-                <div style={{fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.5rem'}}>Success Rate</div>
-                <div style={{fontSize: '1.5rem', fontWeight: 'bold', color: '#22c55e'}}>
-                  {getSuccessRate(test.summary)}
-                </div>
-              </div>
-              <div style={{
-                padding: '1rem',
-                backgroundColor: 'white',
-                borderRadius: '8px',
-                borderLeft: '4px solid #f59e0b'
-              }}>
-                <div style={{fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.5rem'}}>Duration</div>
-                <div style={{fontSize: '1.5rem', fontWeight: 'bold', color: '#f59e0b'}}>
-                  {test.endTime && test.startTime ? `${((test.endTime - test.startTime) / 1000).toFixed(1)}s` : 'N/A'}
-                </div>
-              </div>
-            </div>
-            <div style={{marginTop: '1rem', display: 'flex', gap: '0.5rem'}}>
-              <Link
-                to={`/tests/${test.testId}`}
-                style={{
-                  padding: '0.5rem 1rem',
-                  backgroundColor: '#3b82f6',
-                  color: 'white',
-                  textDecoration: 'none',
-                  borderRadius: '4px',
-                  fontSize: '0.875rem'
-                }}
-              >
-                {t('folderList.viewFolder')}
-              </Link>
-              {onRerun && (
-                <button
-                  onClick={() => onRerun(test.testId)}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    backgroundColor: '#10b981',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    fontSize: '0.875rem',
-                    cursor: 'pointer'
-                  }}
-                >
-                  {t('testList.rerun')}
-                </button>
-              )}
-            </div>
-          </td>
-        </tr>
-      )}
-    </>
+    </tr>
   );
 };

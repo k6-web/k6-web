@@ -18,7 +18,6 @@ export const FolderDetail = () => {
   const [error, setError] = useState<string | null>(null);
   const [isRunningAll, setIsRunningAll] = useState(false);
   const [folderTests, setFolderTests] = useState<Test[]>([]);
-  const [expandedTests, setExpandedTests] = useState<Set<string>>(new Set());
   const [showLastScriptTooltip, setShowLastScriptTooltip] = useState(false);
   const [showTestNameModal, setShowTestNameModal] = useState(false);
   const [testNameInput, setTestNameInput] = useState('');
@@ -161,18 +160,6 @@ export const FolderDetail = () => {
     }
   };
 
-  const handleToggleExpand = (testId: string) => {
-    setExpandedTests(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(testId)) {
-        newSet.delete(testId);
-      } else {
-        newSet.add(testId);
-      }
-      return newSet;
-    });
-  };
-
   if (loading) return <div>{t('common.loading')}</div>;
   if (error) return <div style={{color: 'red'}}>{t('common.error')}: {error}</div>;
   if (!folderData) return <div>{t('folderList.noFolders')}</div>;
@@ -180,7 +167,7 @@ export const FolderDetail = () => {
   return (
     <div>
       <div style={{marginBottom: '1rem'}}>
-        <Link to="/" style={{color: '#3b82f6', textDecoration: 'none'}}>
+        <Link to="/folders" style={{color: '#3b82f6', textDecoration: 'none'}}>
           {t('folderDetail.backToFolders')}
         </Link>
       </div>
@@ -427,8 +414,6 @@ export const FolderDetail = () => {
           <h2 style={{margin: '0 0 1rem 0', fontSize: '1.25rem'}}>{t('folderDetail.executionResults')}</h2>
           <TestTable
             tests={folderTests}
-            expandedTests={expandedTests}
-            onToggleExpand={handleToggleExpand}
           />
         </div>
       )}

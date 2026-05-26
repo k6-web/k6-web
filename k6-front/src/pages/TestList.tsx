@@ -15,7 +15,6 @@ export const TestList = () => {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [expandedTests, setExpandedTests] = useState<Set<string>>(new Set());
 
   const fetchTests = async (cursor: number | null = null, append = false) => {
     try {
@@ -64,18 +63,6 @@ export const TestList = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [nextCursor, hasMore, loadingMore]);
-
-  const toggleTestExpand = (testId: string) => {
-    const newExpanded = new Set(expandedTests);
-
-    if (newExpanded.has(testId)) {
-      newExpanded.delete(testId);
-    } else {
-      newExpanded.add(testId);
-    }
-
-    setExpandedTests(newExpanded);
-  };
 
   const handleRerun = async (testId: string) => {
     const test = allTests.find(t => t.testId === testId);
@@ -133,8 +120,6 @@ export const TestList = () => {
         <>
           <TestTable
             tests={allTests}
-            expandedTests={expandedTests}
-            onToggleExpand={toggleTestExpand}
             onRerun={handleRerun}
           />
 

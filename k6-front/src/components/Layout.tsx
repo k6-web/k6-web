@@ -43,17 +43,17 @@ export const Layout = () => {
                 color: 'white',
                 textDecoration: 'none',
                 fontSize: 'clamp(0.875rem, 2vw, 1rem)'
-              }}>{t('nav.scripts')}</Link>
+              }}>{t('nav.tests')}</Link>
               <Link to="/new-test" style={{
                 color: 'white',
                 textDecoration: 'none',
                 fontSize: 'clamp(0.875rem, 2vw, 1rem)'
               }}>{t('nav.newTest')}</Link>
-              <Link to="/tests" style={{
+              <Link to="/folders" style={{
                 color: 'white',
                 textDecoration: 'none',
                 fontSize: 'clamp(0.875rem, 2vw, 1rem)'
-              }}>{t('nav.tests')}</Link>
+              }}>{t('nav.scripts')}</Link>
             </div>
           </div>
           <div style={{

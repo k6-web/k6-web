@@ -1,8 +1,8 @@
 {
   "nav": {
-    "scripts": "Scripts",
+    "scripts": "Script List",
     "newTest": "New Test",
-    "tests": "Recent Test Histories"
+    "tests": "Test History"
   },
   "common": {
     "loading": "Loading...",
@@ -226,6 +226,9 @@
     "failedToDelete": "Failed to delete script",
     "copiedToClipboard": "Copied to clipboard!",
     "viewDetails": "View Details"
+  },
+  "scriptList": {
+    "description": "Save frequently used k6 scripts so you can run, edit, and reuse them whenever needed."
   },
   "recentTestsModal": {
     "title": "Recent Tests",

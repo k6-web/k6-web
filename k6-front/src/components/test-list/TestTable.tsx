@@ -4,12 +4,10 @@ import {TestTableRow} from './TestTableRow';
 
 interface TestTableProps {
   tests: Test[];
-  expandedTests: Set<string>;
-  onToggleExpand: (testId: string) => void;
   onRerun?: (testId: string) => void;
 }
 
-export const TestTable = ({tests, expandedTests, onToggleExpand, onRerun}: TestTableProps) => {
+export const TestTable = ({tests, onRerun}: TestTableProps) => {
   const {t} = useTranslation();
   return (
     <div style={{
@@ -21,7 +19,6 @@ export const TestTable = ({tests, expandedTests, onToggleExpand, onRerun}: TestT
       <table style={{width: '100%', borderCollapse: 'collapse', minWidth: '800px'}}>
         <thead style={{backgroundColor: '#f9fafb'}}>
           <tr>
-            <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb', width: '40px'}}></th>
             <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>{t('common.name')} / {t('testDetail.testId')}</th>
             <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>{t('common.status')}</th>
             <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>{t('scriptDetail.scriptId')}</th>
@@ -38,8 +35,6 @@ export const TestTable = ({tests, expandedTests, onToggleExpand, onRerun}: TestT
             <TestTableRow
               key={test.testId}
               test={test}
-              isExpanded={expandedTests.has(test.testId)}
-              onToggleExpand={onToggleExpand}
               onRerun={onRerun}
             />
           ))}

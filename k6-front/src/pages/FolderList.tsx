@@ -109,7 +109,12 @@ export const FolderList = () => {
         flexWrap: 'wrap',
         gap: '1rem'
       }}>
-        <h1 style={{margin: 0, fontSize: 'clamp(1.5rem, 5vw, 2rem)'}}>{t('folderList.title')}</h1>
+        <div>
+          <h1 style={{margin: 0, fontSize: 'clamp(1.5rem, 5vw, 2rem)'}}>{t('folderList.title')}</h1>
+          <p style={{margin: '0.5rem 0 0 0', color: '#6b7280', fontSize: '0.875rem'}}>
+            {t('scriptList.description')}
+          </p>
+        </div>
         <button
           onClick={() => setShowCreateModal(true)}
           style={{
