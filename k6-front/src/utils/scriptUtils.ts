@@ -1,6 +1,8 @@
 import * as acorn from 'acorn';
 import type {K6ScriptTemplate, K6TestConfig} from '../types/k6';
 
+const RAMP_TRANSITION_DURATION = '1s';
+
 export const hasDynamicParameters = (scriptCode: string): boolean => {
   return (
     /`[^`]*\$\{[^}]+\}[^`]*`/.test(scriptCode) ||
@@ -65,18 +67,27 @@ const k6OptionsToScript = (config: K6TestConfig): string => {
       maxVUs: ${maximumVUs},
 `;
   } else if (template === 'ramp-up') {
-    const rampStages = (stages && stages.length > 0 ? stages : [
+    const configuredStages = (stages && stages.length > 0 ? stages : [
       {duration: Math.max(rampUp || 30, 1), target: vusers},
       {duration: Math.max(duration, 1), target: vusers}
     ]).map(stage => ({
       duration: Math.max(stage.duration || 1, 1),
       target: Math.max(stage.target || 0, 0)
     }));
+    const rampStages = configuredStages.flatMap((stage, index, allStages) => {
+      const previousTarget = index === 0 ? 0 : allStages[index - 1].target;
+      const holdStage = {duration: `${stage.duration}s`, target: stage.target};
+      if (stage.target === previousTarget) return [holdStage];
+      return [
+        {duration: RAMP_TRANSITION_DURATION, target: stage.target},
+        holdStage
+      ];
+    });
 
     optionsCode += `      executor: 'ramping-vus',
       startVUs: 0,
       stages: [
-${rampStages.map(stage => `        { duration: '${stage.duration}s', target: ${stage.target} },`).join('\n')}
+${rampStages.map(stage => `        { duration: '${stage.duration}', target: ${stage.target} },`).join('\n')}
       ],
 `;
   } else {
