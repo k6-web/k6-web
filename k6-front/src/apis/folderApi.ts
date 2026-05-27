@@ -11,6 +11,11 @@ export interface RunAllResponse {
   message: string;
 }
 
+export interface ImportPostmanScriptsResponse {
+  scripts: Script[];
+  count: number;
+}
+
 export const folderApi = {
   createFolder: async (data: {
     folderId?: string;
@@ -83,5 +88,14 @@ export const folderApi = {
 
   deleteScript: async (folderId: string, scriptId: string): Promise<void> => {
     await api.delete(`/v1/folders/${folderId}/scripts/${scriptId}`);
+  },
+
+  importPostmanScripts: async (folderId: string, data: {
+    collection: unknown;
+    config?: Partial<K6TestConfig>;
+    tags?: string[];
+  }): Promise<ImportPostmanScriptsResponse> => {
+    const response = await api.post<ImportPostmanScriptsResponse>(`/v1/folders/${folderId}/scripts/import/postman`, data);
+    return response.data;
   },
 };

@@ -9,9 +9,10 @@ interface ScriptEditorProps {
   script: string;
   syntaxError: string | null;
   onScriptChange: (script: string) => void;
+  embedded?: boolean;
 }
 
-export const ScriptEditor = ({script, syntaxError, onScriptChange}: ScriptEditorProps) => {
+export const ScriptEditor = ({script, syntaxError, onScriptChange, embedded = false}: ScriptEditorProps) => {
   const {t} = useTranslation();
   const editorWrapperRef = useRef<HTMLDivElement>(null);
   const lineNumbersRef = useRef<HTMLDivElement>(null);
@@ -35,13 +36,13 @@ export const ScriptEditor = ({script, syntaxError, onScriptChange}: ScriptEditor
   return (
     <div style={{
       backgroundColor: 'white',
-      padding: '1.5rem',
+      padding: embedded ? 0 : '1.5rem',
       borderRadius: '8px',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+      boxShadow: embedded ? 'none' : '0 1px 3px rgba(0,0,0,0.1)',
       display: 'flex',
       flexDirection: 'column'
     }}>
-      <h2 style={{marginTop: 0, marginBottom: '1.5rem'}}>{t('scriptEditor.title')}</h2>
+      {!embedded && <h2 style={{marginTop: 0, marginBottom: '1.5rem'}}>{t('scriptEditor.title')}</h2>}
 
       <div style={{flex: 1, display: 'flex', flexDirection: 'column'}}>
         <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>

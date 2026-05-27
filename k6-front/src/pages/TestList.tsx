@@ -107,7 +107,7 @@ export const TestList = () => {
       </div>
 
       <InfoBox variant="info">
-        ℹ️ {t('testList.infoMessage')}
+        {t('testList.infoMessage')}
       </InfoBox>
 
       {!allTests || allTests.length === 0 ? (

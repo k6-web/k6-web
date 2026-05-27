@@ -7,6 +7,7 @@ import {ScriptDetail} from './pages/ScriptDetail';
 import {ScriptList} from './pages/ScriptList';
 import {FolderList} from './pages/FolderList';
 import {FolderDetail} from './pages/FolderDetail';
+import './App.css';
 
 function App() {
   return (

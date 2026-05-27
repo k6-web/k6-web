@@ -3,12 +3,28 @@ import {asyncHandler} from '@shared/http/async-handler';
 import {folderService} from './folder-service';
 import {testService} from '@domains/test/test-service';
 import {scriptService} from '@domains/scripts/script-service';
-import {CreateFolderRequest, FolderListQuery, UpdateFolderRequest} from './folder-request';
-import {FolderListResponse, FolderResponse, FolderWithScriptsResponse} from './folder-response';
+import {scriptConverterService} from '@domains/scripts/script-converter-service';
+import {BadRequestError} from '@shared/http/errors';
+import {MAX_SCRIPTS_PER_FOLDER} from '@shared/configs';
+import {CreateFolderRequest, FolderListQuery, ImportPostmanScriptsRequest, UpdateFolderRequest} from './folder-request';
+import {FolderListResponse, FolderResponse, FolderWithScriptsResponse, ImportPostmanScriptsResponse} from './folder-response';
 import {StatusResponse} from '@domains/test/test-response';
 import {ScriptResponse} from '@domains/scripts/script-response';
 
 const folderRouter = express.Router();
+
+const buildAvailableScriptId = (baseId: string, reservedIds: Set<string>): string => {
+  let candidate = baseId;
+  let suffix = 2;
+
+  while (reservedIds.has(candidate) || scriptService.exists(candidate)) {
+    candidate = `${baseId}-${suffix}`;
+    suffix += 1;
+  }
+
+  reservedIds.add(candidate);
+  return candidate;
+};
 
 folderRouter.post('/', asyncHandler(async (req, res) => {
   const request = req.body as CreateFolderRequest;
@@ -116,6 +132,45 @@ folderRouter.post('/:folderId/scripts', asyncHandler(async (req, res) => {
   });
 
   const response: ScriptResponse = script;
+  res.status(201).json(response);
+}));
+
+folderRouter.post('/:folderId/scripts/import/postman', asyncHandler(async (req, res) => {
+  const {folderId} = req.params;
+  const request = req.body as ImportPostmanScriptsRequest;
+
+  folderService.getFolder(folderId);
+
+  const drafts = scriptConverterService.convertPostmanToScripts(request.collection, request.config);
+  const existingScripts = folderService.getScriptsByFolder(folderId);
+
+  if (existingScripts.length + drafts.length > MAX_SCRIPTS_PER_FOLDER) {
+    throw new BadRequestError(
+      `Import would exceed maximum scripts per folder (${MAX_SCRIPTS_PER_FOLDER}). ` +
+      `Current: ${existingScripts.length}, importing: ${drafts.length}`
+    );
+  }
+
+  const reservedIds = new Set<string>();
+  const tags = Array.from(new Set(['postman', ...(request.tags || [])].filter(Boolean)));
+  const scripts = [];
+
+  for (const draft of drafts) {
+    const scriptId = buildAvailableScriptId(draft.scriptIdBase, reservedIds);
+    const script = await scriptService.saveScript(scriptId, {
+      script: draft.script,
+      config: request.config,
+      description: draft.description,
+      tags,
+      folderId,
+    });
+    scripts.push(script);
+  }
+
+  const response: ImportPostmanScriptsResponse = {
+    scripts,
+    count: scripts.length,
+  };
   res.status(201).json(response);
 }));
 

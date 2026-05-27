@@ -1,6 +1,6 @@
 {
   "nav": {
-    "scripts": "스크립트 목록",
+    "scripts": "스크립트",
     "newTest": "신규 테스트",
     "tests": "테스트 이력"
   },
@@ -123,6 +123,7 @@
     "failureThreshold": "실패 임계값",
     "failureThresholdDescription": "최대 허용 오류율 (0.05 = 5%)",
     "dynamicScriptNote": "빠른 시작으로 제공되는 옵션 외의 동작이나 로직은 스크립트 편집기를 통해 자유롭게 구현할 수 있습니다 (e.g. 동적 파라미터 등)",
+    "dynamicScriptLockedFields": "동적 스크립트에서는 URL, HTTP 메서드, 요청 헤더를 빠른 시작에서 변경할 수 없습니다. 해당 값은 스크립트 편집기에서 직접 수정해주세요.",
     "remove": "제거"
   },
   "scriptEditor": {
@@ -201,6 +202,14 @@
     "confirmRunScript": "이 스크립트를 실행하시겠습니까?",
     "confirmRerunTest": "이 테스트를 재실행하시겠습니까?",
     "checkPerformanceChanges": "스크립트를 눌러 API 성능 변화를 확인하세요",
+    "importPostman": "Postman Collection 불러오기",
+    "importPostmanDescription": "Postman Collection JSON의 각 request를 이 폴더의 개별 k6 스크립트로 등록합니다.",
+    "postmanCollectionFile": "Postman Collection JSON",
+    "selectPostmanFile": "Postman Collection JSON 파일을 선택해주세요.",
+    "importPostmanSubmit": "스크립트로 등록",
+    "importingPostman": "등록 중...",
+    "importPostmanSuccess": "{{count}}개 스크립트를 등록했습니다.",
+    "importPostmanFailed": "Postman Collection 등록에 실패했습니다.",
     "actions": "작업"
   },
   "scriptDetail": {
@@ -224,6 +233,9 @@
     "confirmDelete": "이 스크립트를 삭제하시겠습니까?",
     "scriptDeleted": "스크립트가 삭제되었습니다",
     "failedToDelete": "스크립트 삭제에 실패했습니다",
+    "scriptUpdated": "스크립트가 수정되었습니다",
+    "failedToUpdate": "스크립트 수정에 실패했습니다",
+    "scriptRequired": "스크립트 내용은 필수입니다.",
     "copiedToClipboard": "클립보드에 복사되었습니다!",
     "viewDetails": "상세 보기"
   },

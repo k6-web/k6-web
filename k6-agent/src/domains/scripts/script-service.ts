@@ -90,6 +90,10 @@ export class ScriptService {
     logger.info(`Deleted script: ${scriptId}`);
   }
 
+  exists(scriptId: string): boolean {
+    return this.scriptRepository.exists(scriptId);
+  }
+
   getScriptHistory(scriptId: string, limit: number): TestResult[] {
     const script = this.scriptRepository.findById(scriptId);
     if (!script) {

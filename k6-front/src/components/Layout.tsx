@@ -1,104 +1,71 @@
-import {Link, Outlet} from 'react-router-dom';
+import {Link, NavLink, Outlet, useLocation} from 'react-router-dom';
 import {useTranslation} from 'react-i18next';
 
 export const Layout = () => {
   const {t, i18n} = useTranslation();
+  const {pathname} = useLocation();
 
   const changeLanguage = (lng: string) => {
     i18n.changeLanguage(lng);
   };
 
+  const isTestsActive = pathname === '/' || pathname.startsWith('/tests');
+  const isScriptsActive = pathname.startsWith('/folders') || pathname.startsWith('/scripts');
+
   return (
-    <div style={{minHeight: '100vh', display: 'flex', flexDirection: 'column'}}>
-      <header style={{
-        backgroundColor: '#282c34',
-        padding: 'clamp(0.75rem, 2vw, 1rem) clamp(1rem, 4vw, 2rem)',
-        color: 'white',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-      }}>
-        <nav style={{
-          display: 'flex',
-          gap: 'clamp(1rem, 3vw, 2rem)',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          justifyContent: 'space-between'
-        }}>
-          <div style={{
-            display: 'flex',
-            gap: 'clamp(1rem, 3vw, 2rem)',
-            alignItems: 'center',
-            flexWrap: 'wrap'
-          }}>
-            <h1 style={{
-              margin: 0,
-              fontSize: 'clamp(1.25rem, 4vw, 1.5rem)',
-              whiteSpace: 'nowrap'
-            }}>K6 Web</h1>
-            <div style={{
-              display: 'flex',
-              gap: 'clamp(0.75rem, 3vw, 1.5rem)',
-              flexWrap: 'wrap'
-            }}>
-              <Link to="/" style={{
-                color: 'white',
-                textDecoration: 'none',
-                fontSize: 'clamp(0.875rem, 2vw, 1rem)'
-              }}>{t('nav.tests')}</Link>
-              <Link to="/new-test" style={{
-                color: 'white',
-                textDecoration: 'none',
-                fontSize: 'clamp(0.875rem, 2vw, 1rem)'
-              }}>{t('nav.newTest')}</Link>
-              <Link to="/folders" style={{
-                color: 'white',
-                textDecoration: 'none',
-                fontSize: 'clamp(0.875rem, 2vw, 1rem)'
-              }}>{t('nav.scripts')}</Link>
+    <div className="app-shell">
+      <header className="topbar">
+        <nav className="topbar__nav" aria-label="Main navigation">
+          <div className="topbar__primary">
+            <Link to="/" className="topbar__brand" aria-label="K6 Web home">
+              <span className="topbar__brand-mark">K6</span>
+              <span className="topbar__brand-text">
+                <span>K6 Web</span>
+                <small>Load test console</small>
+              </span>
+            </Link>
+
+            <div className="topbar__links">
+              <NavLink
+                to="/tests"
+                className={`topbar__link${isTestsActive ? ' topbar__link--active' : ''}`}
+              >
+                {t('nav.tests')}
+              </NavLink>
+              <NavLink
+                to="/new-test"
+                className={({isActive}) => `topbar__link topbar__link--primary${isActive ? ' topbar__link--active' : ''}`}
+              >
+                {t('nav.newTest')}
+              </NavLink>
+              <NavLink
+                to="/folders"
+                className={`topbar__link${isScriptsActive ? ' topbar__link--active' : ''}`}
+              >
+                {t('nav.scripts')}
+              </NavLink>
             </div>
           </div>
-          <div style={{
-            display: 'flex',
-            gap: '0.5rem',
-            alignItems: 'center'
-          }}>
+
+          <div className="topbar__language" aria-label="Language selector">
             <button
               onClick={() => changeLanguage('en')}
-              style={{
-                padding: '0.25rem 0.75rem',
-                backgroundColor: i18n.language === 'en' ? '#3b82f6' : 'transparent',
-                color: 'white',
-                border: '1px solid white',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: 'clamp(0.75rem, 2vw, 0.875rem)',
-                fontWeight: i18n.language === 'en' ? 'bold' : 'normal'
-              }}
+              className={`topbar__language-button${i18n.language === 'en' ? ' topbar__language-button--active' : ''}`}
+              type="button"
             >
-              English
+              EN
             </button>
             <button
               onClick={() => changeLanguage('ko')}
-              style={{
-                padding: '0.25rem 0.75rem',
-                backgroundColor: i18n.language === 'ko' ? '#3b82f6' : 'transparent',
-                color: 'white',
-                border: '1px solid white',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: 'clamp(0.75rem, 2vw, 0.875rem)',
-                fontWeight: i18n.language === 'ko' ? 'bold' : 'normal'
-              }}
+              className={`topbar__language-button${i18n.language === 'ko' ? ' topbar__language-button--active' : ''}`}
+              type="button"
             >
-              한국어
+              KO
             </button>
           </div>
         </nav>
       </header>
-      <main style={{
-        flex: 1,
-        padding: 'clamp(1rem, 3vw, 2rem)',
-        backgroundColor: '#f5f5f5'
-      }}>
+      <main className="app-main">
         <Outlet/>
       </main>
     </div>

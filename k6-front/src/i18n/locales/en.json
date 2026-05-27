@@ -1,6 +1,6 @@
 {
   "nav": {
-    "scripts": "Script List",
+    "scripts": "Script",
     "newTest": "New Test",
     "tests": "Test History"
   },
@@ -123,6 +123,7 @@
     "failureThreshold": "Failure Threshold",
     "failureThresholdDescription": "Max allowed error rate (0.05 = 5%)",
     "dynamicScriptNote": "Any behavior or logic beyond the options provided in Quick Start can be freely implemented using the script editor (e.g., dynamic parameters).",
+    "dynamicScriptLockedFields": "For dynamic scripts, URL, HTTP method, and request headers cannot be changed in Quick Start. Edit those values directly in the script editor.",
     "remove": "Remove"
   },
   "scriptEditor": {
@@ -201,6 +202,14 @@
     "confirmRunScript": "Are you sure you want to run this script?",
     "confirmRerunTest": "Are you sure you want to re-run this test?",
     "checkPerformanceChanges": "Check the performance changes of the API over time by clicking on each script.",
+    "importPostman": "Import Postman Collection",
+    "importPostmanDescription": "Register each request in a Postman Collection JSON as an individual k6 script in this folder.",
+    "postmanCollectionFile": "Postman Collection JSON",
+    "selectPostmanFile": "Please select a Postman Collection JSON file.",
+    "importPostmanSubmit": "Register Scripts",
+    "importingPostman": "Importing...",
+    "importPostmanSuccess": "Registered {{count}} scripts.",
+    "importPostmanFailed": "Failed to import Postman Collection.",
     "actions": "Actions"
   },
   "scriptDetail": {
@@ -224,6 +233,9 @@
     "confirmDelete": "Are you sure you want to delete this script?",
     "scriptDeleted": "Script deleted successfully",
     "failedToDelete": "Failed to delete script",
+    "scriptUpdated": "Script updated successfully",
+    "failedToUpdate": "Failed to update script",
+    "scriptRequired": "Script content is required.",
     "copiedToClipboard": "Copied to clipboard!",
     "viewDetails": "View Details"
   },

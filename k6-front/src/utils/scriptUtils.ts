@@ -3,6 +3,216 @@ import type {K6ScriptTemplate, K6TestConfig} from '../types/k6';
 
 const RAMP_TRANSITION_DURATION = '1s';
 
+const jsString = (value: string) => JSON.stringify(value);
+
+const findMatchingClose = (input: string, openIndex: number, openChar = '(', closeChar = ')'): number => {
+  let depth = 0;
+  let quote: '"' | "'" | '`' | null = null;
+  let escaped = false;
+  let lineComment = false;
+  let blockComment = false;
+
+  for (let index = openIndex; index < input.length; index += 1) {
+    const char = input[index];
+    const next = input[index + 1];
+
+    if (lineComment) {
+      if (char === '\n') lineComment = false;
+      continue;
+    }
+
+    if (blockComment) {
+      if (char === '*' && next === '/') {
+        blockComment = false;
+        index += 1;
+      }
+      continue;
+    }
+
+    if (quote) {
+      if (escaped) {
+        escaped = false;
+      } else if (char === '\\') {
+        escaped = true;
+      } else if (char === quote) {
+        quote = null;
+      }
+      continue;
+    }
+
+    if (char === '/' && next === '/') {
+      lineComment = true;
+      index += 1;
+      continue;
+    }
+
+    if (char === '/' && next === '*') {
+      blockComment = true;
+      index += 1;
+      continue;
+    }
+
+    if (char === '"' || char === "'" || char === '`') {
+      quote = char;
+      continue;
+    }
+
+    if (char === openChar) depth += 1;
+    if (char === closeChar) {
+      depth -= 1;
+      if (depth === 0) return index;
+    }
+  }
+
+  return -1;
+};
+
+const splitTopLevelArgs = (input: string): string[] => {
+  const args: string[] = [];
+  let start = 0;
+  let depth = 0;
+  let quote: '"' | "'" | '`' | null = null;
+  let escaped = false;
+
+  for (let index = 0; index < input.length; index += 1) {
+    const char = input[index];
+
+    if (quote) {
+      if (escaped) {
+        escaped = false;
+      } else if (char === '\\') {
+        escaped = true;
+      } else if (char === quote) {
+        quote = null;
+      }
+      continue;
+    }
+
+    if (char === '"' || char === "'" || char === '`') {
+      quote = char;
+      continue;
+    }
+
+    if ('([{'.includes(char)) depth += 1;
+    if (')]}'.includes(char)) depth -= 1;
+
+    if (char === ',' && depth === 0) {
+      args.push(input.slice(start, index).trim());
+      start = index + 1;
+    }
+  }
+
+  args.push(input.slice(start).trim());
+  return args;
+};
+
+const decodeJsStringLiteral = (literal: string): string | null => {
+  const quote = literal[0];
+  if ((quote !== '"' && quote !== "'" && quote !== '`') || literal[literal.length - 1] !== quote) return null;
+  if (quote === '`' && literal.includes('${')) return null;
+
+  try {
+    if (quote === '"') return JSON.parse(literal);
+  } catch {
+    return null;
+  }
+
+  let value = '';
+  for (let index = 1; index < literal.length - 1; index += 1) {
+    const char = literal[index];
+    if (char !== '\\') {
+      value += char;
+      continue;
+    }
+
+    index += 1;
+    const escaped = literal[index];
+    if (escaped === 'n') value += '\n';
+    else if (escaped === 'r') value += '\r';
+    else if (escaped === 't') value += '\t';
+    else value += escaped;
+  }
+
+  return value;
+};
+
+const expressionToRequestBody = (expression: string): string => {
+  const trimmed = expression.trim();
+  const stringValue = decodeJsStringLiteral(trimmed);
+  if (stringValue !== null) return stringValue;
+
+  if (trimmed.startsWith('JSON.stringify')) {
+    const openIndex = trimmed.indexOf('(');
+    const closeIndex = openIndex >= 0 ? findMatchingClose(trimmed, openIndex) : -1;
+    if (openIndex >= 0 && closeIndex > openIndex) {
+      const jsonExpression = trimmed.slice(openIndex + 1, closeIndex).trim();
+      try {
+        return JSON.stringify(JSON.parse(jsonExpression), null, 2);
+      } catch {
+        return jsonExpression;
+      }
+    }
+  }
+
+  return trimmed;
+};
+
+const getFirstHttpCallArgs = (scriptCode: string): string[] | null => {
+  const match = /http\.(get|post|put|patch|delete|head|options)\s*\(/i.exec(scriptCode);
+  if (!match) return null;
+
+  const openIndex = scriptCode.indexOf('(', match.index);
+  const closeIndex = findMatchingClose(scriptCode, openIndex);
+  if (closeIndex === -1) return null;
+
+  return splitTopLevelArgs(scriptCode.slice(openIndex + 1, closeIndex));
+};
+
+const bodyToK6Expression = (body: string | object): string => {
+  if (typeof body === 'object') {
+    return `JSON.stringify(${JSON.stringify(body, null, 2)})`;
+  }
+
+  try {
+    return `JSON.stringify(${JSON.stringify(JSON.parse(body), null, 2)})`;
+  } catch {
+    return jsString(body);
+  }
+};
+
+interface AcornNode {
+  type: string;
+  start: number;
+  end: number;
+}
+
+interface AcornVariableDeclarator {
+  id?: {
+    name?: string;
+  };
+}
+
+interface AcornVariableDeclaration {
+  type: 'VariableDeclaration';
+  declarations: AcornVariableDeclarator[];
+}
+
+interface AcornExportNamedDeclaration extends AcornNode {
+  type: 'ExportNamedDeclaration';
+  declaration?: AcornVariableDeclaration;
+}
+
+interface AcornProgram {
+  body: AcornNode[];
+}
+
+const isOptionsExportNode = (node: AcornNode): node is AcornExportNamedDeclaration => {
+  if (node.type !== 'ExportNamedDeclaration') return false;
+  const declaration = (node as Partial<AcornExportNamedDeclaration>).declaration;
+  if (declaration?.type !== 'VariableDeclaration') return false;
+  return declaration.declarations.some(item => item.id?.name === 'options');
+};
+
 export const hasDynamicParameters = (scriptCode: string): boolean => {
   return (
     /`[^`]*\$\{[^}]+\}[^`]*`/.test(scriptCode) ||
@@ -120,13 +330,8 @@ export const updateScriptOptionsFromConfig = (scriptCode: string, config: K6Test
     const ast = acorn.parse(scriptCode, {
       ecmaVersion: 2020,
       sourceType: 'module'
-    }) as any;
-    const optionsNode = ast.body.find((node: any) => {
-      if (node.type !== 'ExportNamedDeclaration') return false;
-      const declaration = node.declaration;
-      if (declaration?.type !== 'VariableDeclaration') return false;
-      return declaration.declarations.some((item: any) => item.id?.name === 'options');
-    });
+    }) as unknown as AcornProgram;
+    const optionsNode = ast.body.find(isOptionsExportNode);
 
     if (!optionsNode) return httpConfigToScript(config);
 
@@ -176,16 +381,7 @@ export default function () {
   } else {
     let bodyString = 'null';
     if (body) {
-      if (typeof body === 'string') {
-        try {
-          JSON.parse(body);
-          bodyString = `\`${body}\``;
-        } catch {
-          bodyString = `'${(body as string).replace(/'/g, "\\'")}'`;
-        }
-      } else if (typeof body === 'object') {
-        bodyString = JSON.stringify(body);
-      }
+      bodyString = bodyToK6Expression(body);
     }
 
     if (headers && Object.keys(headers).length > 0) {
@@ -410,8 +606,6 @@ const postmanBodyToString = (body: PostmanRequest['body']): string => {
   return '';
 };
 
-const jsString = (value: string) => JSON.stringify(value);
-
 const requestToK6Call = (request: PostmanRequest): string => {
   const method = (request.method || 'GET').toLowerCase();
   const url = postmanUrlToString(request.url);
@@ -424,7 +618,7 @@ const requestToK6Call = (request: PostmanRequest): string => {
     return `http.${method}(${jsString(url)}${params})`;
   }
 
-  return `http.${method}(${jsString(url)}, ${jsString(body)}${params})`;
+  return `http.${method}(${jsString(url)}, ${bodyToK6Expression(body)}${params})`;
 };
 
 export const postmanCollectionToScript = (collection: PostmanCollection, config: K6TestConfig): string => {
@@ -433,7 +627,6 @@ export const postmanCollectionToScript = (collection: PostmanCollection, config:
     throw new Error('No requests found in Postman collection');
   }
 
-  const threshold = config.failureThreshold ?? 0.05;
   const groups = requests.map(({name, request}) => `  group(${jsString(name)}, () => {
     const res = ${requestToK6Call(request)};
     check(res, {
@@ -444,15 +637,7 @@ export const postmanCollectionToScript = (collection: PostmanCollection, config:
   return `import http from 'k6/http';
 import { check, group, sleep } from 'k6';
 
-export const options = {
-  vus: ${config.vusers},
-  duration: '${Math.max(config.duration, 1)}s',
-  thresholds: {
-    http_req_failed: [
-      { threshold: "rate<${threshold}", abortOnFail: true },
-    ],
-  },
-};
+${k6OptionsToScript(config)}
 
 export default function () {
 ${groups}
@@ -607,11 +792,9 @@ export const scriptToHttpConfig = (scriptCode: string): {config: Partial<K6TestC
       }
 
       if (['POST', 'PUT', 'PATCH'].includes(config.method || '')) {
-        const bodyMatch = /http\.\w+\s*\([^,]+,\s*([^,)]+)/.exec(scriptCode);
-        if (bodyMatch) {
-          let bodyStr = bodyMatch[1].trim();
-          bodyStr = bodyStr.replace(/^[`'"]/g, '').replace(/[`'"]$/g, '');
-          config.body = bodyStr;
+        const args = getFirstHttpCallArgs(scriptCode);
+        if (args && args.length >= 2) {
+          config.body = expressionToRequestBody(args[1]);
         }
       }
     }

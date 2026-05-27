@@ -33,6 +33,11 @@ export const HttpConfigForm = ({
 }: HttpConfigFormProps) => {
   const {t} = useTranslation();
   const [curlCommand, setCurlCommand] = useState('');
+  const dynamicControlStyle = isDynamic ? {
+    backgroundColor: '#f3f4f6',
+    cursor: 'not-allowed',
+    color: '#6b7280'
+  } : {};
   const stages = config.stages && config.stages.length > 0 ? config.stages : [
     {duration: 30, target: 10},
     {duration: 60, target: 10},
@@ -71,7 +76,7 @@ export const HttpConfigForm = ({
           fontSize: '0.875rem',
           color: '#92400e'
         }}>
-          {t('httpConfig.dynamicScriptNote')}
+          {t('httpConfig.dynamicScriptLockedFields')}
         </div>
       ) : (
         <div style={{
@@ -99,6 +104,7 @@ export const HttpConfigForm = ({
         </label>
         <textarea
           value={curlCommand}
+          disabled={isDynamic}
           onChange={(e) => setCurlCommand(e.target.value)}
           placeholder={t('httpConfig.curlPlaceholder')}
           rows={4}
@@ -109,20 +115,21 @@ export const HttpConfigForm = ({
             borderRadius: '4px',
             fontSize: '0.875rem',
             fontFamily: 'monospace',
-            marginBottom: '0.5rem'
+            marginBottom: '0.5rem',
+            ...dynamicControlStyle
           }}
         />
         <button
           type="button"
           onClick={() => onConvertCurl(curlCommand)}
-          disabled={!curlCommand.trim()}
+          disabled={isDynamic || !curlCommand.trim()}
           style={{
             padding: '0.5rem 0.75rem',
-            backgroundColor: curlCommand.trim() ? '#6366f1' : '#9ca3af',
+            backgroundColor: !isDynamic && curlCommand.trim() ? '#6366f1' : '#9ca3af',
             color: 'white',
             border: 'none',
             borderRadius: '4px',
-            cursor: curlCommand.trim() ? 'pointer' : 'not-allowed',
+            cursor: !isDynamic && curlCommand.trim() ? 'pointer' : 'not-allowed',
             fontSize: '0.875rem',
             fontWeight: 'bold'
           }}
@@ -144,6 +151,7 @@ export const HttpConfigForm = ({
         <input
           type="file"
           accept=".json,application/json"
+          disabled={isDynamic}
           onChange={async (e) => {
             const file = e.target.files?.[0];
             if (!file) return;
@@ -160,7 +168,9 @@ export const HttpConfigForm = ({
             padding: '0.5rem',
             border: '1px solid #d1d5db',
             borderRadius: '4px',
-            backgroundColor: 'white'
+            backgroundColor: isDynamic ? '#f3f4f6' : 'white',
+            cursor: isDynamic ? 'not-allowed' : 'pointer',
+            color: isDynamic ? '#6b7280' : '#000'
           }}
         />
         <div style={{fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem'}}>
@@ -174,7 +184,6 @@ export const HttpConfigForm = ({
         </label>
         <select
           value={config.template || 'constant-vus'}
-          disabled={isDynamic}
           onChange={(e) => onTemplateChange(e.target.value as K6ScriptTemplate)}
           style={{
             width: '100%',
@@ -182,9 +191,9 @@ export const HttpConfigForm = ({
             border: '1px solid #d1d5db',
             borderRadius: '4px',
             fontSize: '1rem',
-            backgroundColor: isDynamic ? '#f3f4f6' : 'white',
-            cursor: isDynamic ? 'not-allowed' : 'pointer',
-            color: isDynamic ? '#6b7280' : '#000'
+            backgroundColor: 'white',
+            cursor: 'pointer',
+            color: '#000'
           }}
         >
           <option value="constant-vus">{t('httpConfig.templateConstantVus')}</option>
@@ -352,14 +361,20 @@ export const HttpConfigForm = ({
             disabled={isDynamic}
             onChange={(e) => onConfigChange({body: e.target.value})}
             placeholder={t('httpConfig.requestBodyPlaceholder')}
-            rows={5}
+            rows={10}
             style={{
               width: '100%',
+              boxSizing: 'border-box',
+              minHeight: '220px',
               padding: '0.5rem',
               border: '1px solid #d1d5db',
               borderRadius: '4px',
               fontSize: '0.875rem',
               fontFamily: 'monospace',
+              lineHeight: 1.5,
+              overflow: 'auto',
+              resize: 'vertical',
+              whiteSpace: 'pre',
               backgroundColor: isDynamic ? '#f3f4f6' : 'white',
               cursor: isDynamic ? 'not-allowed' : 'text',
               color: isDynamic ? '#6b7280' : '#000'
@@ -383,16 +398,15 @@ export const HttpConfigForm = ({
               required
               min="1"
               value={config.vusers}
-              disabled={isDynamic}
               onChange={(e) => onConfigChange({vusers: Number.parseInt(e.target.value)})}
               style={{
                 width: '100%',
                 padding: '0.5rem',
                 border: '1px solid #d1d5db',
                 borderRadius: '4px',
-                backgroundColor: isDynamic ? '#f3f4f6' : 'white',
-                cursor: isDynamic ? 'not-allowed' : 'text',
-                color: isDynamic ? '#6b7280' : '#000'
+                backgroundColor: 'white',
+                cursor: 'text',
+                color: '#000'
               }}
             />
           </div>
@@ -407,16 +421,15 @@ export const HttpConfigForm = ({
               required
               min="1"
               value={config.duration}
-              disabled={isDynamic}
               onChange={(e) => onConfigChange({duration: Number.parseInt(e.target.value)})}
               style={{
                 width: '100%',
                 padding: '0.5rem',
                 border: '1px solid #d1d5db',
                 borderRadius: '4px',
-                backgroundColor: isDynamic ? '#f3f4f6' : 'white',
-                cursor: isDynamic ? 'not-allowed' : 'text',
-                color: isDynamic ? '#6b7280' : '#000'
+                backgroundColor: 'white',
+                cursor: 'text',
+                color: '#000'
               }}
             />
           </div>
@@ -432,16 +445,15 @@ export const HttpConfigForm = ({
                 required
                 min="1"
                 value={config.targetTps || 1}
-                disabled={isDynamic}
                 onChange={(e) => onConfigChange({targetTps: Number.parseInt(e.target.value)})}
                 style={{
                   width: '100%',
                   padding: '0.5rem',
                   border: '1px solid #d1d5db',
                   borderRadius: '4px',
-                  backgroundColor: isDynamic ? '#f3f4f6' : 'white',
-                  cursor: isDynamic ? 'not-allowed' : 'text',
-                  color: isDynamic ? '#6b7280' : '#000'
+                  backgroundColor: 'white',
+                  cursor: 'text',
+                  color: '#000'
                 }}
               />
             </div>
@@ -454,16 +466,15 @@ export const HttpConfigForm = ({
                 required
                 min="1"
                 value={config.duration}
-                disabled={isDynamic}
                 onChange={(e) => onConfigChange({duration: Number.parseInt(e.target.value)})}
                 style={{
                   width: '100%',
                   padding: '0.5rem',
                   border: '1px solid #d1d5db',
                   borderRadius: '4px',
-                  backgroundColor: isDynamic ? '#f3f4f6' : 'white',
-                  cursor: isDynamic ? 'not-allowed' : 'text',
-                  color: isDynamic ? '#6b7280' : '#000'
+                  backgroundColor: 'white',
+                  cursor: 'text',
+                  color: '#000'
                 }}
               />
             </div>
@@ -476,16 +487,15 @@ export const HttpConfigForm = ({
                 required
                 min="1"
                 value={config.preAllocatedVUs || 1}
-                disabled={isDynamic}
                 onChange={(e) => onConfigChange({preAllocatedVUs: Number.parseInt(e.target.value)})}
                 style={{
                   width: '100%',
                   padding: '0.5rem',
                   border: '1px solid #d1d5db',
                   borderRadius: '4px',
-                  backgroundColor: isDynamic ? '#f3f4f6' : 'white',
-                  cursor: isDynamic ? 'not-allowed' : 'text',
-                  color: isDynamic ? '#6b7280' : '#000'
+                  backgroundColor: 'white',
+                  cursor: 'text',
+                  color: '#000'
                 }}
               />
             </div>
@@ -498,16 +508,15 @@ export const HttpConfigForm = ({
                 required
                 min={config.preAllocatedVUs || 1}
                 value={config.maxVUs || config.preAllocatedVUs || 1}
-                disabled={isDynamic}
                 onChange={(e) => onConfigChange({maxVUs: Number.parseInt(e.target.value)})}
                 style={{
                   width: '100%',
                   padding: '0.5rem',
                   border: '1px solid #d1d5db',
                   borderRadius: '4px',
-                  backgroundColor: isDynamic ? '#f3f4f6' : 'white',
-                  cursor: isDynamic ? 'not-allowed' : 'text',
-                  color: isDynamic ? '#6b7280' : '#000'
+                  backgroundColor: 'white',
+                  cursor: 'text',
+                  color: '#000'
                 }}
               />
             </div>
@@ -527,15 +536,14 @@ export const HttpConfigForm = ({
               </label>
               <button
                 type="button"
-                disabled={isDynamic}
                 onClick={addStage}
                 style={{
                   padding: '0.375rem 0.75rem',
-                  backgroundColor: isDynamic ? '#9ca3af' : '#10b981',
+                  backgroundColor: '#10b981',
                   color: 'white',
                   border: 'none',
                   borderRadius: '4px',
-                  cursor: isDynamic ? 'not-allowed' : 'pointer',
+                  cursor: 'pointer',
                   fontSize: '0.875rem'
                 }}
               >
@@ -561,16 +569,15 @@ export const HttpConfigForm = ({
                       type="number"
                       min="1"
                       value={stage.duration}
-                      disabled={isDynamic}
                       onChange={(e) => updateStage(index, {duration: Number.parseInt(e.target.value)})}
                       style={{
                         width: '100%',
                         padding: '0.5rem',
                         border: '1px solid #d1d5db',
                         borderRadius: '4px',
-                        backgroundColor: isDynamic ? '#f3f4f6' : 'white',
-                        cursor: isDynamic ? 'not-allowed' : 'text',
-                        color: isDynamic ? '#6b7280' : '#000'
+                        backgroundColor: 'white',
+                        cursor: 'text',
+                        color: '#000'
                       }}
                     />
                   </div>
@@ -582,30 +589,29 @@ export const HttpConfigForm = ({
                       type="number"
                       min="0"
                       value={stage.target}
-                      disabled={isDynamic}
                       onChange={(e) => updateStage(index, {target: Number.parseInt(e.target.value)})}
                       style={{
                         width: '100%',
                         padding: '0.5rem',
                         border: '1px solid #d1d5db',
                         borderRadius: '4px',
-                        backgroundColor: isDynamic ? '#f3f4f6' : 'white',
-                        cursor: isDynamic ? 'not-allowed' : 'text',
-                        color: isDynamic ? '#6b7280' : '#000'
+                        backgroundColor: 'white',
+                        cursor: 'text',
+                        color: '#000'
                       }}
                     />
                   </div>
                   <button
                     type="button"
-                    disabled={isDynamic || stages.length <= 1}
+                    disabled={stages.length <= 1}
                     onClick={() => removeStage(index)}
                     style={{
                       padding: '0.5rem 0.75rem',
-                      backgroundColor: isDynamic || stages.length <= 1 ? '#9ca3af' : '#ef4444',
+                      backgroundColor: stages.length <= 1 ? '#9ca3af' : '#ef4444',
                       color: 'white',
                       border: 'none',
                       borderRadius: '4px',
-                      cursor: isDynamic || stages.length <= 1 ? 'not-allowed' : 'pointer'
+                      cursor: stages.length <= 1 ? 'not-allowed' : 'pointer'
                     }}
                   >
                     {t('httpConfig.remove')}
@@ -625,16 +631,15 @@ export const HttpConfigForm = ({
             max="100"
             step="1"
             value={((config.failureThreshold ?? 0.05) * 100).toFixed(0)}
-            disabled={isDynamic}
             onChange={(e) => onConfigChange({failureThreshold: Number.parseInt(e.target.value) / 100})}
             style={{
               width: '100%',
               padding: '0.5rem',
               border: '1px solid #d1d5db',
               borderRadius: '4px',
-              backgroundColor: isDynamic ? '#f3f4f6' : 'white',
-              cursor: isDynamic ? 'not-allowed' : 'text',
-              color: isDynamic ? '#6b7280' : '#000'
+              backgroundColor: 'white',
+              cursor: 'text',
+              color: '#000'
             }}
           />
           <div style={{fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem'}}>

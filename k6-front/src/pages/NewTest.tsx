@@ -10,7 +10,7 @@ import {Button, InfoBox} from '../components/common';
 import {useScriptConfig} from '../hooks/useScriptConfig';
 import {useScriptValidation} from '../hooks/useScriptValidation';
 import {useTooltip} from '../hooks/useTooltip';
-import {curlToHttpConfig, getTemplateDefaults, httpConfigToScript, postmanCollectionToScript, updateScriptOptionsFromConfig} from '../utils/scriptUtils';
+import {curlToHttpConfig, getTemplateDefaults, hasDynamicParameters, httpConfigToScript, postmanCollectionToScript, updateScriptOptionsFromConfig} from '../utils/scriptUtils';
 import type {K6ScriptTemplate, K6TestConfig} from '../types/k6';
 
 const DEFAULT_SCRIPT = `import http from 'k6/http';
@@ -58,6 +58,8 @@ const getErrorMessage = (err: unknown, fallback: string) => {
   const apiError = err as ApiError;
   return apiError.response?.data?.error || apiError.message || fallback;
 };
+
+const dynamicLockedConfigKeys = new Set<keyof K6TestConfig>(['url', 'method', 'headers']);
 
 export const NewTest = () => {
   const {t} = useTranslation();
@@ -129,10 +131,7 @@ export const NewTest = () => {
       setScript(copiedScriptContent);
       setSaveAsScript(true);
 
-      // 동적 스크립트 여부 설정
-      if (isDynamic !== undefined) {
-        setIsDynamicScript(isDynamic);
-      }
+      setIsDynamicScript(isDynamic ?? hasDynamicParameters(copiedScriptContent));
 
       if (description) {
         setScriptDescription(description);
@@ -183,6 +182,7 @@ export const NewTest = () => {
 
     if (rerunScript) {
       setScript(rerunScript);
+      setIsDynamicScript(hasDynamicParameters(rerunScript));
       sessionStorage.removeItem('rerunScript');
 
       if (rerunConfigStr) {
@@ -216,7 +216,7 @@ export const NewTest = () => {
         updateConfigFromScript(rerunScript);
       }
     }
-  }, [setScript, setHttpConfig, updateConfigFromScript]);
+  }, [setScript, setHttpConfig, setIsDynamicScript, updateConfigFromScript]);
 
   // Validate initial script
   useEffect(() => {
@@ -258,6 +258,7 @@ export const NewTest = () => {
       const test = await k6Api.getTest(testId);
       if (test.script) {
         setScript(test.script);
+        setIsDynamicScript(hasDynamicParameters(test.script));
         if (test.config) {
           setHttpConfig({
             url: test.config.url || '',
@@ -418,6 +419,8 @@ export const NewTest = () => {
   };
 
   const handleAddHeader = () => {
+    if (isDynamicScript) return;
+
     if (headerKey && headerValue) {
       const newHeaders = {...httpConfig.headers, [headerKey]: headerValue};
       handleConfigChange({headers: newHeaders});
@@ -427,10 +430,27 @@ export const NewTest = () => {
   };
 
   const handleRemoveHeader = (key: string) => {
+    if (isDynamicScript) return;
+
     const rest = Object.fromEntries(
       Object.entries(httpConfig.headers || {}).filter(([headerKey]) => headerKey !== key)
     );
     handleConfigChange({headers: rest});
+  };
+
+  const handleHttpConfigChange = (changes: Partial<K6TestConfig>) => {
+    if (!isDynamicScript) {
+      handleConfigChange(changes);
+      return;
+    }
+
+    const allowedChanges = Object.fromEntries(
+      Object.entries(changes).filter(([key]) => !dynamicLockedConfigKeys.has(key as keyof K6TestConfig))
+    ) as Partial<K6TestConfig>;
+
+    if (Object.keys(allowedChanges).length > 0) {
+      handleConfigChange(allowedChanges);
+    }
   };
 
   const handleScriptChangeWithValidation = (newScript: string) => {
@@ -447,12 +467,10 @@ export const NewTest = () => {
   };
 
   const handleConvertCurl = (curlCommand: string) => {
+    if (isDynamicScript) return;
+
     try {
-      const nextConfig = {
-        ...curlToHttpConfig(curlCommand, httpConfig),
-        template: 'constant-vus' as const,
-        rampUp: 0,
-      };
+      const nextConfig = curlToHttpConfig(curlCommand, httpConfig);
       const generatedScript = httpConfigToScript(nextConfig);
       setHttpConfig(nextConfig);
       setScript(generatedScript);
@@ -463,21 +481,17 @@ export const NewTest = () => {
   };
 
   const handleImportPostman = async (collection: unknown) => {
+    if (isDynamicScript) return;
+
     try {
-      const nextConfig = {
-        ...httpConfig,
-        template: 'constant-vus' as const,
-        rampUp: 0,
-      };
       let generatedScript: string;
       try {
-        generatedScript = await scriptApi.convertPostman(collection);
+        generatedScript = updateScriptOptionsFromConfig(await scriptApi.convertPostman(collection), httpConfig);
       } catch {
-        generatedScript = postmanCollectionToScript(collection as Parameters<typeof postmanCollectionToScript>[0], nextConfig);
+        generatedScript = postmanCollectionToScript(collection as Parameters<typeof postmanCollectionToScript>[0], httpConfig);
       }
       setScript(generatedScript);
       updateConfigFromScript(generatedScript);
-      setHttpConfig(nextConfig);
       validate(generatedScript);
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to convert Postman collection');
@@ -578,7 +592,7 @@ export const NewTest = () => {
             isDynamic={isDynamicScript}
             headerKey={headerKey}
             headerValue={headerValue}
-            onConfigChange={handleConfigChange}
+            onConfigChange={handleHttpConfigChange}
             onTemplateChange={handleTemplateChange}
             onConvertCurl={handleConvertCurl}
             onImportPostman={handleImportPostman}

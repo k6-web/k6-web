@@ -11,3 +11,8 @@ export interface FolderWithScriptsResponse {
   scripts: Script[];
   scriptCount: number;
 }
+
+export interface ImportPostmanScriptsResponse {
+  scripts: Script[];
+  count: number;
+}
