@@ -241,6 +241,7 @@
     "failedToUpdate": "Failed to update script",
     "scriptRequired": "Script content is required.",
     "copiedToClipboard": "Copied to clipboard!",
+    "failedToShare": "Failed to share script",
     "viewDetails": "View Details"
   },
   "scriptList": {

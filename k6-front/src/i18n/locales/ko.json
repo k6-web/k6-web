@@ -241,6 +241,7 @@
     "failedToUpdate": "스크립트 수정에 실패했습니다",
     "scriptRequired": "스크립트 내용은 필수입니다.",
     "copiedToClipboard": "클립보드에 복사되었습니다!",
+    "failedToShare": "공유에 실패했습니다",
     "viewDetails": "상세 보기"
   },
   "scriptList": {
