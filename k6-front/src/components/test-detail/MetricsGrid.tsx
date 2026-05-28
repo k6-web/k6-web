@@ -7,6 +7,56 @@ interface MetricsGridProps {
   summary: K6Summary;
 }
 
+interface DurationStatProps {
+  label: string;
+  value?: number;
+  color?: string;
+}
+
+const DurationStat = ({label, value, color = '#7c3aed'}: DurationStatProps) => (
+  <div>
+    <div style={{fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.25rem'}}>{label}</div>
+    <div style={{fontSize: '1.125rem', fontWeight: 'bold', color}}>
+      {formatDuration(value)}
+    </div>
+  </div>
+);
+
+interface MetricPairProps {
+  label: string;
+  total?: number;
+  rate?: number;
+}
+
+const MetricPair = ({label, total, rate}: MetricPairProps) => (
+  <div>
+    <div style={{fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.25rem'}}>{label}</div>
+    <div style={{fontSize: '1.125rem', fontWeight: 'bold', color: '#f59e0b'}}>
+      {formatBytes(total)}
+    </div>
+    <div style={{fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem'}}>
+      {formatBytes(rate)}/s
+    </div>
+  </div>
+);
+
+interface PercentStatProps {
+  label: string;
+  value: string;
+  count: string;
+  color: string;
+}
+
+const PercentStat = ({label, value, count, color}: PercentStatProps) => (
+  <div>
+    <div style={{fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.25rem'}}>{label}</div>
+    <div style={{fontSize: '1.5rem', fontWeight: 'bold', color}}>{value}</div>
+    <div style={{fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem'}}>{count}</div>
+  </div>
+);
+
+const formatRate = (value?: number) => value !== undefined ? Math.round(value).toString() : 'N/A';
+
 export const MetricsGrid = ({summary}: MetricsGridProps) => {
   const {t} = useTranslation();
   const checks = summary.metrics.checks;
@@ -15,98 +65,149 @@ export const MetricsGrid = ({summary}: MetricsGridProps) => {
   const totalChecks = checks ? (checks.passes + checks.fails) : 0;
   const passedChecks = checks?.passes || 0;
   const failedChecks = checks?.fails || 0;
+  const requestRate = summary.metrics.http_reqs?.rate;
+  const requestCount = summary.metrics.http_reqs?.count;
+  const iterationRate = summary.metrics.iterations?.rate;
+  const iterationCount = summary.metrics.iterations?.count;
 
   return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-      gap: '1rem',
-      marginBottom: '1.5rem'
-    }}>
-      {/* TPS Card */}
-      <MetricCard
-        title={`TPS`}
-        value={summary.metrics.http_reqs?.rate ? Math.round(summary.metrics.http_reqs.rate) : 'N/A'}
-        color="#3b82f6"
-      />
+    <div style={{marginBottom: '1.5rem'}}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+        gap: '1rem',
+        marginBottom: '1rem'
+      }}>
+        <MetricCard
+          title={t('metrics.requestRate')}
+          value=""
+          color="#2563eb"
+        >
+          <div>
+            <div style={{display: 'flex', alignItems: 'baseline', gap: '0.5rem'}}>
+              <span style={{fontSize: '2rem', fontWeight: 'bold', color: '#2563eb'}}>
+                {formatRate(requestRate)}
+              </span>
+              <span style={{fontSize: '0.875rem', color: '#2563eb', fontWeight: 'bold'}}>RPS</span>
+            </div>
+            <div style={{fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem'}}>
+              {requestCount !== undefined ? t('metrics.totalRequests', {count: requestCount}) : 'N/A'}
+            </div>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: '1rem',
+              borderTop: '1px solid #e5e7eb',
+              marginTop: '1rem',
+              paddingTop: '0.875rem',
+              fontSize: '0.875rem'
+            }}>
+              <span style={{color: '#374151', fontWeight: '600'}}>{t('metrics.iterations')}</span>
+              <span style={{color: '#4f46e5', fontWeight: '700', textAlign: 'right'}}>
+                {formatRate(iterationRate)}/s
+                {iterationCount !== undefined && (
+                  <span style={{color: '#6b7280', fontWeight: 'normal'}}> · {t('metrics.totalIterations', {count: iterationCount})}</span>
+                )}
+              </span>
+            </div>
+          </div>
+        </MetricCard>
 
-      {/* Latency Card */}
-      <MetricCard
-        title={t('metrics.httpReqDuration')}
-        value=""
-        color="#8b5cf6"
-      >
-        <div style={{display: 'flex', gap: '1rem', marginTop: '0.5rem'}}>
-          <div>
-            <div style={{fontSize: '0.75rem', color: '#999'}}>{t('metrics.avg')}</div>
-            <div style={{fontSize: '1.25rem', fontWeight: 'bold', color: '#8b5cf6'}}>
-              {formatDuration(summary.metrics.http_req_duration?.avg)}
+        <MetricCard
+          title={t('metrics.latencyAndIteration')}
+          value=""
+          color="#7c3aed"
+        >
+          <div style={{display: 'grid', gap: '1rem'}}>
+            <div>
+              <div style={{fontSize: '0.75rem', color: '#374151', fontWeight: 'bold', marginBottom: '0.5rem'}}>
+                {t('metrics.httpReqDuration')}
+              </div>
+              <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '1rem'}}>
+                <DurationStat label={t('metrics.avg')} value={summary.metrics.http_req_duration?.avg}/>
+                <DurationStat label={t('metrics.p90')} value={summary.metrics.http_req_duration?.['p(90)']}/>
+                <DurationStat label={t('metrics.p95')} value={summary.metrics.http_req_duration?.['p(95)']}/>
+              </div>
+            </div>
+            <div style={{borderTop: '1px solid #e5e7eb', paddingTop: '1rem'}}>
+              <div style={{fontSize: '0.75rem', color: '#374151', fontWeight: 'bold', marginBottom: '0.5rem'}}>
+                {t('metrics.iterationDuration')}
+              </div>
+              <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '1rem'}}>
+                <DurationStat label={t('metrics.avg')} value={summary.metrics.iteration_duration?.avg} color="#0f766e"/>
+                <DurationStat label={t('metrics.p90')} value={summary.metrics.iteration_duration?.['p(90)']} color="#0f766e"/>
+                <DurationStat label={t('metrics.p95')} value={summary.metrics.iteration_duration?.['p(95)']} color="#0f766e"/>
+              </div>
             </div>
           </div>
-          <div>
-            <div style={{fontSize: '0.75rem', color: '#999'}}>{t('metrics.p90')}</div>
-            <div style={{fontSize: '1.25rem', fontWeight: 'bold', color: '#8b5cf6'}}>
-              {formatDuration(summary.metrics.http_req_duration?.['p(90)'])}
-            </div>
-          </div>
-          <div>
-            <div style={{fontSize: '0.75rem', color: '#999'}}>{t('metrics.p95')}</div>
-            <div style={{fontSize: '1.25rem', fontWeight: 'bold', color: '#8b5cf6'}}>
-              {formatDuration(summary.metrics.http_req_duration?.['p(95)'])}
-            </div>
-          </div>
-        </div>
-      </MetricCard>
+        </MetricCard>
 
-      {/* Success/Failure Card */}
-      <MetricCard
-        title={`${t('testDetail.passed')} / ${t('testDetail.failed')}`}
-        value=""
-        color={failedChecks > 0 ? '#ef4444' : '#22c55e'}
-      >
-        <div style={{display: 'flex', gap: '1.5rem', alignItems: 'center'}}>
-          <div>
-            <div style={{fontSize: '0.75rem', color: '#22c55e'}}>✓ {t('testDetail.passed')}</div>
-            <div style={{fontSize: '1.5rem', fontWeight: 'bold', color: '#22c55e'}}>
-              {passRate.toFixed(1)}%
-            </div>
-            <div style={{fontSize: '0.75rem', color: '#999'}}>
-              {passedChecks} / {totalChecks}
-            </div>
+        <MetricCard
+          title={t('metrics.successRate')}
+          value=""
+          color={failedChecks > 0 ? '#ef4444' : '#16a34a'}
+        >
+          <div style={{display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '1rem'}}>
+            <PercentStat
+              label={t('testDetail.passed')}
+              value={`${passRate.toFixed(1)}%`}
+              count={`${passedChecks} / ${totalChecks}`}
+              color="#16a34a"
+            />
+            <PercentStat
+              label={t('testDetail.failed')}
+              value={`${failRate.toFixed(1)}%`}
+              count={`${failedChecks} / ${totalChecks}`}
+              color="#dc2626"
+            />
           </div>
-          <div>
-            <div style={{fontSize: '0.75rem', color: '#ef4444'}}>✗ {t('testDetail.failed')}</div>
-            <div style={{fontSize: '1.5rem', fontWeight: 'bold', color: '#ef4444'}}>
-              {failRate.toFixed(1)}%
-            </div>
-            <div style={{fontSize: '0.75rem', color: '#999'}}>
-              {failedChecks} / {totalChecks}
-            </div>
-          </div>
-        </div>
-      </MetricCard>
+        </MetricCard>
 
-      {/* Network Bandwidth Card */}
-      <MetricCard
-        title="Network Bandwidth"
-        value=""
-        color="#f59e0b"
-      >
-        <div style={{marginTop: '0.5rem'}}>
-          <div style={{marginBottom: '0.75rem'}}>
-            <div style={{fontSize: '0.75rem', color: '#999'}}>↓ {t('metrics.dataReceived')}</div>
-            <div style={{fontSize: '1.25rem', fontWeight: 'bold', color: '#f59e0b'}}>
-              {formatBytes(summary.metrics.data_received?.count)}
-            </div>
+        <MetricCard
+          title={t('metrics.networkBandwidth')}
+          value=""
+          color="#f59e0b"
+        >
+          <div style={{display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '1rem'}}>
+            <MetricPair
+              label={`↓ ${t('metrics.dataReceived')}`}
+              total={summary.metrics.data_received?.count}
+              rate={summary.metrics.data_received?.rate}
+            />
+            <MetricPair
+              label={`↑ ${t('metrics.dataSent')}`}
+              total={summary.metrics.data_sent?.count}
+              rate={summary.metrics.data_sent?.rate}
+            />
           </div>
-          <div>
-            <div style={{fontSize: '0.75rem', color: '#999'}}>↑ {t('metrics.dataSent')}</div>
-            <div style={{fontSize: '1.25rem', fontWeight: 'bold', color: '#f59e0b'}}>
-              {formatBytes(summary.metrics.data_sent?.count)}
-            </div>
+        </MetricCard>
+      </div>
+
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+        gap: '1rem'
+      }}>
+        <MetricCard
+          title={t('metrics.httpTimingBreakdown')}
+          value=""
+          color="#0ea5e9"
+        >
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+            gap: '1rem'
+          }}>
+            <DurationStat label={t('metrics.waiting')} value={summary.metrics.http_req_waiting?.avg} color="#0284c7"/>
+            <DurationStat label={t('metrics.sending')} value={summary.metrics.http_req_sending?.avg} color="#0284c7"/>
+            <DurationStat label={t('metrics.receiving')} value={summary.metrics.http_req_receiving?.avg} color="#0284c7"/>
+            <DurationStat label={t('metrics.blocked')} value={summary.metrics.http_req_blocked?.avg} color="#0284c7"/>
+            <DurationStat label={t('metrics.connecting')} value={summary.metrics.http_req_connecting?.avg} color="#0284c7"/>
+            <DurationStat label={t('metrics.tlsHandshaking')} value={summary.metrics.http_req_tls_handshaking?.avg} color="#0284c7"/>
           </div>
-        </div>
-      </MetricCard>
+        </MetricCard>
+      </div>
     </div>
   );
 };

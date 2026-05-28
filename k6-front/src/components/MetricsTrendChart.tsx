@@ -10,7 +10,7 @@ type MetricType = 'tps' | 'avg' | 'p90' | 'p95' | 'errorRate';
 
 const metricConfig = {
   tps: {
-    label: 'TPS (Requests/sec)',
+    label: 'RPS',
     color: '#3b82f6',
     unit: 'req/s',
     format: (val: number) => val.toFixed(2),

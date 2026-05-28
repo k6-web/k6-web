@@ -1,5 +1,5 @@
 export const formatBytes = (bytes: number | undefined): string => {
-  if (!bytes) return 'N/A';
+  if (bytes === undefined || bytes === null) return 'N/A';
   const units = ['B', 'KB', 'MB', 'GB'];
   let size = bytes;
   let unitIndex = 0;

@@ -55,22 +55,22 @@ export const PerformanceChart = ({data, isLive = false}: PerformanceChartProps) 
       </div>
 
       <div style={{marginBottom: showLatency || showErrorRate ? '2rem' : 0}}>
-        <h3 style={{fontSize: '1rem', color: '#666', marginBottom: '1rem'}}>{t('testDetail.transactionsPerSecond')}</h3>
+        <h3 style={{fontSize: '1rem', color: '#666', marginBottom: '1rem'}}>{t('testDetail.requestsPerSecond')}</h3>
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={data} margin={chartMargin}>
             <CartesianGrid strokeDasharray="3 3"/>
             <XAxis dataKey="time" label={timeLabel()}/>
-            <YAxis label={{value: 'TPS', angle: -90, position: 'insideLeft'}}/>
-            <Tooltip formatter={(v: number) => [v, 'TPS']} labelFormatter={(l) => `Time: ${l}s`}/>
+            <YAxis label={{value: 'RPS', angle: -90, position: 'insideLeft'}}/>
+            <Tooltip formatter={(v: number) => [v, 'RPS']} labelFormatter={(l) => `Time: ${l}s`}/>
             <Legend/>
-            <Line type="monotone" dataKey="tps" stroke="#82ca9d" strokeWidth={2} name="Transactions/sec" dot={false} isAnimationActive={false}/>
+            <Line type="monotone" dataKey="tps" stroke="#82ca9d" strokeWidth={2} name="Requests/sec" dot={false} isAnimationActive={false}/>
           </LineChart>
         </ResponsiveContainer>
       </div>
 
       {showLatency && (
         <div style={{marginBottom: showErrorRate ? '2rem' : 0}}>
-          <h3 style={{fontSize: '1rem', color: '#666', marginBottom: '1rem'}}>Latency (ms)</h3>
+          <h3 style={{fontSize: '1rem', color: '#666', marginBottom: '1rem'}}>{t('metrics.httpReqDuration')} (ms)</h3>
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={data} margin={chartMargin}>
               <CartesianGrid strokeDasharray="3 3"/>
