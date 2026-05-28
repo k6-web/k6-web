@@ -7,7 +7,7 @@ import type {Script, TestComparison} from '../types/script';
 import type {Test} from '../types/test';
 import type {K6ScriptTemplate, K6TestConfig} from '../types/k6';
 import {MetricsTrendChart} from '../components/MetricsTrendChart';
-import {Button} from '../components/common';
+import {Button, TestNameModal} from '../components/common';
 import {HttpConfigForm, ScriptEditor} from '../components/new-test';
 import {useScriptValidation} from '../hooks/useScriptValidation';
 import {
@@ -65,6 +65,8 @@ export const ScriptDetail = () => {
   const [comparison, setComparison] = useState<TestComparison | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isRunModalOpen, setIsRunModalOpen] = useState(false);
+  const [isRunning, setIsRunning] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editScript, setEditScript] = useState('');
@@ -119,15 +121,21 @@ export const ScriptDetail = () => {
     fetchData();
   }, [scriptId, editParam, initializeEditState]);
 
-  const handleRun = async () => {
+  const handleRun = () => {
     if (!scriptId) return;
-    if (!confirm(t('folderDetail.confirmRunScript'))) return;
+    setIsRunModalOpen(true);
+  };
 
+  const handleRunConfirm = async (name?: string) => {
+    if (!scriptId) return;
     try {
-      const result = await scriptApi.runScript(scriptId);
+      setIsRunning(true);
+      const result = await scriptApi.runScript(scriptId, name ? {name} : undefined);
       navigate(`/tests/${result.testId}`);
     } catch {
       alert(t('folderDetail.failedToRunScript'));
+    } finally {
+      setIsRunning(false);
     }
   };
 
@@ -412,18 +420,19 @@ export const ScriptDetail = () => {
             </button>
             <button
               onClick={handleRun}
+              disabled={isRunning}
               style={{
                 padding: '0.5rem 1rem',
-                backgroundColor: '#10b981',
+                backgroundColor: isRunning ? '#9ca3af' : '#10b981',
                 color: 'white',
                 border: 'none',
                 borderRadius: '4px',
-                cursor: 'pointer',
+                cursor: isRunning ? 'not-allowed' : 'pointer',
                 fontWeight: 'bold',
                 fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'
               }}
             >
-              {t('scriptDetail.runTest')}
+              {isRunning ? t('newTest.startingTest') : t('scriptDetail.runTest')}
             </button>
             <button
               onClick={handleDelete}
@@ -640,9 +649,9 @@ export const ScriptDetail = () => {
             <table style={{width: '100%', borderCollapse: 'collapse'}}>
               <thead>
               <tr style={{backgroundColor: '#f3f4f6'}}>
-                <th style={{padding: '0.5rem', textAlign: 'left'}}>{t('testDetail.testId')}</th>
+                <th style={{padding: '0.5rem', textAlign: 'left'}}>{t('common.name')} / {t('testDetail.testId')}</th>
                 <th style={{padding: '0.5rem', textAlign: 'left'}}>{t('common.status')}</th>
-                <th style={{padding: '0.5rem', textAlign: 'right'}}>TPS</th>
+                <th style={{padding: '0.5rem', textAlign: 'right'}}>RPS</th>
                 <th style={{padding: '0.5rem', textAlign: 'right'}}>Avg (ms)</th>
                 <th style={{padding: '0.5rem', textAlign: 'right'}}>P90 (ms)</th>
                 <th style={{padding: '0.5rem', textAlign: 'right'}}>P95 (ms)</th>
@@ -656,7 +665,22 @@ export const ScriptDetail = () => {
                 const metrics = extractMetrics(test);
                 return (
                   <tr key={test.testId} style={{borderBottom: '1px solid #e5e7eb'}}>
-                    <td style={{padding: '0.5rem'}}>{test.testId}</td>
+                    <td style={{padding: '0.5rem'}}>
+                      <Link to={`/tests/${test.testId}`} style={{color: '#3b82f6', textDecoration: 'none'}}>
+                        {test.name ? (
+                          <div>
+                            <div style={{fontWeight: 'bold', marginBottom: '0.25rem'}}>
+                              {test.name}
+                            </div>
+                            <div style={{fontSize: '0.75rem', color: '#6b7280'}}>
+                              {test.testId}
+                            </div>
+                          </div>
+                        ) : (
+                          test.testId
+                        )}
+                      </Link>
+                    </td>
                     <td style={{padding: '0.5rem'}}>
                         <span style={{
                           padding: '0.25rem 0.5rem',
@@ -761,6 +785,15 @@ export const ScriptDetail = () => {
             <strong>Summary:</strong> {comparison.summary.improved} improved, {comparison.summary.degraded} degraded, {comparison.summary.unchanged} unchanged
           </div>
         </div>
+      )}
+
+      {isRunModalOpen && (
+        <TestNameModal
+          initialName={script.config?.name || ''}
+          loading={isRunning}
+          onCancel={() => setIsRunModalOpen(false)}
+          onConfirm={handleRunConfirm}
+        />
       )}
     </div>
   );
