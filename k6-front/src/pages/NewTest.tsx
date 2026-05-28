@@ -115,6 +115,7 @@ export const NewTest = () => {
         tags?: string[];
         folderId?: string;
         isDynamic?: boolean;
+        saveAsScript?: boolean;
       }
     } | null;
 
@@ -125,11 +126,12 @@ export const NewTest = () => {
         description,
         tags,
         folderId: copiedFolderId,
-        isDynamic
+        isDynamic,
+        saveAsScript: shouldSaveAsScript
       } = state.copiedScript;
 
       setScript(copiedScriptContent);
-      setSaveAsScript(true);
+      setSaveAsScript(shouldSaveAsScript ?? true);
 
       setIsDynamicScript(isDynamic ?? hasDynamicParameters(copiedScriptContent));
 

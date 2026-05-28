@@ -7,8 +7,12 @@ interface TestHeaderProps {
   status: string;
   onStop: () => void;
   onRerun: () => void;
+  onCopyScript: () => void;
+  onEditScript: () => void;
   onDelete: () => void;
   onCopyLink: () => void;
+  canRerun: boolean;
+  canEditScript: boolean;
 }
 
 export const TestHeader = ({
@@ -17,8 +21,12 @@ export const TestHeader = ({
   status,
   onStop,
   onRerun,
+  onCopyScript,
+  onEditScript,
   onDelete,
-  onCopyLink
+  onCopyLink,
+  canRerun,
+  canEditScript
 }: TestHeaderProps) => {
   const {t} = useTranslation();
   return (
@@ -65,14 +73,32 @@ export const TestHeader = ({
               Share
             </Button>
             <Button
-              variant="primary"
+              variant="success"
               onClick={onRerun}
+              disabled={!canRerun}
+              style={{fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'}}
+              title={canRerun ? t('testList.rerun') : t('testList.noScriptAvailable')}
+            >
+              {t('testList.rerun')}
+            </Button>
+            <Button
+              variant="primary"
+              onClick={onCopyScript}
               style={{fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'}}
             >
-              {t('testDetail.copyScript')}
+              {t('testDetail.openAsNewTest')}
             </Button>
             <Button
               variant="gray"
+              onClick={onEditScript}
+              disabled={!canEditScript}
+              style={{fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'}}
+              title={canEditScript ? t('testDetail.editScript') : t('testDetail.noSavedScriptAvailable')}
+            >
+              {t('testDetail.editScript')}
+            </Button>
+            <Button
+              variant="danger"
               onClick={onDelete}
               style={{fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'}}
             >

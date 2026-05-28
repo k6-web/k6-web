@@ -7,6 +7,7 @@ import {StatusBadge} from '../common';
 interface TestTableRowProps {
   test: Test;
   onRerun?: (testId: string) => void;
+  isRerunning?: boolean;
 }
 
 const getTPS = (summary?: K6Summary): string => {
@@ -28,8 +29,9 @@ const getSuccessRate = (summary?: K6Summary): string => {
   return `${rate.toFixed(1)}%`;
 };
 
-export const TestTableRow = ({test, onRerun}: TestTableRowProps) => {
+export const TestTableRow = ({test, onRerun, isRerunning = false}: TestTableRowProps) => {
   const {t} = useTranslation();
+  const canRerun = Boolean(test.script);
 
   return (
     <tr style={{borderBottom: '1px solid #e5e7eb'}}>
@@ -97,18 +99,19 @@ export const TestTableRow = ({test, onRerun}: TestTableRowProps) => {
             {onRerun && test.status !== 'running' && (
               <button
                 onClick={() => onRerun(test.testId)}
+                disabled={isRerunning || !canRerun}
                 style={{
                   padding: '0.25rem 0.75rem',
-                  backgroundColor: '#10b981',
+                  backgroundColor: isRerunning || !canRerun ? '#9ca3af' : '#10b981',
                   color: 'white',
                   border: 'none',
                   borderRadius: '4px',
                   fontSize: '0.875rem',
-                  cursor: 'pointer'
+                  cursor: isRerunning || !canRerun ? 'not-allowed' : 'pointer'
                 }}
-                title={t('testList.rerun')}
+                title={canRerun ? t('testList.rerun') : t('testList.noScriptAvailable')}
               >
-                {t('testList.rerun')}
+                {isRerunning ? t('newTest.startingTest') : t('testList.rerun')}
               </button>
             )}
           </div>

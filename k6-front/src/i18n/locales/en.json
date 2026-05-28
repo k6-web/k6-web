@@ -36,6 +36,7 @@
     "testNotFound": "Test not found",
     "noScriptAvailable": "No script available to re-run",
     "failedToLoadScript": "Failed to load test script",
+    "failedToStartTest": "Failed to start test",
     "viewDetails": "View Details"
   },
   "newTest": {
@@ -94,7 +95,7 @@
     "postmanDescription": "Select a Postman collection JSON file to convert it to a k6 script.",
     "invalidPostmanFile": "This is not a valid Postman JSON file.",
     "testName": "Test Name (optional)",
-    "testNameOptionalInfo": "If you don't enter a test name, it will be generated automatically.",
+    "testNameOptionalInfo": "Leave the test name empty to reuse the existing name.",
     "testNamePlaceholder": "e.g., Homepage Load Test",
     "url": "Target URL",
     "urlPlaceholder": "https://api.example.com/endpoint",
@@ -135,6 +136,9 @@
   },
   "testDetail": {
     "copyScript": "Copy Script",
+    "openAsNewTest": "Open as New Test",
+    "editScript": "Edit Script",
+    "noSavedScriptAvailable": "No saved script available to edit",
     "backToTests": "← Back to Tests",
     "testId": "Test ID",
     "status": "Status",

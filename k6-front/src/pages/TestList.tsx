@@ -4,7 +4,7 @@ import {useTranslation} from 'react-i18next';
 import {k6Api} from '../apis/testApi.ts';
 import type {Test} from '../types/test.ts';
 import {TestTable} from '../components/test-list';
-import {InfoBox} from '../components/common';
+import {InfoBox, TestNameModal} from '../components/common';
 
 export const TestList = () => {
   const {t} = useTranslation();
@@ -15,6 +15,8 @@ export const TestList = () => {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [rerunTarget, setRerunTarget] = useState<Test | null>(null);
+  const [rerunLoading, setRerunLoading] = useState(false);
 
   const fetchTests = async (cursor: number | null = null, append = false) => {
     try {
@@ -64,7 +66,7 @@ export const TestList = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [nextCursor, hasMore, loadingMore]);
 
-  const handleRerun = async (testId: string) => {
+  const handleRerun = (testId: string) => {
     const test = allTests.find(t => t.testId === testId);
 
     if (!test) {
@@ -72,21 +74,29 @@ export const TestList = () => {
       return;
     }
 
+    setRerunTarget(test);
+  };
+
+  const handleRerunConfirm = async (name?: string) => {
+    if (!rerunTarget) return;
+
     try {
-      const result = await k6Api.getTest(testId);
-      if (result?.script) {
-        sessionStorage.setItem('rerunScript', result.script);
-        if (result.config) {
-          sessionStorage.setItem('rerunConfig', JSON.stringify(result.config));
-        } else {
-          sessionStorage.removeItem('rerunConfig');
-        }
-        navigate('/new-test');
+      setRerunLoading(true);
+      const test = await k6Api.getTest(rerunTarget.testId);
+      if (test?.script) {
+        const result = await k6Api.runTest(test.script, {
+          name: name || test.name || test.config?.name,
+          config: test.config,
+          ...(test.scriptId && {scriptId: test.scriptId})
+        });
+        navigate(`/tests/${result.testId}`);
       } else {
         alert(t('testList.noScriptAvailable'));
       }
     } catch {
-      alert(t('testList.failedToLoadScript'));
+      alert(t('testList.failedToStartTest'));
+    } finally {
+      setRerunLoading(false);
     }
   };
 
@@ -126,6 +136,7 @@ export const TestList = () => {
           <TestTable
             tests={allTests}
             onRerun={handleRerun}
+            rerunningTestId={rerunLoading ? rerunTarget?.testId : undefined}
           />
 
           {loadingMore && (
@@ -161,6 +172,15 @@ export const TestList = () => {
             </div>
           )}
         </>
+      )}
+
+      {rerunTarget && (
+        <TestNameModal
+          initialName={rerunTarget.name || rerunTarget.config?.name || ''}
+          loading={rerunLoading}
+          onCancel={() => setRerunTarget(null)}
+          onConfirm={handleRerunConfirm}
+        />
       )}
     </div>
   );

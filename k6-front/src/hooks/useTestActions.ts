@@ -29,22 +29,60 @@ export const useTestActions = (testId: string | undefined, testInfo: Test | null
     }
   };
 
-  const handleRerun = () => {
+  const handleRerun = async (name?: string) => {
     if (!testInfo) return;
 
     const scriptToRerun = testInfo?.script;
 
     if (scriptToRerun) {
-      sessionStorage.setItem('rerunScript', scriptToRerun);
-      if (testInfo.config) {
-        sessionStorage.setItem('rerunConfig', JSON.stringify(testInfo.config));
-      } else {
-        sessionStorage.removeItem('rerunConfig');
-      }
-      navigate('/new-test');
+      const result = await k6Api.runTest(scriptToRerun, {
+        name: name || testInfo.name || testInfo.config?.name,
+        config: testInfo.config,
+        ...(testInfo.scriptId && {scriptId: testInfo.scriptId})
+      });
+      navigate(`/tests/${result.testId}`);
     } else {
-      alert('No script available to re-run');
+      alert(t('testList.noScriptAvailable'));
     }
+  };
+
+  const handleCopyScript = () => {
+    if (!testInfo?.script) {
+      alert(t('testList.noScriptAvailable'));
+      return;
+    }
+
+    navigate('/new-test', {
+      state: {
+        copiedScript: {
+          script: testInfo.script,
+          config: testInfo.config,
+          saveAsScript: true
+        }
+      }
+    });
+  };
+
+  const handleEditScript = () => {
+    if (!testInfo?.script) {
+      alert(t('testList.noScriptAvailable'));
+      return;
+    }
+
+    if (testInfo.scriptId) {
+      navigate(`/scripts/${testInfo.scriptId}?edit=true`);
+      return;
+    }
+
+    navigate('/new-test', {
+      state: {
+        copiedScript: {
+          script: testInfo.script,
+          config: testInfo.config,
+          saveAsScript: false
+        }
+      }
+    });
   };
 
   const handleCopyLink = () => {
@@ -81,6 +119,8 @@ export const useTestActions = (testId: string | undefined, testInfo: Test | null
     handleStop,
     handleDelete,
     handleRerun,
+    handleCopyScript,
+    handleEditScript,
     handleCopyLink
   };
 };

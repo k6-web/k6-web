@@ -5,9 +5,10 @@ import {TestTableRow} from './TestTableRow';
 interface TestTableProps {
   tests: Test[];
   onRerun?: (testId: string) => void;
+  rerunningTestId?: string;
 }
 
-export const TestTable = ({tests, onRerun}: TestTableProps) => {
+export const TestTable = ({tests, onRerun, rerunningTestId}: TestTableProps) => {
   const {t} = useTranslation();
   return (
     <div style={{
@@ -36,6 +37,7 @@ export const TestTable = ({tests, onRerun}: TestTableProps) => {
               key={test.testId}
               test={test}
               onRerun={onRerun}
+              isRerunning={rerunningTestId === test.testId}
             />
           ))}
         </tbody>

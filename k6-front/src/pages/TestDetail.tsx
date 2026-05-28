@@ -1,3 +1,4 @@
+import {useState} from 'react';
 import {useParams} from 'react-router-dom';
 import {useTranslation} from 'react-i18next';
 import {
@@ -11,10 +12,13 @@ import {
 import {useTestDetail} from '../hooks/useTestDetail';
 import {useLiveLogs} from '../hooks/useLiveLogs';
 import {useTestActions} from '../hooks/useTestActions';
+import {TestNameModal} from '../components/common';
 
 export const TestDetail = () => {
   const {t} = useTranslation();
   const {testId} = useParams<{ testId: string }>();
+  const [showRerunModal, setShowRerunModal] = useState(false);
+  const [rerunLoading, setRerunLoading] = useState(false);
   const {testInfo, loading, error} = useTestDetail(testId);
   const {
     logs,
@@ -30,7 +34,26 @@ export const TestDetail = () => {
     scrollToBottom,
     toggleAutoScroll
   } = useLiveLogs(testId, testInfo);
-  const {handleStop, handleDelete, handleRerun, handleCopyLink} = useTestActions(testId, testInfo);
+  const {
+    handleStop,
+    handleDelete,
+    handleRerun,
+    handleCopyScript,
+    handleEditScript,
+    handleCopyLink
+  } = useTestActions(testId, testInfo);
+
+  const handleRerunConfirm = async (name?: string) => {
+    try {
+      setRerunLoading(true);
+      await handleRerun(name);
+      setShowRerunModal(false);
+    } catch {
+      alert(t('testList.failedToStartTest'));
+    } finally {
+      setRerunLoading(false);
+    }
+  };
 
   if (loading) return <div>{t('common.loading')}</div>;
   if (error) return <div style={{color: 'red'}}>{t('common.error')}: {error}</div>;
@@ -48,9 +71,13 @@ export const TestDetail = () => {
         testName={testInfo.name}
         status={testInfo.status}
         onStop={handleStop}
-        onRerun={handleRerun}
+        onRerun={() => setShowRerunModal(true)}
+        onCopyScript={handleCopyScript}
+        onEditScript={handleEditScript}
         onDelete={handleDelete}
         onCopyLink={handleCopyLink}
+        canRerun={Boolean(testInfo.script)}
+        canEditScript={Boolean(testInfo.script)}
       />
 
       <TestInfoCard test={testInfo} progress={progress} errorCount={errorCount}/>
@@ -131,6 +158,15 @@ export const TestDetail = () => {
 
       {testInfo?.summary && (
         <MetricsGrid summary={testInfo.summary}/>
+      )}
+
+      {showRerunModal && (
+        <TestNameModal
+          initialName={testInfo.name || testInfo.config?.name || ''}
+          loading={rerunLoading}
+          onCancel={() => setShowRerunModal(false)}
+          onConfirm={handleRerunConfirm}
+        />
       )}
     </div>
   );
