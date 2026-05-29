@@ -1,5 +1,5 @@
 import {useTranslation} from 'react-i18next';
-import {CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
+import {CartesianGrid, Line, LineChart, ReferenceDot, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
 import {Card} from '../common';
 import type {TimeSeriesDataPoint} from '../../types/test';
 
@@ -10,11 +10,11 @@ interface PerformanceChartProps {
 
 const timeLabel = () => ({
   value: `Time (s)`,
-  position: 'insideBottomRight' as const,
-  offset: -10,
+  position: 'bottom' as const,
+  offset: 0,
 });
 
-const chartMargin = {top: 5, right: 30, left: 20, bottom: 5};
+const chartMargin = {top: 16, right: 30, left: 20, bottom: 26};
 
 const hasLatencyData = (data: TimeSeriesDataPoint[]) =>
   data.some(d => d.latencyAvg !== undefined);
@@ -22,12 +22,136 @@ const hasLatencyData = (data: TimeSeriesDataPoint[]) =>
 const hasErrorRateData = (data: TimeSeriesDataPoint[]) =>
   data.some(d => d.errorRate !== undefined);
 
+type ChartPoint = TimeSeriesDataPoint & {
+  errorRatePct?: number;
+};
+
+interface SeriesConfig {
+  key: keyof ChartPoint;
+  name: string;
+  color: string;
+  unit: string;
+  format: (value: number) => string;
+}
+
+const getSeriesStats = (data: ChartPoint[], config: SeriesConfig) => {
+  const points = data
+    .map(point => ({
+      time: point.time,
+      value: point[config.key] as number | undefined,
+    }))
+    .filter((point): point is {time: number; value: number} => point.value !== undefined && Number.isFinite(point.value));
+
+  if (points.length === 0) return null;
+
+  const min = points.reduce((current, point) => point.value < current.value ? point : current, points[0]);
+  const max = points.reduce((current, point) => point.value > current.value ? point : current, points[0]);
+  return {min, max};
+};
+
+const TimeSeriesLineChart = ({data, config, yAxisLabel}: {
+  data: ChartPoint[];
+  config: SeriesConfig;
+  yAxisLabel: string;
+}) => {
+  const stats = getSeriesStats(data, config);
+  return (
+    <ResponsiveContainer width="100%" height={220}>
+      <LineChart data={data} margin={chartMargin}>
+        <CartesianGrid stroke="#e5e7eb" vertical={false}/>
+        <XAxis
+          dataKey="time"
+          label={timeLabel()}
+          tickLine={false}
+          axisLine={{stroke: '#d1d5db'}}
+          tick={{fill: '#6b7280', fontSize: 12}}
+        />
+        <YAxis
+          label={{value: yAxisLabel, angle: -90, position: 'insideLeft'}}
+          tickLine={false}
+          axisLine={false}
+          tick={{fill: '#6b7280', fontSize: 12}}
+        />
+        {stats && (
+          <ReferenceDot
+            x={stats.max.time}
+            y={stats.max.value}
+            r={5}
+            fill={config.color}
+            stroke="#ffffff"
+            strokeWidth={2}
+            label={{
+              value: `Max ${config.format(stats.max.value)}${config.unit}`,
+              fill: config.color,
+              fontSize: 12,
+              position: stats.max.value === 0 ? 'top' : 'bottom'
+            }}
+          />
+        )}
+        <Tooltip
+          formatter={(value: number) => [`${config.format(value)} ${config.unit}`, config.name]}
+          labelFormatter={(label) => `Time: ${label}s`}
+          contentStyle={{
+            borderRadius: '8px',
+            border: '1px solid #e5e7eb',
+            boxShadow: '0 12px 24px rgba(15, 23, 42, 0.14)'
+          }}
+        />
+        <Line
+          type="monotone"
+          dataKey={config.key}
+          stroke={config.color}
+          strokeWidth={3}
+          name={config.name}
+          dot={false}
+          activeDot={{fill: config.color, stroke: 'white', strokeWidth: 3, r: 7}}
+          isAnimationActive={false}
+        />
+      </LineChart>
+    </ResponsiveContainer>
+  );
+};
+
 export const PerformanceChart = ({data, isLive = false}: PerformanceChartProps) => {
   const {t} = useTranslation();
   if (data.length === 0) return null;
 
   const showLatency = !isLive && hasLatencyData(data);
   const showErrorRate = !isLive && hasErrorRateData(data);
+  const chartData: ChartPoint[] = data.map(d => ({
+    ...d,
+    errorRatePct: d.errorRate !== undefined ? Math.round(d.errorRate * 10000) / 100 : undefined
+  }));
+  const seriesConfigs: SeriesConfig[] = [
+    {
+      key: 'vus',
+      name: t('testDetail.vus'),
+      color: '#7c3aed',
+      unit: 'VU',
+      format: (value) => value.toFixed(0),
+    },
+    {
+      key: 'tps',
+      name: 'RPS',
+      color: '#059669',
+      unit: 'RPS',
+      format: (value) => Math.round(value).toLocaleString(),
+    },
+    ...(showLatency ? [{
+      key: 'latencyAvg' as const,
+      name: t('metrics.httpReqDuration'),
+      color: '#2563eb',
+      unit: 'ms',
+      format: (value: number) => value.toFixed(2),
+    }] : []),
+    ...(showErrorRate ? [{
+      key: 'errorRatePct' as const,
+      name: 'Error Rate',
+      color: '#dc2626',
+      unit: '%',
+      format: (value: number) => value.toFixed(2),
+    }] : []),
+  ];
 
   return (
     <Card>
@@ -42,61 +166,29 @@ export const PerformanceChart = ({data, isLive = false}: PerformanceChartProps) 
 
       <div style={{marginBottom: '2rem'}}>
         <h3 style={{fontSize: '1rem', color: '#666', marginBottom: '1rem'}}>{t('testDetail.vus')}</h3>
-        <ResponsiveContainer width="100%" height={200}>
-          <LineChart data={data} margin={chartMargin}>
-            <CartesianGrid strokeDasharray="3 3"/>
-            <XAxis dataKey="time" label={timeLabel()}/>
-            <YAxis label={{value: t('testDetail.vus'), angle: -90, position: 'insideLeft'}}/>
-            <Tooltip formatter={(v: number) => [v, t('testDetail.vus')]} labelFormatter={(l) => `Time: ${l}s`}/>
-            <Legend/>
-            <Line type="monotone" dataKey="vus" stroke="#8884d8" strokeWidth={2} name={t('testDetail.vus')} dot={false} isAnimationActive={false}/>
-          </LineChart>
-        </ResponsiveContainer>
+        <TimeSeriesLineChart data={chartData} config={seriesConfigs[0]} yAxisLabel={t('testDetail.vus')}/>
       </div>
 
       <div style={{marginBottom: showLatency || showErrorRate ? '2rem' : 0}}>
         <h3 style={{fontSize: '1rem', color: '#666', marginBottom: '1rem'}}>{t('testDetail.requestsPerSecond')}</h3>
-        <ResponsiveContainer width="100%" height={200}>
-          <LineChart data={data} margin={chartMargin}>
-            <CartesianGrid strokeDasharray="3 3"/>
-            <XAxis dataKey="time" label={timeLabel()}/>
-            <YAxis label={{value: 'RPS', angle: -90, position: 'insideLeft'}}/>
-            <Tooltip formatter={(v: number) => [v, 'RPS']} labelFormatter={(l) => `Time: ${l}s`}/>
-            <Legend/>
-            <Line type="monotone" dataKey="tps" stroke="#82ca9d" strokeWidth={2} name="Requests/sec" dot={false} isAnimationActive={false}/>
-          </LineChart>
-        </ResponsiveContainer>
+        <TimeSeriesLineChart data={chartData} config={seriesConfigs[1]} yAxisLabel="RPS"/>
       </div>
 
       {showLatency && (
         <div style={{marginBottom: showErrorRate ? '2rem' : 0}}>
           <h3 style={{fontSize: '1rem', color: '#666', marginBottom: '1rem'}}>{t('metrics.httpReqDuration')} (ms)</h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={data} margin={chartMargin}>
-              <CartesianGrid strokeDasharray="3 3"/>
-              <XAxis dataKey="time" label={timeLabel()}/>
-              <YAxis label={{value: 'ms', angle: -90, position: 'insideLeft'}}/>
-              <Tooltip formatter={(v: number, name: string) => [`${v}ms`, name]} labelFormatter={(l) => `Time: ${l}s`}/>
-              <Legend/>
-              <Line type="monotone" dataKey="latencyAvg" stroke="#3b82f6" strokeWidth={2} name="avg" dot={false} isAnimationActive={false}/>
-            </LineChart>
-          </ResponsiveContainer>
+          <TimeSeriesLineChart data={chartData} config={seriesConfigs[2]} yAxisLabel="ms"/>
         </div>
       )}
 
       {showErrorRate && (
         <div>
           <h3 style={{fontSize: '1rem', color: '#666', marginBottom: '1rem'}}>Error Rate (%)</h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={data.map(d => ({...d, errorRatePct: d.errorRate !== undefined ? Math.round(d.errorRate * 10000) / 100 : undefined}))} margin={chartMargin}>
-              <CartesianGrid strokeDasharray="3 3"/>
-              <XAxis dataKey="time" label={timeLabel()}/>
-              <YAxis unit="%" domain={[0, 'auto']} label={{value: '%', angle: -90, position: 'insideLeft'}}/>
-              <Tooltip formatter={(v: number) => [`${v}%`, 'Error Rate']} labelFormatter={(l) => `Time: ${l}s`}/>
-              <Legend/>
-              <Line type="monotone" dataKey="errorRatePct" stroke="#dc2626" strokeWidth={2} name="Error Rate" dot={false} isAnimationActive={false}/>
-            </LineChart>
-          </ResponsiveContainer>
+          <TimeSeriesLineChart
+            data={chartData}
+            config={seriesConfigs[showLatency ? 3 : 2]}
+            yAxisLabel="%"
+          />
         </div>
       )}
     </Card>

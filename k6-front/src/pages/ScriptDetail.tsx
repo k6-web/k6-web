@@ -627,7 +627,7 @@ export const ScriptDetail = () => {
           boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
           marginBottom: '1rem'
         }}>
-          <h2 style={{marginBottom: '1rem'}}>{t('testList.title')}</h2>
+          <h2 style={{marginBottom: '1rem'}}>{t('metrics.performanceOverTime')}</h2>
           <MetricsTrendChart tests={history}/>
         </div>
       )}
