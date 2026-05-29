@@ -1,3 +1,8 @@
+export const formatNumber = (value: number | undefined): string => {
+  if (value === undefined || value === null) return 'N/A';
+  return Math.round(value).toLocaleString();
+};
+
 export const formatBytes = (bytes: number | undefined): string => {
   if (bytes === undefined || bytes === null) return 'N/A';
   const units = ['B', 'KB', 'MB', 'GB'];

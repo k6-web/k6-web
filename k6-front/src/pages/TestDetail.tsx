@@ -88,6 +88,10 @@ export const TestDetail = () => {
         <PerformanceChart data={timeSeriesData} isLive={testInfo.status === 'running'}/>
       )}
 
+      {testInfo?.summary && (
+        <MetricsGrid summary={testInfo.summary}/>
+      )}
+
       {testInfo.status === 'running' && logs.length > 0 && (
         <LiveLogsPanel
           logs={logs}
@@ -154,10 +158,6 @@ export const TestDetail = () => {
             ))}
           </div>
         </div>
-      )}
-
-      {testInfo?.summary && (
-        <MetricsGrid summary={testInfo.summary}/>
       )}
 
       {showRerunModal && (
