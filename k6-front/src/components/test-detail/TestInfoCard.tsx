@@ -2,6 +2,7 @@ import {useTranslation} from 'react-i18next';
 import type {Test} from '../../types/test';
 import {Card} from '../common';
 import {Link} from 'react-router-dom';
+import {formatElapsedDuration} from '../../utils/formatUtils';
 
 interface TestInfoCardProps {
   test: Test;
@@ -85,7 +86,7 @@ export const TestInfoCard = ({test, progress = 0, errorCount = 0}: TestInfoCardP
             </div>
             <div>
               <div style={{fontSize: '0.875rem', color: '#666'}}>{t('testDetail.duration')}</div>
-              <div style={{fontSize: '1rem'}}>{((test.endTime - test.startTime) / 1000).toFixed(2)}s</div>
+              <div style={{fontSize: '1rem'}}>{formatElapsedDuration(test.endTime - test.startTime)}</div>
             </div>
           </>
         )}

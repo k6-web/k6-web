@@ -19,6 +19,7 @@ import {
   scriptToHttpConfig,
   updateScriptOptionsFromConfig
 } from '../utils/scriptUtils';
+import {formatElapsedDuration} from '../utils/formatUtils';
 
 const DEFAULT_EDIT_CONFIG: K6TestConfig = {
   url: '',
@@ -657,6 +658,7 @@ export const ScriptDetail = () => {
                 <th style={{padding: '0.5rem', textAlign: 'right'}}>P95 (ms)</th>
                 <th style={{padding: '0.5rem', textAlign: 'right'}}>Error %</th>
                 <th style={{padding: '0.5rem', textAlign: 'left'}}>{t('testDetail.startTime')}</th>
+                <th style={{padding: '0.5rem', textAlign: 'left'}}>{t('testDetail.duration')}</th>
                 <th style={{padding: '0.5rem', textAlign: 'left'}}>{t('common.actions')}</th>
               </tr>
               </thead>
@@ -708,6 +710,9 @@ export const ScriptDetail = () => {
                       {metrics.errorRate > 0 ? (metrics.errorRate * 100).toFixed(2) : '0.00'}
                     </td>
                     <td style={{padding: '0.5rem'}}>{new Date(test.startTime).toLocaleString()}</td>
+                    <td style={{padding: '0.5rem', fontFamily: 'monospace'}}>
+                      {test.endTime && test.startTime ? formatElapsedDuration(test.endTime - test.startTime) : '-'}
+                    </td>
                     <td style={{padding: '0.5rem'}}>
                       <Link
                         to={`/tests/${test.testId}`}

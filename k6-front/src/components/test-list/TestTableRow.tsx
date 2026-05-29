@@ -3,6 +3,7 @@ import {Link} from 'react-router-dom';
 import type {Test} from '../../types/test';
 import type {K6Summary} from '../../types/k6';
 import {StatusBadge} from '../common';
+import {formatElapsedDuration} from '../../utils/formatUtils';
 
 interface TestTableRowProps {
   test: Test;
@@ -79,7 +80,7 @@ export const TestTableRow = ({test, onRerun, isRerunning = false}: TestTableRowP
           {new Date(test.startTime).toLocaleString()}
         </td>
         <td style={{padding: '1rem', fontSize: '0.875rem', fontWeight: '600', color: '#f59e0b'}}>
-          {test.endTime && test.startTime ? `${((test.endTime - test.startTime) / 1000).toFixed(1)}s` : '-'}
+          {test.endTime && test.startTime ? formatElapsedDuration(test.endTime - test.startTime) : '-'}
         </td>
         <td style={{padding: '1rem', textAlign: 'center'}}>
           <div style={{display: 'flex', gap: '0.5rem', justifyContent: 'center'}}>
