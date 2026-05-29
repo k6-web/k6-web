@@ -59,6 +59,35 @@
   text-decoration: none;
 }
 
+.topbar__toggle {
+  display: none;
+  width: 42px;
+  height: 38px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+}
+
+.topbar__toggle:hover {
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: none;
+}
+
+.topbar__toggle span {
+  width: 18px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
 .topbar__brand-mark {
   width: 44px;
   height: 44px;
@@ -238,13 +267,19 @@
   }
 
   .topbar__primary {
-    align-items: stretch;
-    flex-direction: column;
-    gap: 0.75rem;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
   }
 
   .topbar__brand {
-    width: 100%;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .topbar__toggle {
+    display: inline-flex;
   }
 
   .topbar__links,
@@ -253,8 +288,32 @@
   }
 
   .topbar__links {
-    display: grid;
+    order: 3;
+    flex: 0 0 100%;
+  }
+
+  .topbar__language {
+    order: 2;
+  }
+
+  .topbar__links,
+  .topbar__language {
+    display: none;
+  }
+
+  .topbar__nav--open .topbar__links,
+  .topbar__nav--open .topbar__language {
+    display: flex;
+  }
+
+  .topbar__links {
+    display: none;
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: -0.25rem;
+  }
+
+  .topbar__nav--open .topbar__links {
+    display: grid;
   }
 
   .topbar__link {

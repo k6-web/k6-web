@@ -1,9 +1,11 @@
+import {useState} from 'react';
 import {Link, NavLink, Outlet, useLocation} from 'react-router-dom';
 import {useTranslation} from 'react-i18next';
 
 export const Layout = () => {
   const {t, i18n} = useTranslation();
   const {pathname} = useLocation();
+  const [isNavOpen, setIsNavOpen] = useState(false);
 
   const changeLanguage = (lng: string) => {
     i18n.changeLanguage(lng);
@@ -15,7 +17,7 @@ export const Layout = () => {
   return (
     <div className="app-shell">
       <header className="topbar">
-        <nav className="topbar__nav" aria-label="Main navigation">
+        <nav className={`topbar__nav${isNavOpen ? ' topbar__nav--open' : ''}`} aria-label="Main navigation">
           <div className="topbar__primary">
             <Link to="/" className="topbar__brand" aria-label="K6 Web home">
               <span className="topbar__brand-mark">K6</span>
@@ -25,22 +27,37 @@ export const Layout = () => {
               </span>
             </Link>
 
+            <button
+              className="topbar__toggle"
+              type="button"
+              aria-label="Toggle navigation"
+              aria-expanded={isNavOpen}
+              onClick={() => setIsNavOpen((current) => !current)}
+            >
+              <span/>
+              <span/>
+              <span/>
+            </button>
+
             <div className="topbar__links">
               <NavLink
                 to="/tests"
                 className={`topbar__link${isTestsActive ? ' topbar__link--active' : ''}`}
+                onClick={() => setIsNavOpen(false)}
               >
                 {t('nav.tests')}
               </NavLink>
               <NavLink
                 to="/new-test"
                 className={({isActive}) => `topbar__link topbar__link--primary${isActive ? ' topbar__link--active' : ''}`}
+                onClick={() => setIsNavOpen(false)}
               >
                 {t('nav.newTest')}
               </NavLink>
               <NavLink
                 to="/folders"
                 className={`topbar__link${isScriptsActive ? ' topbar__link--active' : ''}`}
+                onClick={() => setIsNavOpen(false)}
               >
                 {t('nav.scripts')}
               </NavLink>
