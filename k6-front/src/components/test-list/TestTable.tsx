@@ -6,10 +6,24 @@ interface TestTableProps {
   tests: Test[];
   onRerun?: (testId: string) => void;
   rerunningTestId?: string;
+  selectedTestIds?: string[];
+  onToggleSelection?: (testId: string) => void;
+  canSelectTest?: (test: Test) => boolean;
+  isSelectionLimitReached?: boolean;
 }
 
-export const TestTable = ({tests, onRerun, rerunningTestId}: TestTableProps) => {
+export const TestTable = ({
+  tests,
+  onRerun,
+  rerunningTestId,
+  selectedTestIds = [],
+  onToggleSelection,
+  canSelectTest,
+  isSelectionLimitReached = false
+}: TestTableProps) => {
   const {t} = useTranslation();
+  const hasSelection = Boolean(onToggleSelection);
+
   return (
     <div style={{
       backgroundColor: 'white',
@@ -20,6 +34,11 @@ export const TestTable = ({tests, onRerun, rerunningTestId}: TestTableProps) => 
       <table style={{width: '100%', borderCollapse: 'collapse', minWidth: '800px'}}>
         <thead style={{backgroundColor: '#f9fafb'}}>
           <tr>
+            {hasSelection && (
+              <th style={{width: '56px', padding: '1rem', textAlign: 'center', borderBottom: '1px solid #e5e7eb'}}>
+                {t('testList.compare')}
+              </th>
+            )}
             <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>{t('common.name')} / {t('testDetail.testId')}</th>
             <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>{t('common.status')}</th>
             <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>{t('scriptDetail.scriptId')}</th>
@@ -38,6 +57,10 @@ export const TestTable = ({tests, onRerun, rerunningTestId}: TestTableProps) => 
               test={test}
               onRerun={onRerun}
               isRerunning={rerunningTestId === test.testId}
+              isSelected={selectedTestIds.includes(test.testId)}
+              onToggleSelection={onToggleSelection}
+              canSelect={canSelectTest ? canSelectTest(test) : true}
+              isSelectionLimitReached={isSelectionLimitReached}
             />
           ))}
         </tbody>

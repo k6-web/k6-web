@@ -9,6 +9,10 @@ interface TestTableRowProps {
   test: Test;
   onRerun?: (testId: string) => void;
   isRerunning?: boolean;
+  isSelected?: boolean;
+  onToggleSelection?: (testId: string) => void;
+  canSelect?: boolean;
+  isSelectionLimitReached?: boolean;
 }
 
 const getTPS = (summary?: K6Summary): string => {
@@ -30,12 +34,40 @@ const getSuccessRate = (summary?: K6Summary): string => {
   return `${rate.toFixed(1)}%`;
 };
 
-export const TestTableRow = ({test, onRerun, isRerunning = false}: TestTableRowProps) => {
+export const TestTableRow = ({
+  test,
+  onRerun,
+  isRerunning = false,
+  isSelected = false,
+  onToggleSelection,
+  canSelect = true,
+  isSelectionLimitReached = false
+}: TestTableRowProps) => {
   const {t} = useTranslation();
   const canRerun = Boolean(test.script);
+  const hasSelection = Boolean(onToggleSelection);
+  const isSelectionDisabled = !isSelected && (!canSelect || isSelectionLimitReached);
+  const selectionTitle = !canSelect
+    ? t('testList.summaryRequired')
+    : isSelectionLimitReached && !isSelected
+      ? t('testList.maxSelectionReached')
+      : t('testList.selectForComparison');
 
   return (
-    <tr style={{borderBottom: '1px solid #e5e7eb'}}>
+    <tr style={{borderBottom: '1px solid #e5e7eb', backgroundColor: isSelected ? '#eff6ff' : 'white'}}>
+        {hasSelection && (
+          <td style={{padding: '1rem', textAlign: 'center', borderBottom: '1px solid #e5e7eb'}}>
+            <input
+              type="checkbox"
+              checked={isSelected}
+              disabled={isSelectionDisabled}
+              onChange={() => onToggleSelection?.(test.testId)}
+              title={selectionTitle}
+              aria-label={selectionTitle}
+              style={{width: '1rem', height: '1rem', cursor: isSelectionDisabled ? 'not-allowed' : 'pointer'}}
+            />
+          </td>
+        )}
         <td style={{padding: '1rem', borderBottom: '1px solid #e5e7eb'}}>
           <Link to={`/tests/${test.testId}`} style={{color: '#3b82f6', textDecoration: 'none'}}>
             {test.name ? (
