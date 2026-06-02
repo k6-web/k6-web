@@ -4,6 +4,7 @@ import {FolderRepository} from '../folder-repository';
 import {ScriptRepository} from '@domains/scripts/script-repository';
 import {Folder, Script} from '@domains/test/test-types';
 import {BadRequestError, NotFoundError} from '@shared/http/errors';
+import {MAX_FOLDERS} from '@shared/configs';
 
 describe('FolderService', () => {
   let folderService: FolderService;
@@ -93,7 +94,7 @@ describe('FolderService', () => {
     it('should throw BadRequestError when maximum folders limit is reached', async () => {
       const metadata = {name: 'Test Folder'};
 
-      mockFolderRepository.count.mockReturnValue(100); // Assuming MAX_FOLDERS is 100
+      mockFolderRepository.count.mockReturnValue(MAX_FOLDERS);
 
       await expect(
         folderService.saveFolder(undefined, metadata)
@@ -133,6 +134,43 @@ describe('FolderService', () => {
       const result = await folderService.saveFolder(undefined, metadata);
 
       expect(result.folderId).toMatch(/^folder-test-folder-/);
+    });
+
+    it('should allow a new folder when folder count is below the limit', async () => {
+      const metadata = {name: 'Allowed Folder'};
+
+      mockFolderRepository.count.mockReturnValue(MAX_FOLDERS - 1);
+      mockFolderRepository.exists.mockReturnValue(false);
+
+      const result = await folderService.saveFolder('allowed-folder', metadata);
+
+      expect(result.folderId).toBe('allowed-folder');
+      expect(mockFolderRepository.save).toHaveBeenCalledWith(expect.objectContaining({
+        folderId: 'allowed-folder',
+        name: 'Allowed Folder',
+      }));
+    });
+
+    it('should not check folder count or ID uniqueness when updating an existing folder', async () => {
+      const existingFolder: Folder = {
+        folderId: 'folder-1',
+        name: 'Original Name',
+        createdAt: 1000,
+        updatedAt: 1000,
+      };
+
+      mockFolderRepository.findById.mockReturnValue(existingFolder);
+      mockFolderRepository.count.mockReturnValue(MAX_FOLDERS);
+      mockFolderRepository.exists.mockReturnValue(true);
+
+      const result = await folderService.saveFolder('folder-1', {name: 'Updated Name'});
+
+      expect(result.name).toBe('Updated Name');
+      expect(mockFolderRepository.count).not.toHaveBeenCalled();
+      expect(mockFolderRepository.exists).not.toHaveBeenCalled();
+      expect(mockFolderRepository.save).toHaveBeenCalledWith(expect.objectContaining({
+        folderId: 'folder-1',
+      }));
     });
   });
 

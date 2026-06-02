@@ -5,6 +5,7 @@ import {TestResultRepository} from '@domains/results';
 import {Script, TestResult} from '@domains/test/test-types';
 import {BadRequestError, NotFoundError} from '@shared/http/errors';
 import {TestStatus} from '@domains/test/test-enums';
+import {MAX_SCRIPTS_PER_FOLDER} from '@shared/configs';
 
 describe('ScriptService', () => {
   let scriptService: ScriptService;
@@ -128,7 +129,7 @@ describe('ScriptService', () => {
         folderId: 'folder-1',
       };
 
-      const existingScripts = Array.from({length: 100}, (_, i) => ({
+      const existingScripts = Array.from({length: MAX_SCRIPTS_PER_FOLDER}, (_, i) => ({
         scriptId: `script-${i}`,
         script: 'test',
         folderId: 'folder-1',
@@ -187,6 +188,62 @@ describe('ScriptService', () => {
 
       expect(result.scriptId).toBe(customScriptId);
     });
+
+    it('should allow a new script when folder script count is below the limit', async () => {
+      const metadata = {
+        script: 'export default function() {}',
+        folderId: 'folder-1',
+      };
+      const existingScripts = Array.from({length: MAX_SCRIPTS_PER_FOLDER - 1}, (_, i) => ({
+        scriptId: `script-${i}`,
+        script: 'test',
+        folderId: 'folder-1',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      }));
+
+      mockScriptRepository.findByFolderId.mockReturnValue(existingScripts);
+      mockScriptRepository.exists.mockReturnValue(false);
+
+      const result = await scriptService.saveScript('new-script', metadata);
+
+      expect(result.scriptId).toBe('new-script');
+      expect(mockScriptRepository.save).toHaveBeenCalledWith(expect.objectContaining({
+        scriptId: 'new-script',
+        folderId: 'folder-1',
+      }));
+    });
+
+    it('should not check folder script limit when updating an existing script', async () => {
+      const existingScript: Script = {
+        scriptId: 'script-1',
+        script: 'original script',
+        folderId: 'folder-1',
+        createdAt: 1000,
+        updatedAt: 1000,
+      };
+      const existingScripts = Array.from({length: MAX_SCRIPTS_PER_FOLDER}, (_, i) => ({
+        scriptId: `script-${i}`,
+        script: 'test',
+        folderId: 'folder-1',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      }));
+
+      mockScriptRepository.findById.mockReturnValue(existingScript);
+      mockScriptRepository.findByFolderId.mockReturnValue(existingScripts);
+
+      const result = await scriptService.saveScript('script-1', {
+        script: 'updated script',
+        folderId: 'folder-1',
+      });
+
+      expect(result.script).toBe('updated script');
+      expect(mockScriptRepository.exists).not.toHaveBeenCalled();
+      expect(mockScriptRepository.save).toHaveBeenCalledWith(expect.objectContaining({
+        scriptId: 'script-1',
+      }));
+    });
   });
 
   describe('getScript', () => {
@@ -231,6 +288,17 @@ describe('ScriptService', () => {
       expect(() => {
         scriptService.deleteScript('non-existent');
       }).toThrow(NotFoundError);
+    });
+  });
+
+  describe('exists', () => {
+    it('should delegate existence checks to repository', () => {
+      mockScriptRepository.exists.mockReturnValue(true);
+
+      const result = scriptService.exists('script-1');
+
+      expect(result).toBe(true);
+      expect(mockScriptRepository.exists).toHaveBeenCalledWith('script-1');
     });
   });
 
@@ -319,6 +387,38 @@ describe('ScriptService', () => {
       const result = scriptService.getScriptHistory(scriptId, 5);
 
       expect(result).toHaveLength(5);
+    });
+
+    it('should return an empty history when limit is zero', () => {
+      const scriptId = 'script-1';
+      const script: Script = {
+        scriptId,
+        script: 'export default function() {}',
+        folderId: 'folder-1',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+      const testResults: TestResult[] = [
+        {
+          testId: 'test-1',
+          scriptId,
+          status: TestStatus.COMPLETED,
+          startTime: Date.now(),
+          endTime: Date.now(),
+          duration: 1000,
+          exitCode: 0,
+          script: script.script,
+          summary: {},
+        },
+      ];
+
+      mockScriptRepository.findById.mockReturnValue(script);
+      mockResultRepository.findByScriptId.mockReturnValue(testResults);
+
+      const result = scriptService.getScriptHistory(scriptId, 0);
+
+      expect(result).toEqual([]);
+      expect(mockResultRepository.findByScriptId).toHaveBeenCalledWith(scriptId);
     });
 
     it('should throw NotFoundError when script does not exist', () => {
