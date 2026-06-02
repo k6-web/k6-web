@@ -82,15 +82,18 @@ export const TestDetail = () => {
 
       <TestInfoCard test={testInfo} progress={progress} errorCount={errorCount}/>
 
-      {testInfo.script && <ScriptDisplay script={testInfo.script}/>}
-
       {timeSeriesData.length > 0 && (
         <PerformanceChart data={timeSeriesData} isLive={testInfo.status === 'running'}/>
       )}
 
       {testInfo?.summary && (
-        <MetricsGrid summary={testInfo.summary}/>
+        <section>
+          <h2 style={{marginTop: 0, marginBottom: '1rem'}}>{t('testDetail.summaryResult')}</h2>
+          <MetricsGrid summary={testInfo.summary}/>
+        </section>
       )}
+
+      {testInfo.script && <ScriptDisplay script={testInfo.script}/>}
 
       {testInfo.status === 'running' && logs.length > 0 && (
         <LiveLogsPanel

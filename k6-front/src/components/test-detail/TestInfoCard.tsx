@@ -14,7 +14,7 @@ export const TestInfoCard = ({test, progress = 0, errorCount = 0}: TestInfoCardP
   const {t} = useTranslation();
 
   return (
-    <Card title={t('testDetail.summary')}>
+    <Card title={t('testDetail.info')}>
       <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem'}}>
         <div>
           <div style={{fontSize: '0.875rem', color: '#666'}}>{t('common.status')}</div>
