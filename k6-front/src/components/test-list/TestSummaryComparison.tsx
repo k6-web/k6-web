@@ -1,5 +1,5 @@
 import {useTranslation} from 'react-i18next';
-import {Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
+import {Bar, BarChart, CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
 import type {Test} from '../../types/test';
 import type {K6Summary} from '../../types/k6';
 import {formatBytes, formatDuration, formatNumber} from '../../utils/formatUtils';
@@ -28,9 +28,23 @@ interface ComparisonChartPoint {
   p95?: number;
 }
 
+interface ChartSeries {
+  key: string;
+  name: string;
+  testId: string;
+  color: string;
+}
+
+interface MetricComparisonChartPoint {
+  metric: string;
+  [testKey: string]: string | number | undefined;
+}
+
+const TEST_COLORS = ['#2563eb', '#dc2626', '#059669', '#d97706', '#7c3aed'];
+
 const formatRate = (value: number | undefined): string => {
   if (value === undefined || value === null) return 'N/A';
-  return value.toLocaleString(undefined, {maximumFractionDigits: 2});
+  return Math.round(value).toLocaleString();
 };
 
 const formatPercent = (value: number | undefined): string => {
@@ -89,6 +103,31 @@ const getChartData = (tests: Test[]): ComparisonChartPoint[] => tests.map((test,
   p95: test.summary?.metrics.http_req_duration?.['p(95)']
 }));
 
+const getChartSeries = (tests: Test[]): ChartSeries[] => tests.map((test, index) => ({
+  key: `test${index}`,
+  name: getShortTestName(test, index),
+  testId: test.testId,
+  color: TEST_COLORS[index % TEST_COLORS.length]
+}));
+
+const getLatencyChartData = (tests: Test[], series: ChartSeries[], t: (key: string) => string): MetricComparisonChartPoint[] => {
+  const metricKeys = [
+    {key: 'avg' as const, label: t('metrics.avg')},
+    {key: 'p90' as const, label: t('metrics.p90')},
+    {key: 'p95' as const, label: t('metrics.p95')}
+  ];
+
+  return metricKeys.map(metric => {
+    const point: MetricComparisonChartPoint = {metric: metric.label};
+
+    tests.forEach((test, index) => {
+      point[series[index].key] = test.summary?.metrics.http_req_duration?.[metric.key === 'p90' ? 'p(90)' : metric.key === 'p95' ? 'p(95)' : 'avg'];
+    });
+
+    return point;
+  });
+};
+
 const chartPanelStyle = {
   minHeight: '280px',
   padding: '1rem',
@@ -100,6 +139,8 @@ const chartPanelStyle = {
 export const TestSummaryComparison = ({tests}: TestSummaryComparisonProps) => {
   const {t} = useTranslation();
   const chartData = getChartData(tests);
+  const chartSeries = getChartSeries(tests);
+  const latencyChartData = getLatencyChartData(tests, chartSeries, t);
 
   const metricRows: MetricRow[] = [
     {
@@ -218,7 +259,11 @@ export const TestSummaryComparison = ({tests}: TestSummaryComparisonProps) => {
                   labelFormatter={(_, payload) => payload?.[0]?.payload?.testId || ''}
                   contentStyle={{borderRadius: '8px', border: '1px solid #e5e7eb'}}
                 />
-                <Bar dataKey="rps" fill="#2563eb" radius={[4, 4, 0, 0]}/>
+                <Bar dataKey="rps" radius={[4, 4, 0, 0]}>
+                  {chartData.map((_, index) => (
+                    <Cell key={`rps-${index}`} fill={chartSeries[index].color}/>
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -237,7 +282,11 @@ export const TestSummaryComparison = ({tests}: TestSummaryComparisonProps) => {
                   labelFormatter={(_, payload) => payload?.[0]?.payload?.testId || ''}
                   contentStyle={{borderRadius: '8px', border: '1px solid #e5e7eb'}}
                 />
-                <Bar dataKey="failureRate" fill="#dc2626" radius={[4, 4, 0, 0]}/>
+                <Bar dataKey="failureRate" radius={[4, 4, 0, 0]}>
+                  {chartData.map((_, index) => (
+                    <Cell key={`failure-rate-${index}`} fill={chartSeries[index].color}/>
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -248,19 +297,27 @@ export const TestSummaryComparison = ({tests}: TestSummaryComparisonProps) => {
             {t('testList.latencyComparison')}
           </h4>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData} margin={{top: 12, right: 16, left: 0, bottom: 0}}>
+            <BarChart data={latencyChartData} margin={{top: 12, right: 16, left: 0, bottom: 0}}>
               <CartesianGrid stroke="#e5e7eb" vertical={false}/>
-              <XAxis dataKey="name" tick={{fill: '#6b7280', fontSize: 12}} tickLine={false}/>
+              <XAxis dataKey="metric" tick={{fill: '#6b7280', fontSize: 12}} tickLine={false}/>
               <YAxis tick={{fill: '#6b7280', fontSize: 12}} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}ms`}/>
               <Tooltip
-                formatter={(value: number, name: string) => [formatDuration(value), name]}
-                labelFormatter={(_, payload) => payload?.[0]?.payload?.testId || ''}
+                formatter={(value: number, name: string) => {
+                  const series = chartSeries.find(current => current.key === name);
+                  return [formatDuration(value), series?.name || name];
+                }}
                 contentStyle={{borderRadius: '8px', border: '1px solid #e5e7eb'}}
               />
               <Legend/>
-              <Bar dataKey="avg" name={t('metrics.avg')} fill="#7c3aed" radius={[4, 4, 0, 0]}/>
-              <Bar dataKey="p90" name={t('metrics.p90')} fill="#2563eb" radius={[4, 4, 0, 0]}/>
-              <Bar dataKey="p95" name={t('metrics.p95')} fill="#059669" radius={[4, 4, 0, 0]}/>
+              {chartSeries.map(series => (
+                <Bar
+                  key={series.key}
+                  dataKey={series.key}
+                  name={series.name}
+                  fill={series.color}
+                  radius={[4, 4, 0, 0]}
+                />
+              ))}
             </BarChart>
           </ResponsiveContainer>
         </div>
