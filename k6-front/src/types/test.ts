@@ -1,7 +1,7 @@
 import type {K6Summary, K6TestConfig} from "./k6.ts";
 import type {LogEntry} from "./log.ts";
 
-export type TestStatus = 'running' | 'completed' | 'failed' | 'stopped';
+export type TestStatus = 'scheduled' | 'queued' | 'running' | 'completed' | 'failed' | 'stopped' | 'cancelled';
 
 export interface TimeSeriesDataPoint {
   time: number;
@@ -17,6 +17,9 @@ export interface Test {
   name?: string;
   status: TestStatus;
   startTime: number;
+  createdAt?: number;
+  scheduledAt?: number;
+  queuedAt?: number;
   endTime?: number;
   script: string;
   config?: K6TestConfig;
@@ -35,4 +38,6 @@ export interface TestListResponse {
 
 export interface RunTestResponse {
   testId: string;
+  status?: TestStatus;
+  scheduledAt?: number;
 }

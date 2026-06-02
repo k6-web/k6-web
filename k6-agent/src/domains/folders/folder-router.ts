@@ -6,6 +6,7 @@ import {scriptService} from '@domains/scripts/script-service';
 import {scriptConverterService} from '@domains/scripts/script-converter-service';
 import {BadRequestError} from '@shared/http/errors';
 import {MAX_SCRIPTS_PER_FOLDER} from '@shared/configs';
+import logger from '@shared/logger/logger';
 import {CreateFolderRequest, FolderListQuery, ImportPostmanScriptsRequest, UpdateFolderRequest} from './folder-request';
 import {FolderListResponse, FolderResponse, FolderWithScriptsResponse, ImportPostmanScriptsResponse} from './folder-response';
 import {StatusResponse} from '@domains/test/test-response';
@@ -85,6 +86,7 @@ folderRouter.delete('/:folderId', asyncHandler(async (req, res) => {
 
 folderRouter.post('/:folderId/run-all', asyncHandler(async (req, res) => {
   const {folderId} = req.params;
+  const scheduledAt = req.body?.scheduledAt !== undefined ? Number(req.body.scheduledAt) : undefined;
 
   const scripts = folderService.getScriptsByFolder(folderId);
 
@@ -93,27 +95,25 @@ folderRouter.post('/:folderId/run-all', asyncHandler(async (req, res) => {
     return;
   }
 
-  // 즉시 응답 반환
-  res.json({
-    message: `Queued ${scripts.length} tests for sequential execution`,
-    count: scripts.length,
-  });
-
-  // 백그라운드에서 순차 실행
-  setImmediate(async () => {
-    const logger = require('@shared/logger/logger').default;
-    for (const script of scripts) {
-      try {
-        const testId = testService.createTest(script.script, {
-          config: script.config,
-          scriptId: script.scriptId,
-          name: `${script.scriptId}`,
-        });
-        await testService.waitForTest(testId);
-      } catch (err) {
-        logger.error(`Failed to run test for script ${script.scriptId}: ${(err as Error).message}`);
-      }
+  const testIds: string[] = [];
+  for (const script of scripts) {
+    try {
+      const testId = testService.createTest(script.script, {
+        config: script.config,
+        scriptId: script.scriptId,
+        name: `${script.scriptId}`,
+      }, scheduledAt);
+      testIds.push(testId);
+    } catch (err) {
+      logger.error(`Failed to queue test for script ${script.scriptId}: ${(err as Error).message}`);
     }
+  }
+
+  res.json({
+    message: `Queued ${testIds.length} tests for sequential execution`,
+    count: testIds.length,
+    testIds,
+    scheduledAt,
   });
 }));
 

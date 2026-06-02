@@ -5,6 +5,7 @@ export interface CreateTestRequest {
   name?: string;
   config?: K6TestConfig;
   scriptId?: string;
+  scheduledAt?: number | string;
 }
 
 export interface PaginationRequest {

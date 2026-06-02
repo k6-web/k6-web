@@ -9,9 +9,15 @@ import {testService} from '@domains/test/test-service';
 const testRouter = express.Router();
 
 testRouter.post('/', asyncHandler(async (req, res) => {
-  const {script, name, config, scriptId} = req.body as CreateTestRequest;
-  const testId = testService.createTest(script, {name, config, scriptId});
-  const response: RunTestResponse = {testId};
+  const {script, name, config, scriptId, scheduledAt} = req.body as CreateTestRequest;
+  const normalizedScheduledAt = scheduledAt !== undefined ? Number(scheduledAt) : undefined;
+  const testId = testService.createTest(script, {name, config, scriptId}, normalizedScheduledAt);
+  const queued = testService.getTest(testId);
+  const response: RunTestResponse = {
+    testId,
+    status: queued.status,
+    scheduledAt: 'scheduledAt' in queued ? queued.scheduledAt : undefined,
+  };
   res.json(response);
 }));
 

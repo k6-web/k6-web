@@ -1,5 +1,5 @@
 import fs from 'fs';
-import {RESULTS_DIR, SCRIPTS_DIR, SCRIPTS_REPO_DIR, FOLDERS_REPO_DIR} from '@shared/configs';
+import {RESULTS_DIR, SCRIPTS_DIR, SCRIPTS_REPO_DIR, FOLDERS_REPO_DIR, TEST_QUEUE_DIR} from '@shared/configs';
 
 export function initializeDirectories(): void {
   if (!fs.existsSync(RESULTS_DIR)) {
@@ -13,5 +13,8 @@ export function initializeDirectories(): void {
   }
   if (!fs.existsSync(FOLDERS_REPO_DIR)) {
     fs.mkdirSync(FOLDERS_REPO_DIR, {recursive: true});
+  }
+  if (!fs.existsSync(TEST_QUEUE_DIR)) {
+    fs.mkdirSync(TEST_QUEUE_DIR, {recursive: true});
   }
 }

@@ -173,6 +173,8 @@
     "noLogs": "No logs available",
     "passed": "Passed",
     "failed": "Failed",
+    "scheduled": "Scheduled",
+    "queued": "Queued",
     "running": "Running",
     "pending": "Pending",
     "cancelled": "Cancelled",

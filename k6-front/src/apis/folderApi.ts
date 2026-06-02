@@ -9,6 +9,8 @@ export interface FolderListResponse {
 export interface RunAllResponse {
   testIds: string[];
   message: string;
+  count?: number;
+  scheduledAt?: number;
 }
 
 export interface ImportPostmanScriptsResponse {
@@ -58,8 +60,8 @@ export const folderApi = {
     await api.delete(`/v1/folders/${folderId}`);
   },
 
-  runAllScripts: async (folderId: string): Promise<RunAllResponse> => {
-    const response = await api.post<RunAllResponse>(`/v1/folders/${folderId}/run-all`, {});
+  runAllScripts: async (folderId: string, options?: {scheduledAt?: number}): Promise<RunAllResponse> => {
+    const response = await api.post<RunAllResponse>(`/v1/folders/${folderId}/run-all`, options || {});
     return response.data;
   },
 

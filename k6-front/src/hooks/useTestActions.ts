@@ -29,7 +29,7 @@ export const useTestActions = (testId: string | undefined, testInfo: Test | null
     }
   };
 
-  const handleRerun = async (name?: string) => {
+  const handleRerun = async (name?: string, scheduledAt?: number) => {
     if (!testInfo) return;
 
     const scriptToRerun = testInfo?.script;
@@ -38,7 +38,8 @@ export const useTestActions = (testId: string | undefined, testInfo: Test | null
       const result = await k6Api.runTest(scriptToRerun, {
         name: name || testInfo.name || testInfo.config?.name,
         config: testInfo.config,
-        ...(testInfo.scriptId && {scriptId: testInfo.scriptId})
+        ...(testInfo.scriptId && {scriptId: testInfo.scriptId}),
+        ...(scheduledAt && {scheduledAt})
       });
       navigate(`/tests/${result.testId}`);
     } else {

@@ -43,10 +43,10 @@ export const TestDetail = () => {
     handleCopyLink
   } = useTestActions(testId, testInfo);
 
-  const handleRerunConfirm = async (name?: string) => {
+  const handleRerunConfirm = async (name?: string, scheduledAt?: number) => {
     try {
       setRerunLoading(true);
-      await handleRerun(name);
+      await handleRerun(name, scheduledAt);
       setShowRerunModal(false);
     } catch {
       alert(t('testList.failedToStartTest'));

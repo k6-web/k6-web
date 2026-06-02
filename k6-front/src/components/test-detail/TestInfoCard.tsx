@@ -21,9 +21,11 @@ export const TestInfoCard = ({test, progress = 0, errorCount = 0}: TestInfoCardP
           <div style={{
             fontSize: '1.25rem',
             fontWeight: 'bold',
-            color: test.status === 'running' ? '#3b82f6' :
-              test.status === 'completed' ? '#22c55e' :
-                test.status === 'failed' ? '#ef4444' : '#6b7280'
+            color: test.status === 'scheduled' ? '#8b5cf6' :
+              test.status === 'queued' ? '#f59e0b' :
+                test.status === 'running' ? '#3b82f6' :
+                  test.status === 'completed' ? '#22c55e' :
+                    test.status === 'failed' ? '#ef4444' : '#6b7280'
           }}>
             {t(`testDetail.${test.status}`).toUpperCase()}
           </div>
@@ -78,6 +80,18 @@ export const TestInfoCard = ({test, progress = 0, errorCount = 0}: TestInfoCardP
           <div style={{fontSize: '0.875rem', color: '#666'}}>{t('testDetail.startTime')}</div>
           <div style={{fontSize: '1rem'}}>{new Date(test.startTime).toLocaleString()}</div>
         </div>
+        {test.scheduledAt && (
+          <div>
+            <div style={{fontSize: '0.875rem', color: '#666'}}>Scheduled Time</div>
+            <div style={{fontSize: '1rem'}}>{new Date(test.scheduledAt).toLocaleString()}</div>
+          </div>
+        )}
+        {test.queuedAt && (
+          <div>
+            <div style={{fontSize: '0.875rem', color: '#666'}}>Queued Time</div>
+            <div style={{fontSize: '1rem'}}>{new Date(test.queuedAt).toLocaleString()}</div>
+          </div>
+        )}
         {test?.endTime && (
           <>
             <div>

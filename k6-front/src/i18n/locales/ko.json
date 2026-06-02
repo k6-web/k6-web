@@ -173,6 +173,8 @@
     "noLogs": "로그가 없습니다",
     "passed": "성공",
     "failed": "실패",
+    "scheduled": "예약됨",
+    "queued": "대기 중",
     "running": "실행 중",
     "pending": "대기 중",
     "cancelled": "취소됨",

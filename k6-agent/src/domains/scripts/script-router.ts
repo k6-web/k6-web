@@ -29,13 +29,19 @@ scriptRouter.post('/:scriptId/run', asyncHandler(async (req, res) => {
 
   const config = request.config ?? script.config;
 
+  const scheduledAt = request.scheduledAt !== undefined ? Number(request.scheduledAt) : undefined;
   const testId = testService.createTest(script.script, {
     config,
     scriptId: script.scriptId,
     name: request.name || `[${script.scriptId}] Test Run`,
-  });
+  }, scheduledAt);
 
-  const response: RunTestResponse = {testId};
+  const queued = testService.getTest(testId);
+  const response: RunTestResponse = {
+    testId,
+    status: queued.status,
+    scheduledAt: 'scheduledAt' in queued ? queued.scheduledAt : undefined,
+  };
   res.json(response);
 }));
 

@@ -4,13 +4,18 @@ import {NotFoundError, BadRequestError} from '@shared/http/errors';
 import {TestStatus} from '../test-enums';
 import {TestResultRepository} from '../../results';
 import {K6Executor} from '@shared/k6/k6-executor';
+import {TestQueueRepository} from '../test-queue-repository';
+import {TestQueueItem} from '../test-types';
 
 describe('TestService', () => {
   let testService: TestService;
   let mockRepository: jest.Mocked<TestResultRepository>;
   let mockExecutor: jest.Mocked<K6Executor>;
+  let mockQueueRepository: jest.Mocked<TestQueueRepository>;
+  let queueItems: Map<string, TestQueueItem>;
 
   beforeEach(() => {
+    queueItems = new Map();
     mockRepository = {
       save: jest.fn(),
       findById: jest.fn(),
@@ -31,27 +36,43 @@ describe('TestService', () => {
       waitForTest: jest.fn(),
     } as jest.Mocked<K6Executor>;
 
-    testService = new TestService(mockRepository, mockExecutor);
+    mockQueueRepository = {
+      save: jest.fn((item: TestQueueItem) => {
+        queueItems.set(item.testId, {...item});
+      }),
+      findById: jest.fn((testId: string) => queueItems.get(testId) ?? null),
+      findAll: jest.fn(() => Array.from(queueItems.values())),
+      deleteById: jest.fn((testId: string) => queueItems.delete(testId)),
+    };
+
+    testService = new TestService(mockRepository, mockExecutor, mockQueueRepository);
     jest.clearAllMocks();
   });
 
   describe('createTest', () => {
-    it('should create a test with valid script', () => {
+    it('should queue a test with valid script', async () => {
       const mockTestId = 'test-123';
       const script = 'export default function() { console.log("test"); }';
 
       mockExecutor.runTest.mockReturnValue(mockTestId);
 
-      const result = testService.createTest(script, {});
+      const result = testService.createTest(script, {testId: mockTestId});
+      await new Promise(resolve => setImmediate(resolve));
 
       expect(result).toBe(mockTestId);
-      expect(mockExecutor.runTest).toHaveBeenCalledWith(script, {});
+      expect(mockQueueRepository.save).toHaveBeenCalledWith(expect.objectContaining({
+        testId: mockTestId,
+        status: TestStatus.QUEUED,
+        script,
+      }));
+      expect(mockExecutor.runTest).toHaveBeenCalledWith(script, {testId: mockTestId});
     });
 
-    it('should create a test with metadata', () => {
+    it('should queue a test with metadata', async () => {
       const mockTestId = 'test-456';
       const script = 'export default function() {}';
       const metadata = {
+        testId: mockTestId,
         name: 'My Test',
         config: {vus: 10, duration: '30s'},
       };
@@ -59,9 +80,26 @@ describe('TestService', () => {
       mockExecutor.runTest.mockReturnValue(mockTestId);
 
       const result = testService.createTest(script, metadata);
+      await new Promise(resolve => setImmediate(resolve));
 
       expect(result).toBe(mockTestId);
       expect(mockExecutor.runTest).toHaveBeenCalledWith(script, metadata);
+    });
+
+    it('should schedule a test for a future time', () => {
+      const mockTestId = 'test-789';
+      const script = 'export default function() {}';
+      const scheduledAt = Date.now() + 60000;
+
+      const result = testService.createTest(script, {testId: mockTestId}, scheduledAt);
+
+      expect(result).toBe(mockTestId);
+      expect(mockQueueRepository.save).toHaveBeenCalledWith(expect.objectContaining({
+        testId: mockTestId,
+        status: TestStatus.SCHEDULED,
+        scheduledAt,
+      }));
+      expect(mockExecutor.runTest).not.toHaveBeenCalled();
     });
 
     it('should throw BadRequestError for empty script', () => {

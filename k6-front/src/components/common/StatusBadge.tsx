@@ -8,6 +8,10 @@ interface StatusBadgeProps {
 export const StatusBadge = ({status, className = ''}: StatusBadgeProps) => {
   const getStatusColor = () => {
     switch (status) {
+      case 'scheduled':
+        return {bg: '#8b5cf6', text: 'white'};
+      case 'queued':
+        return {bg: '#f59e0b', text: 'white'};
       case 'running':
         return {bg: '#3b82f6', text: 'white'};
       case 'completed':
@@ -16,6 +20,8 @@ export const StatusBadge = ({status, className = ''}: StatusBadgeProps) => {
         return {bg: '#ef4444', text: 'white'};
       case 'stopped':
         return {bg: '#6b7280', text: 'white'};
+      case 'cancelled':
+        return {bg: '#64748b', text: 'white'};
       default:
         return {bg: '#6b7280', text: 'white'};
     }

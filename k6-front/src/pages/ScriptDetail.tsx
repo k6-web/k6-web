@@ -127,11 +127,14 @@ export const ScriptDetail = () => {
     setIsRunModalOpen(true);
   };
 
-  const handleRunConfirm = async (name?: string) => {
+  const handleRunConfirm = async (name?: string, scheduledAt?: number) => {
     if (!scriptId) return;
     try {
       setIsRunning(true);
-      const result = await scriptApi.runScript(scriptId, name ? {name} : undefined);
+      const result = await scriptApi.runScript(scriptId, {
+        ...(name && {name}),
+        ...(scheduledAt && {scheduledAt})
+      });
       navigate(`/tests/${result.testId}`);
     } catch {
       alert(t('folderDetail.failedToRunScript'));

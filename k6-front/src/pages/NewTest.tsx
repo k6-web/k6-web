@@ -100,10 +100,23 @@ export const NewTest = () => {
 
   const [showTestNameModal, setShowTestNameModal] = useState(false);
   const [testNameInput, setTestNameInput] = useState('');
+  const [testScheduledAtInput, setTestScheduledAtInput] = useState('');
   const [pendingAction, setPendingAction] = useState<boolean | null>(null);
 
   const [headerKey, setHeaderKey] = useState('');
   const [headerValue, setHeaderValue] = useState('');
+
+  const getScheduledAt = (): number | undefined => {
+    if (!testScheduledAtInput) {
+      return undefined;
+    }
+
+    const scheduledAt = new Date(testScheduledAtInput).getTime();
+    if (!Number.isFinite(scheduledAt)) {
+      throw new Error('Invalid scheduled time');
+    }
+    return scheduledAt;
+  };
 
   // Load copied script from location state
   useEffect(() => {
@@ -331,10 +344,12 @@ export const NewTest = () => {
       }
 
       // Run test after saving script (or directly if not saving)
+      const scheduledAt = getScheduledAt();
       const result = await k6Api.runTest(script, {
         name: httpConfig.name,
         config: httpConfig,
-        ...(savedScriptId && {scriptId: savedScriptId})
+        ...(savedScriptId && {scriptId: savedScriptId}),
+        ...(scheduledAt && {scheduledAt})
       });
       navigate(`/tests/${result.testId}`);
     } catch (err: unknown) {
@@ -351,6 +366,7 @@ export const NewTest = () => {
     if (!saveAsScript || shouldRunTest) {
       setPendingAction(shouldRunTest);
       setTestNameInput(httpConfig.name || '');
+      setTestScheduledAtInput('');
       setShowTestNameModal(true);
     } else {
       // 스크립트만 저장하는 경우 바로 실행
@@ -405,10 +421,12 @@ export const NewTest = () => {
       }
 
       // Run test after saving script (or directly if not saving)
+      const scheduledAt = getScheduledAt();
       const result = await k6Api.runTest(script, {
         name: testName || httpConfig.name,
         config: httpConfig,
-        ...(savedScriptId && {scriptId: savedScriptId})
+        ...(savedScriptId && {scriptId: savedScriptId}),
+        ...(scheduledAt && {scheduledAt})
       });
       navigate(`/tests/${result.testId}`);
     } catch (err: unknown) {
@@ -984,6 +1002,26 @@ export const NewTest = () => {
               />
               <div style={{fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem'}}>
                 {testNameInput?.length || 0}/50 characters
+              </div>
+            </div>
+            <div style={{marginBottom: '1.5rem'}}>
+              <label style={{display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: '#374151', fontWeight: 600}}>
+                Scheduled Time
+              </label>
+              <input
+                type="datetime-local"
+                value={testScheduledAtInput}
+                onChange={(e) => setTestScheduledAtInput(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '4px',
+                  fontSize: '1rem'
+                }}
+              />
+              <div style={{fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem'}}>
+                Leave empty to queue immediately.
               </div>
             </div>
             <div style={{display: 'flex', gap: '0.5rem', justifyContent: 'flex-end'}}>

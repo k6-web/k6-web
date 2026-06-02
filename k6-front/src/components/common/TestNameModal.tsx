@@ -1,30 +1,33 @@
-import {useEffect, useState} from 'react';
+import {useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Button} from './Button';
 
 interface TestNameModalProps {
   initialName?: string;
   loading?: boolean;
+  showName?: boolean;
   onCancel: () => void;
-  onConfirm: (name?: string) => void;
+  onConfirm: (name?: string, scheduledAt?: number) => void;
 }
 
 export const TestNameModal = ({
   initialName = '',
   loading = false,
+  showName = true,
   onCancel,
   onConfirm
 }: TestNameModalProps) => {
   const {t} = useTranslation();
   const [testName, setTestName] = useState(initialName);
-
-  useEffect(() => {
-    setTestName(initialName);
-  }, [initialName]);
+  const [scheduledAtInput, setScheduledAtInput] = useState('');
 
   const confirm = () => {
     if (loading) return;
-    onConfirm(testName.trim() || undefined);
+    const scheduledAt = scheduledAtInput ? new Date(scheduledAtInput).getTime() : undefined;
+    if (scheduledAtInput && !Number.isFinite(scheduledAt)) {
+      return;
+    }
+    onConfirm(testName.trim() || undefined, scheduledAt);
   };
 
   return (
@@ -47,17 +50,48 @@ export const TestNameModal = ({
         maxWidth: '500px',
         width: '90%'
       }}>
-        <h2 style={{marginTop: 0}}>{t('httpConfig.testName')}</h2>
-        <p style={{margin: '0 0 1rem 0', fontSize: '0.875rem', color: '#6b7280'}}>
-          {t('httpConfig.testNameOptionalInfo')}
-        </p>
+        <h2 style={{marginTop: 0}}>{showName ? t('httpConfig.testName') : 'Schedule Run'}</h2>
+        {showName && (
+          <>
+            <p style={{margin: '0 0 1rem 0', fontSize: '0.875rem', color: '#6b7280'}}>
+              {t('httpConfig.testNameOptionalInfo')}
+            </p>
+            <div style={{marginBottom: '1.5rem'}}>
+              <input
+                type="text"
+                value={testName}
+                onChange={(e) => setTestName(e.target.value.slice(0, 50))}
+                placeholder={t('httpConfig.testNamePlaceholder')}
+                maxLength={50}
+                disabled={loading}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '4px',
+                  fontSize: '1rem'
+                }}
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    confirm();
+                  }
+                }}
+              />
+              <div style={{fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem'}}>
+                {testName.length}/50 characters
+              </div>
+            </div>
+          </>
+        )}
         <div style={{marginBottom: '1.5rem'}}>
+          <label style={{display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: '#374151', fontWeight: 600}}>
+            Scheduled Time
+          </label>
           <input
-            type="text"
-            value={testName}
-            onChange={(e) => setTestName(e.target.value.slice(0, 50))}
-            placeholder={t('httpConfig.testNamePlaceholder')}
-            maxLength={50}
+            type="datetime-local"
+            value={scheduledAtInput}
+            onChange={(e) => setScheduledAtInput(e.target.value)}
             disabled={loading}
             style={{
               width: '100%',
@@ -66,15 +100,9 @@ export const TestNameModal = ({
               borderRadius: '4px',
               fontSize: '1rem'
             }}
-            autoFocus
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                confirm();
-              }
-            }}
           />
           <div style={{fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem'}}>
-            {testName.length}/50 characters
+            Leave empty to queue immediately.
           </div>
         </div>
         <div style={{display: 'flex', gap: '0.5rem', justifyContent: 'flex-end'}}>

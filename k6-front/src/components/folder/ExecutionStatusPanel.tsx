@@ -1,3 +1,4 @@
+import {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
 
 export interface ScriptExecutionStatus {
@@ -13,6 +14,13 @@ interface ExecutionStatusPanelProps {
 }
 
 export const ExecutionStatusPanel = ({statuses}: ExecutionStatusPanelProps) => {
+  const [now, setNow] = useState(0);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(interval);
+  }, []);
+
   if (statuses.length === 0) return null;
 
   const getStatusIcon = (status: string) => {
@@ -36,8 +44,8 @@ export const ExecutionStatusPanel = ({statuses}: ExecutionStatusPanelProps) => {
   };
 
   const getElapsedTime = (startTime?: number): string => {
-    if (!startTime) return '-';
-    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    if (!startTime || now === 0) return '-';
+    const elapsed = Math.floor((now - startTime) / 1000);
     const minutes = Math.floor(elapsed / 60);
     const seconds = elapsed % 60;
     return minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;

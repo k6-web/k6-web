@@ -84,7 +84,7 @@ export const TestList = () => {
     setRerunTarget(test);
   };
 
-  const handleRerunConfirm = async (name?: string) => {
+  const handleRerunConfirm = async (name?: string, scheduledAt?: number) => {
     if (!rerunTarget) return;
 
     try {
@@ -94,7 +94,8 @@ export const TestList = () => {
         const result = await k6Api.runTest(test.script, {
           name: name || test.name || test.config?.name,
           config: test.config,
-          ...(test.scriptId && {scriptId: test.scriptId})
+          ...(test.scriptId && {scriptId: test.scriptId}),
+          ...(scheduledAt && {scheduledAt})
         });
         navigate(`/tests/${result.testId}`);
       } else {

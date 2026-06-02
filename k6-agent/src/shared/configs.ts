@@ -11,6 +11,7 @@ export const RESULTS_DIR = process.env.RESULTS_DIR || path.join(K6_BASE_PATH, 'k
 export const SCRIPTS_DIR = process.env.SCRIPTS_DIR || path.join(K6_BASE_PATH, 'k6-scripts');
 export const SCRIPTS_REPO_DIR = process.env.SCRIPTS_REPO_DIR || path.join(SCRIPTS_DIR, 'repo');
 export const FOLDERS_REPO_DIR = process.env.FOLDERS_REPO_DIR || path.join(SCRIPTS_DIR, 'folders');
+export const TEST_QUEUE_DIR = process.env.TEST_QUEUE_DIR || path.join(K6_BASE_PATH, 'k6-test-queue');
 
 export const MAX_RESULT_FILES = parseInt(process.env.MAX_RESULT_FILES || '500', 10);
 export const MAX_FOLDERS = parseInt(process.env.MAX_FOLDERS || '50', 10);

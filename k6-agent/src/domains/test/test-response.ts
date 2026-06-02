@@ -2,6 +2,8 @@ import {TestStatus} from '@domains/test/test-enums';
 
 export interface RunTestResponse {
   testId: string;
+  status?: TestStatus;
+  scheduledAt?: number;
 }
 
 export interface TestResponse {

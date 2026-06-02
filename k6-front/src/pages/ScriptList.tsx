@@ -3,6 +3,7 @@ import {Link, useNavigate} from 'react-router-dom';
 import {useTranslation} from 'react-i18next';
 import {scriptApi} from '../apis/scriptApi';
 import type {Script} from '../types/script';
+import {TestNameModal} from '../components/common';
 
 export const ScriptList = () => {
   const {t} = useTranslation();
@@ -12,6 +13,8 @@ export const ScriptList = () => {
   const [error, setError] = useState<string | null>(null);
   const [sortBy] = useState<'createdAt' | 'updatedAt' | 'name'>('updatedAt');
   const [sortOrder] = useState<'asc' | 'desc'>('desc');
+  const [runTargetScriptId, setRunTargetScriptId] = useState<string | null>(null);
+  const [runningScript, setRunningScript] = useState(false);
 
   const fetchScripts = async () => {
     try {
@@ -36,17 +39,30 @@ export const ScriptList = () => {
     try {
       await scriptApi.deleteScript(scriptId);
       fetchScripts();
-    } catch (err) {
+    } catch {
       alert(t('folderDetail.failedToDeleteScript'));
     }
   };
 
-  const handleRun = async (scriptId: string) => {
+  const handleRun = (scriptId: string) => {
+    setRunTargetScriptId(scriptId);
+  };
+
+  const handleRunConfirm = async (name?: string, scheduledAt?: number) => {
+    if (!runTargetScriptId) return;
+
     try {
-      const result = await scriptApi.runScript(scriptId);
+      setRunningScript(true);
+      const result = await scriptApi.runScript(runTargetScriptId, {
+        ...(name && {name}),
+        ...(scheduledAt && {scheduledAt})
+      });
       navigate(`/tests/${result.testId}`);
-    } catch (err) {
+    } catch {
       alert(t('folderDetail.failedToRunScript'));
+    } finally {
+      setRunningScript(false);
+      setRunTargetScriptId(null);
     }
   };
 
@@ -178,6 +194,14 @@ export const ScriptList = () => {
             </div>
           ))}
         </div>
+      )}
+      {runTargetScriptId && (
+        <TestNameModal
+          initialName={`[${runTargetScriptId}] Test Run`}
+          loading={runningScript}
+          onCancel={() => setRunTargetScriptId(null)}
+          onConfirm={handleRunConfirm}
+        />
       )}
     </div>
   );

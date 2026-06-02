@@ -3,6 +3,7 @@ import {TestStatus} from '@domains/test/test-enums';
 import {K6TestConfig} from '@domains/test/test-models';
 
 export interface TestMetadata {
+  testId?: string;
   name?: string;
   script?: string;
   config?: K6TestConfig;
@@ -39,6 +40,24 @@ export interface TestInfo {
   logListeners: LogListener[];
   name?: string;
   config?: K6TestConfig;
+}
+
+export interface QueuedTestInfo {
+  testId: string;
+  scriptId?: string;
+  status: TestStatus.SCHEDULED | TestStatus.QUEUED | TestStatus.RUNNING | TestStatus.CANCELLED | TestStatus.FAILED;
+  createdAt: number;
+  scheduledAt?: number;
+  queuedAt?: number;
+  startTime: number;
+  script: string;
+  name?: string;
+  config?: K6TestConfig;
+  error?: string;
+}
+
+export interface TestQueueItem extends QueuedTestInfo {
+  metadata: TestMetadata;
 }
 
 export interface TestResult {

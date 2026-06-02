@@ -8,6 +8,7 @@ import type {FolderWithScripts} from '../types/script';
 import type {Test} from '../types/test';
 import type {K6RampUpStage, K6ScriptTemplate, K6TestConfig} from '../types/k6';
 import {TestTable} from '../components/test-list';
+import {TestNameModal} from '../components/common';
 
 const DEFAULT_IMPORT_STAGES: K6RampUpStage[] = [
   {duration: 30, target: 10},
@@ -39,8 +40,8 @@ export const FolderDetail = () => {
   const [folderTests, setFolderTests] = useState<Test[]>([]);
   const [showLastScriptTooltip, setShowLastScriptTooltip] = useState(false);
   const [showTestNameModal, setShowTestNameModal] = useState(false);
-  const [testNameInput, setTestNameInput] = useState('');
   const [pendingScriptId, setPendingScriptId] = useState<string | null>(null);
+  const [showRunAllModal, setShowRunAllModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [importCollection, setImportCollection] = useState<unknown | null>(null);
   const [importFileName, setImportFileName] = useState('');
@@ -192,11 +193,10 @@ export const FolderDetail = () => {
 
   const handleRun = (scriptId: string) => {
     setPendingScriptId(scriptId);
-    setTestNameInput('');
     setShowTestNameModal(true);
   };
 
-  const handleTestNameConfirm = async () => {
+  const handleTestNameConfirm = async (name?: string, scheduledAt?: number) => {
     if (!pendingScriptId) return;
 
     setShowTestNameModal(false);
@@ -207,7 +207,10 @@ export const FolderDetail = () => {
     }
 
     try {
-      const result = await scriptApi.runScript(pendingScriptId, testNameInput ? {name: testNameInput} : undefined);
+      const result = await scriptApi.runScript(pendingScriptId, {
+        ...(name && {name}),
+        ...(scheduledAt && {scheduledAt})
+      });
       navigate(`/tests/${result.testId}`);
     } catch {
       alert(t('folderDetail.failedToRunScript'));
@@ -222,11 +225,19 @@ export const FolderDetail = () => {
       return;
     }
 
+    setShowRunAllModal(true);
+  };
+
+  const handleRunAllConfirm = async (_name?: string, scheduledAt?: number) => {
+    if (!folderId) return;
+
+    setShowRunAllModal(false);
+
     if (!confirm(t('folderDetail.confirmRunAll'))) return;
 
     try {
       setIsRunningAll(true);
-      await folderApi.runAllScripts(folderId);
+      await folderApi.runAllScripts(folderId, scheduledAt ? {scheduledAt} : undefined);
 
       // 실행 완료 후 테스트 목록 새로고침
       await fetchFolderTests();
@@ -932,90 +943,23 @@ export const FolderDetail = () => {
 
       {/* 테스트 이름 입력 모달 */}
       {showTestNameModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            padding: '2rem',
-            borderRadius: '8px',
-            maxWidth: '500px',
-            width: '90%'
-          }}>
-            <h2 style={{marginTop: 0}}>{t('httpConfig.testName')}</h2>
-            <p style={{margin: '0 0 1rem 0', fontSize: '0.875rem', color: '#6b7280'}}>
-              {t('httpConfig.testNameOptionalInfo')}
-            </p>
-            <div style={{marginBottom: '1.5rem'}}>
-              <input
-                type="text"
-                value={testNameInput}
-                onChange={(e) => setTestNameInput(e.target.value.slice(0, 50))}
-                placeholder={t('httpConfig.testNamePlaceholder')}
-                maxLength={50}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '4px',
-                  fontSize: '1rem'
-                }}
-                autoFocus
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    handleTestNameConfirm();
-                  }
-                }}
-              />
-              <div style={{fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem'}}>
-                {testNameInput?.length || 0}/50 characters
-              </div>
-            </div>
-            <div style={{display: 'flex', gap: '0.5rem', justifyContent: 'flex-end'}}>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowTestNameModal(false);
-                  setPendingScriptId(null);
-                }}
-                style={{
-                  padding: '0.5rem 1rem',
-                  backgroundColor: '#6b7280',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
-              >
-                {t('common.cancel')}
-              </button>
-              <button
-                type="button"
-                onClick={handleTestNameConfirm}
-                style={{
-                  padding: '0.5rem 1rem',
-                  backgroundColor: '#3b82f6',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontWeight: 'bold'
-                }}
-              >
-                {t('common.start')}
-              </button>
-            </div>
-          </div>
-        </div>
+        <TestNameModal
+          loading={false}
+          onCancel={() => {
+            setShowTestNameModal(false);
+            setPendingScriptId(null);
+          }}
+          onConfirm={handleTestNameConfirm}
+        />
+      )}
+
+      {showRunAllModal && (
+        <TestNameModal
+          showName={false}
+          loading={isRunningAll}
+          onCancel={() => setShowRunAllModal(false)}
+          onConfirm={handleRunAllConfirm}
+        />
       )}
     </div>
   );

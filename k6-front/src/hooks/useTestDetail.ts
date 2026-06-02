@@ -15,7 +15,7 @@ export const useTestDetail = (testId: string | undefined) => {
         const info = await k6Api.getTest(testId);
         setTestInfo(info);
 
-        if (info.status !== 'running') {
+        if (!['scheduled', 'queued', 'running'].includes(info.status)) {
           const result = await k6Api.getTest(testId);
           setTestInfo(result);
         }
@@ -30,7 +30,7 @@ export const useTestDetail = (testId: string | undefined) => {
 
     fetchTestInfo();
 
-    if (testInfo?.status === 'running') {
+    if (testInfo?.status && ['scheduled', 'queued', 'running'].includes(testInfo.status)) {
       const interval = setInterval(fetchTestInfo, 2000);
       return () => clearInterval(interval);
     }

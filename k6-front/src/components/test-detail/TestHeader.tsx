@@ -54,7 +54,7 @@ export const TestHeader = ({
         )}
       </div>
       <div style={{display: 'flex', gap: '0.5rem', flexWrap: 'wrap'}}>
-        {status === 'running' && (
+        {['scheduled', 'queued', 'running'].includes(status) && (
           <Button
             variant="danger"
             onClick={onStop}
@@ -63,7 +63,7 @@ export const TestHeader = ({
             {t('common.cancel')}
           </Button>
         )}
-        {status !== 'running' && (
+        {!['scheduled', 'queued', 'running'].includes(status) && (
           <>
             <Button
               variant="purple"

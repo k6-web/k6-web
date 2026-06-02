@@ -32,6 +32,12 @@ describe('Test Router', () => {
     it('should create a test with valid request', async () => {
       const mockTestId = 'test-123';
       (testService.createTest as jest.Mock).mockReturnValue(mockTestId);
+      (testService.getTest as jest.Mock).mockReturnValue({
+        testId: mockTestId,
+        status: TestStatus.QUEUED,
+        startTime: Date.now(),
+        script: 'export default function() {}',
+      });
 
       const response = await request(app)
         .post('/api/tests')
@@ -42,7 +48,7 @@ describe('Test Router', () => {
         });
 
       expect(response.status).toBe(200);
-      expect(response.body).toEqual({testId: mockTestId});
+      expect(response.body).toEqual({testId: mockTestId, status: TestStatus.QUEUED});
     });
 
     it('should handle missing script', async () => {

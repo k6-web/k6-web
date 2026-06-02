@@ -29,7 +29,7 @@ export class K6LocalExecutor implements K6Executor {
   }
 
   runTest(script: string, metadata: TestMetadata = {}): string {
-    const testId = `test-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+    const testId = metadata.testId ?? `test-${Date.now()}-${Math.random().toString(36).substring(7)}`;
     const scriptPath = path.join(this.scriptsDir, `k6-script-${testId}.js`);
     const summaryPath = path.join(this.scriptsDir, `k6-summary-${testId}.json`);
     const metricsPath = path.join(this.scriptsDir, `k6-metrics-${testId}.jsonl`);
