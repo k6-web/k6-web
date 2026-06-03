@@ -31,48 +31,51 @@ With k6-web, you can run and manage k6 load tests directly from your browser.
 
 ## Preview
 
-### 1. Home
-
-<img src="docs/home_1.png">
-
-### 2. New Test
+### 1. New Test
 
 <img src="docs/new_test_1.png">
 
 **Run k6 scripts in real time without redeploying your application.**  
 Execute load tests instantly without setting up additional environments or triggering new deployments.
 
-### 3. Running Test (Live)
+### 2. Running Test (Live)
 
 <img src="docs/test_running.png">
 
 **Monitor load test performance in real time.**  
 Key performance metrics update continuously as the test is running.
 
-### 4. Test Result
+### 3. Test Result
 
 <img src="docs/test_result.png">
 
 **View detailed metrics such as TPS, latency, and more.**  
 Analyze system throughput, response times, and overall performance characteristics.
 
-### 5. Script
+### 4. Test Histories
+
+<img src="docs/home_1.png">
+
+**Review previous load test runs in one place.**  
+Track execution status, compare recent outcomes, and reopen detailed results when needed.
+
+### 5. Compare Test Result
+
+<img src="docs/compare_test_1.png">
+
+**Compare multiple test results side by side.**  
+Identify performance regressions or improvements across repeated load test runs.
+
+### 6. Script Management
 
 <img src="docs/script.png">
 
 **Save frequently used scripts and track performance trends over time.**  
 Re-running the same script helps you identify performance improvements or regressions.
 
-### 6. Script Folder
+## Quick Start
 
-<img src="docs/folder.png">
-
-**Organize scripts into folders and execute them as a group.**  
-Ideal for scenario-based or large-scale test suites.
-
-## Installation
-
-### Option 1: Docker (Recommended)
+### Docker (Recommended)
 
 #### 1. K6 Agent (k6-web-agent)
 
@@ -96,31 +99,9 @@ docker run -p 5173:5173 \
   ghcr.io/k6-web/k6-web:latest
 ```
 
-#### Environment Variables
-
-##### k6-web-agent
-
-| Variable                 | Description                              | Default   |
-|--------------------------|------------------------------------------|-----------|
-| `PORT`                   | Server port number                       | `3000`    |
-| `LOG_LEVEL`              | Logging level (error, warn, info, debug) | `info`    |
-| `K6_BASE_PATH`           | Base directory for k6 data               | `/tmp/k6` |
-| `MAX_RESULT_FILES`       | Maximum number of result files to keep   | `500`     |
-| `MAX_FOLDERS`            | Maximum number of folders                | `50`      |
-| `MAX_SCRIPTS_PER_FOLDER` | Maximum number of scripts per folder     | `50`      |
-
-##### k6-web-front
-
-| Variable                | Description      | Default                 | Available Values              |
-|-------------------------|------------------|-------------------------|-------------------------------|
-| `VITE_API_URL`          | K6 Agent API URL | `http://localhost:3000` |                               |
-| `VITE_DEFAULT_LANGUAGE` | Default Language | `en`                    | `en` (English), `ko` (Korean) |
-
-### Option 2: Build from Source
+### Build from Source
 
 #### 1. K6 Web
-
-Node.js (>= 20) is required.
 
 ```shell
 git clone https://github.com/k6-web/k6-web
@@ -135,8 +116,6 @@ npm start
 
 #### 2. K6 Agent
 
-Node.js (>= 20) and k6 are required.
-
 ```shell
 git clone https://github.com/k6-web/k6-web
 cd k6-web/k6-agent
@@ -147,3 +126,32 @@ npm install
 npm run build
 npm start
 ```
+
+## Configuration
+
+### k6-web-agent
+
+| Variable                 | Description                              | Default   |
+|--------------------------|------------------------------------------|-----------|
+| `PORT`                   | Server port number                       | `3000`    |
+| `LOG_LEVEL`              | Logging level (error, warn, info, debug) | `info`    |
+| `K6_BASE_PATH`           | Base directory for k6 data               | `/tmp/k6` |
+| `MAX_RESULT_FILES`       | Maximum number of result files to keep   | `500`     |
+| `MAX_FOLDERS`            | Maximum number of folders                | `50`      |
+| `MAX_SCRIPTS_PER_FOLDER` | Maximum number of scripts per folder     | `50`      |
+
+### k6-web-front
+
+| Variable                | Description      | Default                 | Available Values              |
+|-------------------------|------------------|-------------------------|-------------------------------|
+| `VITE_API_URL`          | K6 Agent API URL | `http://localhost:3000` |                               |
+| `VITE_DEFAULT_LANGUAGE` | Default Language | `en`                    | `en` (English), `ko` (Korean) |
+
+## Requirements
+
+- Node.js (>= 20)
+- k6 (required when running K6 Agent from source)
+
+## License
+
+This project is licensed under the terms of the [LICENSE](LICENSE).
