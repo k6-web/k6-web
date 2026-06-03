@@ -15,4 +15,4 @@ export const TEST_QUEUE_DIR = process.env.TEST_QUEUE_DIR || path.join(K6_BASE_PA
 
 export const MAX_RESULT_FILES = parseInt(process.env.MAX_RESULT_FILES || '500', 10);
 export const MAX_FOLDERS = parseInt(process.env.MAX_FOLDERS || '50', 10);
-export const MAX_SCRIPTS_PER_FOLDER = parseInt(process.env.MAX_SCRIPTS_PER_FOLDER || '20', 10);
+export const MAX_SCRIPTS_PER_FOLDER = parseInt(process.env.MAX_SCRIPTS_PER_FOLDER || '50', 10);

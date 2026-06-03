@@ -4,7 +4,7 @@ import en from './locales/en.json';
 import ko from './locales/ko.json';
 
 const LANGUAGE_KEY = 'k6-web-language';
-const defaultLanguage = import.meta.env.VITE_DEFAULT_LANGUAGE || 'ko';
+const defaultLanguage = import.meta.env.VITE_DEFAULT_LANGUAGE || 'en';
 const savedLanguage = localStorage.getItem(LANGUAGE_KEY) || defaultLanguage;
 
 i18n
