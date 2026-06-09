@@ -33,7 +33,7 @@ With k6-web, you can run and manage k6 load tests directly from your browser.
 
 ### 1. New Test
 
-<img src="docs/new_test_1.png">
+<img src="docs/new_test_1.png"> 
 
 **Run k6 scripts in real time without redeploying your application.**  
 Execute load tests instantly without setting up additional environments or triggering new deployments.
