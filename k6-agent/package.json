@@ -16,7 +16,7 @@
     "dotenv": "^17.2.3",
     "express": "^4.22.2",
     "helmet": "^8.1.0",
-    "joi": "^18.0.2",
+    "joi": "^18.2.1",
     "winston": "^3.19.0"
   },
   "devDependencies": {
