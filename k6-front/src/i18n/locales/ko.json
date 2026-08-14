@@ -24,7 +24,15 @@
     "linkCopied": "링크가 클립보드에 복사되었습니다!",
     "failedToCopyLink": "링크 복사에 실패했습니다.",
     "expand": "펼치기",
-    "collapse": "접기"
+    "collapse": "접기",
+    "confirm": "확인",
+    "retry": "다시 시도"
+  },
+  "testNameModal": {
+    "scheduleRun": "예약 실행",
+    "scheduledTime": "예약 시각",
+    "scheduledTimeHint": "비워두면 즉시 대기열에 등록됩니다.",
+    "invalidSchedule": "올바른 날짜와 시각을 입력하세요."
   },
   "testList": {
     "title": "테스트 이력",
@@ -57,6 +65,9 @@
     "latencyComparison": "응답 시간 비교"
   },
   "newTest": {
+    "overwriteScriptTitle": "스크립트를 다시 생성할까요?",
+    "overwriteScriptMessage": "이 항목을 바꾸면 스크립트 본문이 새로 생성되어 편집기에서 직접 작성한 내용이 사라집니다. VUser·지속 시간·임계값 같은 옵션 항목은 영향을 주지 않습니다.",
+    "overwriteScriptConfirm": "다시 생성",
     "title": "신규 테스트",
     "recentTests": "최근 사용 스크립트 불러오기",
     "recentTestsTooltip": "최근 5개의 테스트 스크립트를 보고 빠르게 재실행하거나 수정할 수 있습니다",
@@ -99,6 +110,14 @@
     "failedToLoadScript": "테스트 스크립트를 불러오는데 실패했습니다"
   },
   "httpConfig": {
+    "stagesHint": "각 행은 유지 구간입니다. 목표 VUser에 먼저 도달한 뒤 입력한 시간만큼 유지합니다. 목표가 바뀔 때마다 1초 전환 구간이 자동으로 추가됩니다.",
+    "stageHold": "유지",
+    "stageRampUp": "증가",
+    "stageRampDown": "감소",
+    "stageSummary": "{{from}} → {{to}} VUser, {{seconds}}초",
+    "stagesTotal": "총 {{total}}초 — 유지 {{hold}}초 + 전환 {{transitions}}회",
+    "importTools": "curl · Postman에서 가져오기",
+    "importToolsSummary": "선택 사항",
     "title": "빠르게 시작하기",
     "template": "테스트 방식",
     "templateDescription": "선택한 방식에 맞춰 k6 실행 옵션이 자동 생성됩니다.",
@@ -139,7 +158,7 @@
     "stageDuration": "지속 시간 (초)",
     "stageTarget": "목표 VUser",
     "failureThreshold": "실패 임계값",
-    "failureThresholdDescription": "최대 허용 오류율 (0.05 = 5%)",
+    "failureThresholdDescription": "오류율이 이 값을 넘으면 테스트를 중단합니다.",
     "dynamicScriptNote": "빠른 시작으로 제공되는 옵션 외의 동작이나 로직은 스크립트 편집기를 통해 자유롭게 구현할 수 있습니다 (e.g. 동적 파라미터 등)",
     "dynamicScriptLockedFields": "동적 스크립트에서는 URL, HTTP 메서드, 요청 헤더를 빠른 시작에서 변경할 수 없습니다. 해당 값은 스크립트 편집기에서 직접 수정해주세요.",
     "remove": "제거"
@@ -162,6 +181,8 @@
     "status": "상태",
     "duration": "실행 시간",
     "startTime": "시작 시간",
+    "progress": "진행률",
+    "queuedTime": "대기열 등록 시각",
     "endTime": "종료 시간",
     "vus": "가상 사용자",
     "iterations": "반복 횟수",
@@ -171,6 +192,10 @@
     "summaryResult": "테스트 결과 (summary)",
     "logs": "테스트 로그",
     "noLogs": "로그가 없습니다",
+    "scrollToTop": "맨 위로 스크롤",
+    "scrollToBottom": "맨 아래로 스크롤",
+    "enableAutoScroll": "자동 스크롤 켜기",
+    "disableAutoScroll": "자동 스크롤 끄기",
     "passed": "성공",
     "failed": "실패",
     "scheduled": "예약됨",
@@ -191,6 +216,9 @@
     "newFolder": "새 폴더",
     "infoMessage": "테스트 스크립트를 폴더로 정리하여 더 나은 관리를 할 수 있습니다.",
     "noFolders": "폴더가 없습니다.",
+    "noDescription": "설명 없음",
+    "folderCreated": "폴더를 생성했습니다.",
+    "folderUpdated": "폴더를 수정했습니다.",
     "createFirstFolder": "첫 번째 폴더 생성하기",
     "folderName": "폴더 이름",
     "scriptsCount": "스크립트",
@@ -199,7 +227,8 @@
     "deleteFolder": "폴더 삭제",
     "confirmDelete": "이 폴더를 삭제하시겠습니까?",
     "folderDeleted": "폴더가 삭제되었습니다",
-    "failedToDelete": "폴더 삭제에 실패했습니다"
+    "failedToDelete": "폴더 삭제에 실패했습니다",
+    "failedToUpdate": "폴더 수정에 실패했습니다"
   },
   "folderDetail": {
     "backToFolders": "← 폴더 목록으로",
@@ -223,6 +252,7 @@
     "failedToShare": "공유에 실패했습니다",
     "scriptsTooltip": "스크립트를 눌러서 스크립트의 최근 이력들로 성능 변화를 확인해보세요",
     "runAllScripts": "전체 스크립트 실행",
+    "runAllStarted": "폴더의 전체 스크립트 실행을 시작했습니다.",
     "confirmRunAll": "전체 스크립트를 순차적으로 실행하시겠습니까?",
     "executionResults": "실행 결과",
     "confirmRunScript": "이 스크립트를 실행하시겠습니까?",
@@ -242,6 +272,7 @@
     "backToFolder": "← 폴더로 돌아가기",
     "runTest": "테스트 실행",
     "editScript": "스크립트 수정",
+    "editRequiresFolder": "폴더에 저장된 스크립트만 수정할 수 있습니다.",
     "deleteScript": "스크립트 삭제",
     "shareScript": "공유하기",
     "copyScript": "신규 테스트로 복사",
@@ -270,6 +301,8 @@
     "description": "자주 사용하는 k6 스크립트를 저장해두고 필요할 때 다시 실행하거나 수정해서 재사용할 수 있습니다."
   },
   "recentTestsModal": {
+    "scriptPreview": "스크립트 미리보기",
+    "tip": "팁: \"스크립트 불러오기\"를 누르면 이전 테스트의 설정과 스크립트를 위 편집기로 가져옵니다.",
     "title": "최근 테스트",
     "loadingTests": "최근 테스트 로딩 중...",
     "noTests": "최근 테스트가 없습니다.",

@@ -43,8 +43,11 @@ test.describe('Script detail', () => {
     const state = await mockApi(page, {scripts: sampleScripts, folders: sampleFolders});
     await page.goto(`/scripts/${checkoutScript.scriptId}`);
 
-    page.on('dialog', (dialog) => dialog.accept());
     await page.getByRole('button', {name: /Delete Script/}).click();
+
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('button', {name: 'Delete', exact: true}).click();
 
     await expect(page).toHaveURL(`/folders/${checkoutFolder.folderId}`);
     expect(state.scripts).toHaveLength(0);

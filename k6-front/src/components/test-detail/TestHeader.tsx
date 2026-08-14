@@ -1,5 +1,9 @@
 import {useTranslation} from 'react-i18next';
-import {Button} from '../common';
+import type {TestStatus} from '../../types/test';
+import {Button, StatusBadge} from '../common';
+import styles from './TestHeader.module.css';
+
+const IN_FLIGHT_STATUSES = ['scheduled', 'queued', 'running'];
 
 interface TestHeaderProps {
   testId: string;
@@ -29,79 +33,49 @@ export const TestHeader = ({
   canEditScript
 }: TestHeaderProps) => {
   const {t} = useTranslation();
+  const isInFlight = IN_FLIGHT_STATUSES.includes(status);
+
   return (
-    <div style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'flex-start',
-      marginBottom: '2rem',
-      flexWrap: 'wrap',
-      gap: '1rem'
-    }}>
-      <div>
-        <h1 style={{margin: 0, fontSize: 'clamp(1.25rem, 4vw, 1.875rem)'}}>
-          {testName || `Test: ${testId}`}
-        </h1>
-        {testName && (
-          <p style={{
-            color: '#9ca3af',
-            margin: '0.25rem 0 0 0',
-            fontSize: 'clamp(0.625rem, 2vw, 0.75rem)',
-            wordBreak: 'break-all'
-          }}>
-            ID: {testId}
-          </p>
-        )}
+    <div className={styles.header}>
+      <div className={styles.titleGroup}>
+        <div className={styles.titleRow}>
+          <h1 className={styles.title}>{testName || `Test: ${testId}`}</h1>
+          <StatusBadge status={status as TestStatus}/>
+        </div>
+        {testName && <p className={styles.testId}>ID: {testId}</p>}
       </div>
-      <div style={{display: 'flex', gap: '0.5rem', flexWrap: 'wrap'}}>
-        {['scheduled', 'queued', 'running'].includes(status) && (
-          <Button
-            variant="danger"
-            onClick={onStop}
-            style={{fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'}}
-          >
+
+      <div className={styles.actions}>
+        {isInFlight ? (
+          <Button variant="danger" onClick={onStop}>
             {t('common.cancel')}
           </Button>
-        )}
-        {!['scheduled', 'queued', 'running'].includes(status) && (
+        ) : (
           <>
-            <Button
-              variant="purple"
-              onClick={onCopyLink}
-              style={{fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'}}
-            >
+            <Button variant="purple" onClick={onCopyLink}>
               Share
             </Button>
             <Button
               variant="success"
               onClick={onRerun}
               disabled={!canRerun}
-              style={{fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'}}
               title={canRerun ? t('testList.rerun') : t('testList.noScriptAvailable')}
             >
               {t('testList.rerun')}
             </Button>
-            <Button
-              variant="primary"
-              onClick={onCopyScript}
-              style={{fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'}}
-            >
+            <Button onClick={onCopyScript}>
               {t('testDetail.openAsNewTest')}
             </Button>
             <Button
               variant="gray"
+              appearance="outline"
               onClick={onEditScript}
               disabled={!canEditScript}
-              style={{fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'}}
               title={canEditScript ? t('testDetail.editScript') : t('testDetail.noSavedScriptAvailable')}
             >
               {t('testDetail.editScript')}
             </Button>
-            <Button
-              variant="danger"
-              onClick={onDelete}
-              style={{fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'}}
-            >
+            <Button variant="danger" appearance="outline" onClick={onDelete}>
               {t('common.delete')}
             </Button>
           </>

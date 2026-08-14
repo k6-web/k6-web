@@ -25,7 +25,6 @@ test.describe('Folder detail', () => {
     await mockApi(page, {folders: sampleFolders, scripts: sampleScripts});
     await page.goto(`/folders/${checkoutFolder.folderId}`);
 
-    page.on('dialog', (dialog) => dialog.accept());
     await page.getByRole('button', {name: 'Run', exact: true}).click();
     await expect(page.getByRole('heading', {name: 'Test Name (optional)'})).toBeVisible();
     await page.getByRole('button', {name: 'Start', exact: true}).click();
@@ -37,7 +36,6 @@ test.describe('Folder detail', () => {
     const state = await mockApi(page, {folders: sampleFolders, scripts: sampleScripts});
     await page.goto(`/folders/${checkoutFolder.folderId}`);
 
-    page.on('dialog', (dialog) => dialog.accept());
     const runAllResponse = page.waitForResponse(
       (response) => response.url().includes('/run-all') && response.request().method() === 'POST',
     );

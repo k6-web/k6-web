@@ -1,7 +1,41 @@
 import * as acorn from 'acorn';
 import type {K6ScriptTemplate, K6TestConfig} from '../types/k6';
 
-const RAMP_TRANSITION_DURATION = '1s';
+/**
+ * k6 stages express "time to reach this target", but the Quick Start form lets
+ * users think in "hold this target for N seconds". To bridge that, generated
+ * scripts get a short transition stage inserted before every target change.
+ */
+export const RAMP_TRANSITION_SECONDS = 1;
+const RAMP_TRANSITION_DURATION = `${RAMP_TRANSITION_SECONDS}s`;
+
+/**
+ * Inverse of that insertion: drops the generated transition stages so a parsed
+ * script round-trips back to the hold stages the user originally entered.
+ * A stage is a transition when it lasts exactly RAMP_TRANSITION_SECONDS and the
+ * stage right after it holds the same target.
+ */
+export const collapseRampTransitionStages = (
+  stages: Array<{duration: number; target: number}>
+): Array<{duration: number; target: number}> => {
+  const collapsed: Array<{duration: number; target: number}> = [];
+
+  for (let index = 0; index < stages.length; index++) {
+    const stage = stages[index];
+    const next = stages[index + 1];
+    const previousTarget = collapsed.length === 0 ? 0 : collapsed[collapsed.length - 1].target;
+
+    const isTransition = stage.duration === RAMP_TRANSITION_SECONDS
+      && next?.target === stage.target
+      && stage.target !== previousTarget;
+
+    if (!isTransition) {
+      collapsed.push(stage);
+    }
+  }
+
+  return collapsed.length > 0 ? collapsed : stages;
+};
 
 const jsString = (value: string) => JSON.stringify(value);
 
@@ -737,10 +771,10 @@ export const scriptToHttpConfig = (scriptCode: string): {config: Partial<K6TestC
           config.template = 'ramp-up';
           const stageMatches = [...scriptCode.matchAll(/\{\s*duration:\s*['"`](\d+)s['"`]\s*,\s*target:\s*(\d+)\s*\}/g)];
           if (stageMatches.length > 0) {
-            config.stages = stageMatches.map(match => ({
+            config.stages = collapseRampTransitionStages(stageMatches.map(match => ({
               duration: Number.parseInt(match[1]),
               target: Number.parseInt(match[2])
-            }));
+            })));
             config.duration = config.stages.reduce((total, stage) => total + stage.duration, 0);
             config.vusers = Math.max(...config.stages.map(stage => stage.target), 1);
             config.rampUp = config.stages[0]?.duration || 0;
@@ -805,3 +839,29 @@ export const scriptToHttpConfig = (scriptCode: string): {config: Partial<K6TestC
     return {config: {}, isDynamic: false};
   }
 };
+
+/**
+ * Fills a partial config with the defaults the editor expects. Callers receive
+ * configs from several sources (copied scripts, rerun state, past tests) that
+ * each may omit fields.
+ */
+export const normalizeTestConfig = (config: Partial<K6TestConfig> = {}): K6TestConfig => ({
+  url: config.url || '',
+  method: config.method || 'GET',
+  headers: config.headers || {},
+  body: config.body || '',
+  vusers: config.vusers || 1,
+  duration: config.duration || 10,
+  rampUp: config.rampUp || 0,
+  stages: config.stages || [
+    {duration: 30, target: 10},
+    {duration: 60, target: 10},
+    {duration: 30, target: 0}
+  ],
+  targetTps: config.targetTps || 10,
+  preAllocatedVUs: config.preAllocatedVUs || 10,
+  maxVUs: config.maxVUs || 20,
+  name: config.name || '',
+  failureThreshold: config.failureThreshold ?? 0.05,
+  template: config.template || 'constant-vus'
+});

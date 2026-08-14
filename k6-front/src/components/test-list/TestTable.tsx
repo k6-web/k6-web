@@ -1,6 +1,7 @@
 import {useTranslation} from 'react-i18next';
 import type {Test} from '../../types/test';
 import {TestTableRow} from './TestTableRow';
+import styles from './TestTable.module.css';
 
 interface TestTableProps {
   tests: Test[];
@@ -25,29 +26,22 @@ export const TestTable = ({
   const hasSelection = Boolean(onToggleSelection);
 
   return (
-    <div style={{
-      backgroundColor: 'white',
-      borderRadius: '8px',
-      overflow: 'auto',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-    }}>
-      <table style={{width: '100%', borderCollapse: 'collapse', minWidth: '800px'}}>
-        <thead style={{backgroundColor: '#f9fafb'}}>
+    <div className={styles.wrapper} tabIndex={0} role="group" aria-label={t('testList.title')}>
+      <table className={styles.table}>
+        <thead>
           <tr>
             {hasSelection && (
-              <th style={{width: '56px', padding: '1rem', textAlign: 'center', borderBottom: '1px solid #e5e7eb'}}>
-                {t('testList.compare')}
-              </th>
+              <th scope="col" className={styles.selectColumn}>{t('testList.compare')}</th>
             )}
-            <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>{t('common.name')} / {t('testDetail.testId')}</th>
-            <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>{t('common.status')}</th>
-            <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>{t('scriptDetail.scriptId')}</th>
-            <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>RPS</th>
-            <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>{t('metrics.httpReqDuration')}</th>
-            <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>Success</th>
-            <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>{t('testDetail.startTime')}</th>
-            <th style={{padding: '1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>{t('testDetail.duration')}</th>
-            <th style={{padding: '1rem', textAlign: 'center', borderBottom: '1px solid #e5e7eb'}}>{t('common.actions')}</th>
+            <th scope="col">{t('common.name')} / {t('testDetail.testId')}</th>
+            <th scope="col">{t('common.status')}</th>
+            <th scope="col">{t('scriptDetail.scriptId')}</th>
+            <th scope="col">RPS</th>
+            <th scope="col">{t('metrics.httpReqDuration')}</th>
+            <th scope="col">Success</th>
+            <th scope="col">{t('testDetail.startTime')}</th>
+            <th scope="col">{t('testDetail.duration')}</th>
+            <th scope="col" className={styles.actionsColumn}>{t('common.actions')}</th>
           </tr>
         </thead>
         <tbody>

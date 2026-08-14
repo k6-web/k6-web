@@ -1,0 +1,65 @@
+.wrapper {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+  /* Shadows appear at the edges only while more content is scrollable. */
+  background-image:
+    linear-gradient(to right, var(--color-surface) 30%, transparent),
+    linear-gradient(to left, var(--color-surface) 30%, transparent),
+    linear-gradient(to right, rgba(15, 23, 42, 0.12), transparent 12px),
+    linear-gradient(to left, rgba(15, 23, 42, 0.12), transparent 12px);
+  background-position: left center, right center, left center, right center;
+  background-repeat: no-repeat;
+  background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
+  background-attachment: local, local, scroll, scroll;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+  font-size: var(--text-sm);
+}
+
+.table thead {
+  background-color: var(--color-surface-muted);
+}
+
+.table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  background-color: var(--color-surface-muted);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.selectColumn {
+  width: 56px;
+  text-align: center;
+}
+
+.actionsColumn {
+  text-align: center;
+}
+
+.table tbody tr {
+  transition: background-color var(--transition-fast);
+}
+
+.table tbody tr:hover {
+  background-color: var(--color-surface-muted);
+}
+
+.table tbody tr:focus-within {
+  background-color: var(--color-primary-subtle);
+}

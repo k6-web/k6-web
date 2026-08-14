@@ -29,8 +29,11 @@ test.describe('Folder list', () => {
     await mockApi(page, {folders: [checkoutFolder]});
     await page.goto('/folders');
 
-    page.on('dialog', (dialog) => dialog.accept());
-    await page.getByRole('button', {name: 'Delete'}).click();
+    await page.getByRole('button', {name: `Delete ${checkoutFolder.name}`}).click();
+
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('button', {name: 'Delete', exact: true}).click();
 
     await expect(page.getByText('No folders found.')).toBeVisible();
   });

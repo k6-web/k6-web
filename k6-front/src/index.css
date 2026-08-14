@@ -1,16 +1,142 @@
-* {
+*, *::before, *::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
 :root {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  /* ---------- Color primitives ---------- */
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+
+  --blue-50: #eff6ff;
+  --blue-200: #bfdbfe;
+  --blue-500: #3b82f6;
+  --blue-600: #2563eb;
+  --blue-800: #1e40af;
+
+  --green-50: #d1fae5;
+  --green-200: #a7f3d0;
+  --green-500: #22c55e;
+  --green-600: #10b981;
+  --green-800: #065f46;
+
+  --red-50: #fee2e2;
+  --red-100: #fef2f2;
+  --red-200: #fecaca;
+  --red-500: #ef4444;
+  --red-600: #dc2626;
+  --red-800: #991b1b;
+
+  --amber-50: #fef3c7;
+  --amber-200: #fcd34d;
+  --amber-500: #f59e0b;
+  --amber-800: #92400e;
+
+  --purple-500: #8b5cf6;
+  --purple-600: #7c3aed;
+
+  --slate-500: #64748b;
+  --slate-900: #0f172a;
+
+  /* ---------- Semantic tokens ---------- */
+  --color-bg: #f4f7fb;
+  --color-surface: #ffffff;
+  --color-surface-muted: var(--gray-50);
+  --color-surface-sunken: var(--gray-100);
+
+  --color-text: var(--gray-900);
+  --color-text-secondary: var(--gray-700);
+  --color-text-muted: var(--gray-500);
+  --color-text-subtle: var(--gray-400);
+  --color-text-inverse: #ffffff;
+
+  --color-border: var(--gray-200);
+  --color-border-strong: var(--gray-300);
+
+  --color-primary: var(--blue-500);
+  --color-primary-hover: var(--blue-600);
+  --color-primary-subtle: var(--blue-50);
+  --color-primary-text: var(--blue-800);
+
+  --color-success: var(--green-500);
+  --color-success-strong: var(--green-600);
+  --color-success-subtle: var(--green-50);
+  --color-success-text: var(--green-800);
+
+  --color-danger: var(--red-500);
+  --color-danger-hover: var(--red-600);
+  --color-danger-subtle: var(--red-50);
+  --color-danger-text: var(--red-800);
+
+  --color-warning: var(--amber-500);
+  --color-warning-subtle: var(--amber-50);
+  --color-warning-text: var(--amber-800);
+
+  --color-accent: var(--purple-500);
+  --color-accent-hover: var(--purple-600);
+
+  --color-neutral: var(--gray-500);
+  --color-neutral-hover: var(--gray-600);
+  --color-disabled: var(--gray-400);
+
+  --color-focus-ring: rgba(59, 130, 246, 0.35);
+
+  /* ---------- Spacing ---------- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+
+  /* ---------- Radius ---------- */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-full: 9999px;
+
+  /* ---------- Shadow ---------- */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.18);
+  --shadow-focus: 0 0 0 3px var(--color-focus-ring);
+
+  /* ---------- Typography ---------- */
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+
+  /* ---------- Motion ---------- */
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.2s ease;
+
+  /* ---------- Layering ---------- */
+  --z-sticky: 20;
+  --z-modal: 1000;
+  --z-toast: 1100;
+
+  font-family: var(--font-sans);
   line-height: 1.5;
   font-weight: 400;
-
-  color: #213547;
-  background-color: #ffffff;
+  color: var(--color-text);
+  background-color: var(--color-surface);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -25,68 +151,84 @@ body {
 }
 
 h1 {
-  font-size: 2em;
+  font-size: clamp(1.5rem, 5vw, 2rem);
   line-height: 1.2;
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-4);
 }
 
 h2 {
-  font-size: 1.5em;
+  font-size: var(--text-2xl);
   line-height: 1.3;
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--space-3);
 }
 
 a {
   font-weight: 500;
-  color: #3b82f6;
+  color: var(--color-primary);
   text-decoration: none;
 }
 
 a:hover {
-  color: #2563eb;
+  color: var(--color-primary-hover);
   text-decoration: underline;
 }
 
+/*
+ * Buttons are intentionally unstyled here. Visual variants live in the Button
+ * component so that text/icon buttons don't need to undo a global background.
+ */
 button {
-  border-radius: 6px;
-  border: 1px solid #e5e7eb;
-  padding: 0.5rem 1rem;
-  font-size: 1em;
-  font-weight: 500;
   font-family: inherit;
-  background-color: #3b82f6;
-  color: white;
+  font-size: inherit;
+  color: inherit;
+  background: none;
+  border: none;
   cursor: pointer;
-  transition: all 0.2s;
-}
-
-button:hover {
-  background-color: #2563eb;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
-}
-
-button:active {
-  transform: scale(0.98);
 }
 
 button:disabled {
-  opacity: 0.5;
   cursor: not-allowed;
 }
 
 input, textarea, select {
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  padding: 0.5rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  padding: var(--space-2);
   font-family: inherit;
-  font-size: 1em;
-  transition: border-color 0.2s;
+  font-size: var(--text-base);
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
 }
 
 input:focus, textarea:focus, select:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-focus);
+}
+
+input:disabled, textarea:disabled, select:disabled {
+  background-color: var(--color-surface-sunken);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Visually hidden but available to screen readers. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 @keyframes fadeIn {
@@ -97,5 +239,14 @@ input:focus, textarea:focus, select:focus {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

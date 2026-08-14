@@ -1,0 +1,39 @@
+.card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--accent-color, var(--color-primary));
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-5);
+}
+
+.title {
+  margin-bottom: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.value {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-color, var(--color-text));
+  word-break: break-word;
+}
+
+.subtitle {
+  margin-top: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--color-text-subtle);
+}
+
+@media (max-width: 560px) {
+  .card {
+    padding: var(--space-4);
+  }
+
+  .value {
+    font-size: 1.5rem;
+  }
+}

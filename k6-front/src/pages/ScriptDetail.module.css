@@ -1,0 +1,133 @@
+.back {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.back:hover {
+  text-decoration: underline;
+}
+
+.panel {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-5);
+  margin-bottom: var(--space-4);
+}
+
+.panelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+.panelTitle {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: 700;
+}
+
+.headerTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+.scriptId {
+  margin: 0 0 var(--space-2);
+  font-size: clamp(1.25rem, 4vw, 1.75rem);
+  font-family: var(--font-mono);
+  font-weight: 800;
+  word-break: break-all;
+}
+
+.description {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.tags {
+  display: flex;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+.tag {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  background-color: var(--color-primary-subtle);
+  color: var(--color-primary-text);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.meta {
+  font-size: var(--text-sm);
+  color: var(--color-text-subtle);
+  display: grid;
+  gap: var(--space-1);
+}
+
+.metaLabel {
+  color: var(--color-text-muted);
+}
+
+.folderLink {
+  color: var(--color-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.folderLink:hover {
+  text-decoration: underline;
+}
+
+.code {
+  margin: 0;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface-sunken);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  overflow: auto;
+  max-height: 60vh;
+}
+
+.editFields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.editPanes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr));
+  gap: var(--space-5);
+}
+
+.emptyHistory {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}

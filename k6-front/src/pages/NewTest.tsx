@@ -6,12 +6,29 @@ import {folderApi} from '../apis/folderApi';
 import {scriptApi} from '../apis/scriptApi';
 import type {Test} from '../types/test.ts';
 import {HttpConfigForm, RecentTestsModal, ScriptEditor} from '../components/new-test';
-import {Button, InfoBox} from '../components/common';
+import {
+  Button,
+  ConfirmDialog,
+  Field,
+  InfoBox,
+  Modal,
+  PageHeader,
+  TestNameModal,
+  useToast
+} from '../components/common';
 import {useScriptConfig} from '../hooks/useScriptConfig';
 import {useScriptValidation} from '../hooks/useScriptValidation';
-import {useTooltip} from '../hooks/useTooltip';
-import {curlToHttpConfig, getTemplateDefaults, hasDynamicParameters, httpConfigToScript, postmanCollectionToScript, updateScriptOptionsFromConfig} from '../utils/scriptUtils';
+import {
+  curlToHttpConfig,
+  getTemplateDefaults,
+  hasDynamicParameters,
+  httpConfigToScript,
+  normalizeTestConfig,
+  postmanCollectionToScript,
+  updateScriptOptionsFromConfig
+} from '../utils/scriptUtils';
 import type {K6ScriptTemplate, K6TestConfig} from '../types/k6';
+import styles from './NewTest.module.css';
 
 const DEFAULT_SCRIPT = `import http from 'k6/http';
 import { check } from 'k6';
@@ -78,6 +95,8 @@ export const NewTest = () => {
   const [showFolderModal, setShowFolderModal] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [newFolderDescription, setNewFolderDescription] = useState('');
+  const [folderModalError, setFolderModalError] = useState<string | null>(null);
+  const [creatingFolder, setCreatingFolder] = useState(false);
 
   const {
     script,
@@ -88,35 +107,23 @@ export const NewTest = () => {
     setIsDynamicScript,
     handleConfigChange,
     handleScriptChange,
-    updateConfigFromScript
+    updateConfigFromScript,
+    hasPendingOverwrite,
+    confirmPendingOverwrite,
+    cancelPendingOverwrite
   } = useScriptConfig(DEFAULT_SCRIPT);
 
   const {syntaxError, validate} = useScriptValidation();
-  const showTooltip = useTooltip(300, 5000);
+  const toast = useToast();
 
   const [showRecentTests, setShowRecentTests] = useState(false);
   const [recentTests, setRecentTests] = useState<Test[]>([]);
   const [loadingRecentTests, setLoadingRecentTests] = useState(false);
 
   const [showTestNameModal, setShowTestNameModal] = useState(false);
-  const [testNameInput, setTestNameInput] = useState('');
-  const [testScheduledAtInput, setTestScheduledAtInput] = useState('');
-  const [pendingAction, setPendingAction] = useState<boolean | null>(null);
 
   const [headerKey, setHeaderKey] = useState('');
   const [headerValue, setHeaderValue] = useState('');
-
-  const getScheduledAt = (): number | undefined => {
-    if (!testScheduledAtInput) {
-      return undefined;
-    }
-
-    const scheduledAt = new Date(testScheduledAtInput).getTime();
-    if (!Number.isFinite(scheduledAt)) {
-      throw new Error('Invalid scheduled time');
-    }
-    return scheduledAt;
-  };
 
   // Load copied script from location state
   useEffect(() => {
@@ -161,26 +168,7 @@ export const NewTest = () => {
       }
 
       if (config) {
-        setHttpConfig({
-          url: config.url || '',
-          method: config.method || 'GET',
-          headers: config.headers || {},
-          body: config.body || '',
-          vusers: config.vusers || 1,
-          duration: config.duration || 10,
-          rampUp: config.rampUp || 0,
-          stages: config.stages || [
-            {duration: 30, target: 10},
-            {duration: 60, target: 10},
-            {duration: 30, target: 0}
-          ],
-          targetTps: config.targetTps || 10,
-          preAllocatedVUs: config.preAllocatedVUs || 10,
-          maxVUs: config.maxVUs || 20,
-          name: config.name || '',
-          failureThreshold: config.failureThreshold ?? 0.05,
-          template: config.template || 'constant-vus'
-        });
+        setHttpConfig(normalizeTestConfig(config));
       } else {
         updateConfigFromScript(copiedScriptContent);
       }
@@ -202,27 +190,7 @@ export const NewTest = () => {
 
       if (rerunConfigStr) {
         try {
-          const rerunConfig = JSON.parse(rerunConfigStr);
-          setHttpConfig({
-            url: rerunConfig.url || '',
-            method: rerunConfig.method || 'GET',
-            headers: rerunConfig.headers || {},
-            body: rerunConfig.body || '',
-            vusers: rerunConfig.vusers || 1,
-            duration: rerunConfig.duration || 10,
-            rampUp: rerunConfig.rampUp || 0,
-            stages: rerunConfig.stages || [
-              {duration: 30, target: 10},
-              {duration: 60, target: 10},
-              {duration: 30, target: 0}
-            ],
-            targetTps: rerunConfig.targetTps || 10,
-            preAllocatedVUs: rerunConfig.preAllocatedVUs || 10,
-            maxVUs: rerunConfig.maxVUs || 20,
-            name: rerunConfig.name || '',
-            failureThreshold: rerunConfig.failureThreshold ?? 0.05,
-            template: rerunConfig.template || 'constant-vus'
-          });
+          setHttpConfig(normalizeTestConfig(JSON.parse(rerunConfigStr)));
           sessionStorage.removeItem('rerunConfig');
         } catch (err) {
           console.error('Failed to parse rerun config:', err);
@@ -233,12 +201,13 @@ export const NewTest = () => {
     }
   }, [setScript, setHttpConfig, setIsDynamicScript, updateConfigFromScript]);
 
-  // Validate initial script
+  // Validate whenever the script changes, including regenerations triggered by
+  // Quick Start edits that don't route through the editor's onChange.
   useEffect(() => {
     if (script) {
       validate(script);
     }
-  }, []);
+  }, [script, validate]);
 
   // Load folders when saveAsScript is enabled
   useEffect(() => {
@@ -275,112 +244,33 @@ export const NewTest = () => {
         setScript(test.script);
         setIsDynamicScript(hasDynamicParameters(test.script));
         if (test.config) {
-          setHttpConfig({
-            url: test.config.url || '',
-            method: test.config.method || 'GET',
-            headers: test.config.headers || {},
-            body: test.config.body || '',
-            vusers: test.config.vusers || 1,
-            duration: test.config.duration || 10,
-            rampUp: test.config.rampUp || 0,
-            stages: test.config.stages || [
-              {duration: 30, target: 10},
-              {duration: 60, target: 10},
-              {duration: 30, target: 0}
-            ],
-            targetTps: test.config.targetTps || 10,
-            preAllocatedVUs: test.config.preAllocatedVUs || 10,
-            maxVUs: test.config.maxVUs || 20,
-            name: test.config.name || '',
-            failureThreshold: test.config.failureThreshold ?? 0.05,
-            template: test.config.template || 'constant-vus'
-          });
+          setHttpConfig(normalizeTestConfig(test.config));
         } else {
           updateConfigFromScript(test.script);
         }
-        validate(test.script);
         setShowRecentTests(false);
         window.scrollTo({top: 0, behavior: 'smooth'});
       }
     } catch {
-      alert(t('newTest.failedToLoadScript'));
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validate(script)) {
-      setError(t('newTest.syntaxError'));
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      let savedScriptId: string | undefined;
-
-      if (saveAsScript) {
-        if (!folderId) {
-          setError(t('newTest.folderRequired'));
-          setLoading(false);
-          return;
-        }
-
-        const trimmedScriptId = scriptId.trim();
-        const trimmedDescription = scriptDescription.trim();
-        const scriptName = httpConfig.name || `Script ${new Date().toLocaleString()}`;
-
-        const savedScript = await folderApi.createScript(folderId, {
-          ...(trimmedScriptId && {scriptId: trimmedScriptId}),
-          name: scriptName,
-          script: script,
-          config: httpConfig,
-          ...(trimmedDescription && {description: trimmedDescription}),
-          ...(scriptTags && {tags: scriptTags.split(',').map(t => t.trim()).filter(t => t)})
-        });
-        savedScriptId = savedScript.scriptId;
-      }
-
-      // Run test after saving script (or directly if not saving)
-      const scheduledAt = getScheduledAt();
-      const result = await k6Api.runTest(script, {
-        name: httpConfig.name,
-        config: httpConfig,
-        ...(savedScriptId && {scriptId: savedScriptId}),
-        ...(scheduledAt && {scheduledAt})
-      });
-      navigate(`/tests/${result.testId}`);
-    } catch (err: unknown) {
-      const errorMessage = getErrorMessage(err, 'Failed to start test');
-      setError(errorMessage);
-      window.scrollTo({top: 0, behavior: 'smooth'});
-    } finally {
-      setLoading(false);
+      toast.error(t('newTest.failedToLoadScript'));
     }
   };
 
   const handleButtonClick = (shouldRunTest: boolean) => {
-    // 테스트를 실행하는 경우에만 테스트 이름 입력 모달 표시
+    // Only ask for a test name when a run actually follows.
     if (!saveAsScript || shouldRunTest) {
-      setPendingAction(shouldRunTest);
-      setTestNameInput(httpConfig.name || '');
-      setTestScheduledAtInput('');
       setShowTestNameModal(true);
     } else {
-      // 스크립트만 저장하는 경우 바로 실행
       handleSubmitWithAction(shouldRunTest);
     }
   };
 
-  const handleTestNameConfirm = () => {
+  const handleTestNameConfirm = (name?: string, scheduledAt?: number) => {
     setShowTestNameModal(false);
-    // 입력받은 테스트 이름을 직접 전달
-    handleSubmitWithAction(pendingAction === true, testNameInput);
+    handleSubmitWithAction(true, name, scheduledAt);
   };
 
-  const handleSubmitWithAction = async (shouldRunTest: boolean, testName?: string) => {
+  const handleSubmitWithAction = async (shouldRunTest: boolean, testName?: string, scheduledAt?: number) => {
     if (!validate(script)) {
       setError(t('newTest.syntaxError'));
       return;
@@ -421,7 +311,6 @@ export const NewTest = () => {
       }
 
       // Run test after saving script (or directly if not saving)
-      const scheduledAt = getScheduledAt();
       const result = await k6Api.runTest(script, {
         name: testName || httpConfig.name,
         config: httpConfig,
@@ -475,15 +364,14 @@ export const NewTest = () => {
 
   const handleScriptChangeWithValidation = (newScript: string) => {
     handleScriptChange(newScript);
-    validate(newScript);
   };
+
 
   const handleTemplateChange = (template: K6ScriptTemplate) => {
     const nextConfig = getTemplateDefaults(template, httpConfig);
     const nextScript = updateScriptOptionsFromConfig(script, nextConfig);
     setHttpConfig(nextConfig);
     setScript(nextScript);
-    validate(nextScript);
   };
 
   const handleConvertCurl = (curlCommand: string) => {
@@ -494,9 +382,8 @@ export const NewTest = () => {
       const generatedScript = httpConfigToScript(nextConfig);
       setHttpConfig(nextConfig);
       setScript(generatedScript);
-      validate(generatedScript);
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to convert curl command');
+      toast.error(err instanceof Error ? err.message : 'Failed to convert curl command');
     }
   };
 
@@ -512,45 +399,46 @@ export const NewTest = () => {
       }
       setScript(generatedScript);
       updateConfigFromScript(generatedScript);
-      validate(generatedScript);
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to convert Postman collection');
+      toast.error(err instanceof Error ? err.message : 'Failed to convert Postman collection');
     }
+  };
+
+  const closeFolderModal = () => {
+    setShowFolderModal(false);
+    setNewFolderName('');
+    setNewFolderDescription('');
+    setFolderModalError(null);
   };
 
   const handleCreateNewFolder = async () => {
     if (!newFolderName.trim()) {
-      alert(t('newTest.folderNameRequired'));
+      setFolderModalError(t('newTest.folderNameRequired'));
       return;
     }
 
     try {
+      setCreatingFolder(true);
       const newFolder = await folderApi.createFolder({
-        name: newFolderName,
-        description: newFolderDescription,
+        name: newFolderName.trim(),
+        description: newFolderDescription.trim()
       });
       setFolders([...folders, {folderId: newFolder.folderId, name: newFolder.name}]);
       setFolderId(newFolder.folderId);
-      setShowFolderModal(false);
-      setNewFolderName('');
-      setNewFolderDescription('');
+      toast.success(t('folderList.folderCreated'));
+      closeFolderModal();
     } catch (err) {
-      alert(err instanceof Error ? err.message : t('newTest.failedToCreateFolder'));
+      setFolderModalError(err instanceof Error ? err.message : t('newTest.failedToCreateFolder'));
+    } finally {
+      setCreatingFolder(false);
     }
   };
 
   return (
     <div>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '1.5rem',
-        flexWrap: 'wrap',
-        gap: '1rem'
-      }}>
-        <h1 style={{margin: 0, fontSize: 'clamp(1.5rem, 5vw, 2rem)'}}>{t('newTest.title')}</h1>
-        <div style={{position: 'relative'}}>
+      <PageHeader
+        title={t('newTest.title')}
+        actions={
           <Button
             variant="purple"
             onClick={() => {
@@ -561,52 +449,13 @@ export const NewTest = () => {
           >
             📋 {t('newTest.recentTests')}
           </Button>
-          {showTooltip && (
-            <div style={{
-              position: 'absolute',
-              top: 'calc(100% + 0.5rem)',
-              right: 0,
-              backgroundColor: '#3b82f6',
-              color: 'white',
-              padding: '0.5rem 0.75rem',
-              borderRadius: '4px',
-              fontSize: '0.75rem',
-              whiteSpace: 'nowrap',
-              boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)',
-              zIndex: 10,
-              pointerEvents: 'none',
-              animation: 'fadeIn 0.3s ease-in'
-            }}>
-              💡 {t('newTest.quickLoadTooltip')}
-              <div style={{
-                position: 'absolute',
-                top: '-4px',
-                right: '1rem',
-                width: 0,
-                height: 0,
-                borderLeft: '6px solid transparent',
-                borderRight: '6px solid transparent',
-                borderBottom: '6px solid #3b82f6'
-              }}/>
-            </div>
-          )}
-        </div>
-      </div>
+        }
+      />
 
-      <form onSubmit={handleSubmit}>
-        {error && (
-          <InfoBox variant="error">
-            {error}
-          </InfoBox>
-        )}
+      <form onSubmit={(e) => e.preventDefault()}>
+        {error && <InfoBox variant="error">{error}</InfoBox>}
 
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 400px), 1fr))',
-          gap: '1.5rem',
-          marginBottom: '1.5rem'
-        }}>
+        <div className={styles.panes}>
           <HttpConfigForm
             config={httpConfig}
             isDynamic={isDynamicScript}
@@ -629,53 +478,23 @@ export const NewTest = () => {
           />
         </div>
 
-        <div style={{
-          backgroundColor: 'white',
-          padding: '1.5rem',
-          borderRadius: '8px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          marginBottom: '1.5rem'
-        }}>
-          <div style={{marginBottom: '1rem'}}>
-            <label style={{display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer'}}>
-              <input
-                type="checkbox"
-                checked={saveAsScript}
-                onChange={(e) => setSaveAsScript(e.target.checked)}
-                style={{width: '18px', height: '18px'}}
-              />
-              <span style={{fontWeight: 'bold'}}>💾 {t('newTest.saveAsScript')}</span>
-            </label>
-            <p style={{margin: '0.5rem 0 0 1.75rem', fontSize: '0.875rem', color: '#6b7280'}}>
-              {t('newTest.saveAsScriptDescription')}
-            </p>
-          </div>
+        <div className={styles.panel}>
+          <label className={styles.saveToggle}>
+            <input
+              type="checkbox"
+              checked={saveAsScript}
+              onChange={(e) => setSaveAsScript(e.target.checked)}
+              className={styles.checkbox}
+            />
+            <span>💾 {t('newTest.saveAsScript')}</span>
+          </label>
+          <p className={styles.toggleHint}>{t('newTest.saveAsScriptDescription')}</p>
 
           {saveAsScript && (
-            <div style={{
-              marginTop: '1rem',
-              padding: '1rem',
-              backgroundColor: '#f9fafb',
-              borderRadius: '4px',
-              borderLeft: '4px solid #10b981'
-            }}>
-              <div>
-                <label style={{display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 'bold'}}>
-                  {t('newTest.folder')} <span style={{color: '#ef4444'}}>{t('newTest.required')}</span>
-                </label>
-                <div style={{display: 'flex', gap: '0.5rem'}}>
-                  <select
-                    value={folderId}
-                    onChange={(e) => setFolderId(e.target.value)}
-                    style={{
-                      flex: 1,
-                      padding: '0.5rem',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '4px',
-                      fontSize: '0.875rem',
-                      backgroundColor: 'white'
-                    }}
-                  >
+            <div className={styles.scriptFields}>
+              <Field label={t('newTest.folder')} required hint={t('newTest.scriptsMustBeInFolder')}>
+                <div className={styles.folderRow}>
+                  <select value={folderId} onChange={(e) => setFolderId(e.target.value)}>
                     <option value="">{t('newTest.selectFolder')}</option>
                     {folders.map(folder => (
                       <option key={folder.folderId} value={folder.folderId}>
@@ -683,32 +502,13 @@ export const NewTest = () => {
                       </option>
                     ))}
                   </select>
-                  <button
-                    type="button"
-                    onClick={() => setShowFolderModal(true)}
-                    style={{
-                      padding: '0.5rem 1rem',
-                      backgroundColor: '#10b981',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      fontSize: '0.875rem',
-                      fontWeight: 'bold',
-                      whiteSpace: 'nowrap'
-                    }}
-                  >
+                  <Button variant="secondary" onClick={() => setShowFolderModal(true)}>
                     {t('newTest.newFolder')}
-                  </button>
+                  </Button>
                 </div>
-                <p style={{margin: '0.25rem 0 0 0', fontSize: '0.75rem', color: '#6b7280'}}>
-                  {t('newTest.scriptsMustBeInFolder')}
-                </p>
-              </div>
-              <div style={{marginBottom: '1rem'}}>
-                <label style={{display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: 'bold'}}>
-                  {t('newTest.scriptId')}
-                </label>
+              </Field>
+
+              <Field label={t('newTest.scriptId')} hint={t('newTest.scriptIdHelper')}>
                 <input
                   type="text"
                   value={scriptId}
@@ -716,233 +516,63 @@ export const NewTest = () => {
                   placeholder={t('newTest.scriptIdPlaceholder')}
                   pattern="^[a-z0-9-]*$"
                   title={t('newTest.scriptIdPattern')}
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '4px',
-                    fontSize: '0.875rem'
-                  }}
                 />
-                <p style={{margin: '0.25rem 0 0 0', fontSize: '0.75rem', color: '#6b7280'}}>
-                  {t('newTest.scriptIdHelper')}
-                </p>
-              </div>
+              </Field>
 
-              <div style={{marginBottom: '1rem'}}>
-                <label style={{display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: 'bold'}}>
-                  {t('newTest.descriptionOptional')}
-                </label>
+              <Field label={t('newTest.descriptionOptional')}>
                 <textarea
                   value={scriptDescription}
                   onChange={(e) => setScriptDescription(e.target.value)}
                   placeholder={t('newTest.descriptionPlaceholder')}
                   rows={2}
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '4px',
-                    fontSize: '0.875rem'
-                  }}
                 />
-              </div>
+              </Field>
 
-              <div style={{marginBottom: '1rem'}}>
-                <label style={{display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: 'bold'}}>
-                  {t('newTest.tagsOptional')}
-                </label>
+              <Field label={t('newTest.tagsOptional')}>
                 <input
                   type="text"
                   value={scriptTags}
                   onChange={(e) => setScriptTags(e.target.value)}
                   placeholder={t('newTest.tagsPlaceholder')}
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '4px',
-                    fontSize: '0.875rem'
-                  }}
                 />
-              </div>
-
-            </div>
-          )}
-
-          {showFolderModal && (
-            <div style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'rgba(0,0,0,0.5)',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              zIndex: 1000
-            }}>
-              <div style={{
-                backgroundColor: 'white',
-                padding: '2rem',
-                borderRadius: '8px',
-                maxWidth: '500px',
-                width: '90%'
-              }}>
-                <h2 style={{marginTop: 0}}>{t('newTest.createNewFolder')}</h2>
-                <div style={{marginBottom: '1rem'}}>
-                  <label style={{display: 'block', marginBottom: '0.5rem'}}>{t('newTest.folderName')}</label>
-                  <input
-                    type="text"
-                    value={newFolderName}
-                    onChange={(e) => setNewFolderName(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '4px',
-                      fontSize: '1rem'
-                    }}
-                    placeholder={t('newTest.folderNamePlaceholder')}
-                  />
-                </div>
-                <div style={{marginBottom: '1rem'}}>
-                  <label style={{display: 'block', marginBottom: '0.5rem'}}>{t('newTest.folderDescription')}</label>
-                  <textarea
-                    value={newFolderDescription}
-                    onChange={(e) => setNewFolderDescription(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '4px',
-                      fontSize: '1rem',
-                      minHeight: '80px'
-                    }}
-                    placeholder={t('newTest.folderDescriptionPlaceholder')}
-                  />
-                </div>
-                <div style={{display: 'flex', gap: '0.5rem', justifyContent: 'flex-end'}}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowFolderModal(false);
-                      setNewFolderName('');
-                      setNewFolderDescription('');
-                    }}
-                    style={{
-                      padding: '0.5rem 1rem',
-                      backgroundColor: '#6b7280',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {t('common.cancel')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCreateNewFolder}
-                    style={{
-                      padding: '0.5rem 1rem',
-                      backgroundColor: '#10b981',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {t('common.create')}
-                  </button>
-                </div>
-              </div>
+              </Field>
             </div>
           )}
         </div>
 
-        <div style={{
-          backgroundColor: 'white',
-          padding: '1.5rem',
-          borderRadius: '8px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          textAlign: 'center'
-        }}>
-          {saveAsScript ? (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-              gap: '1rem',
-              width: '100%'
-            }}>
-              <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
-                <Button
-                  type="button"
-                  onClick={() => handleButtonClick(true)}
-                  disabled={loading}
-                  style={{
-                    padding: '1rem 1.5rem',
-                    fontSize: 'clamp(0.875rem, 2.5vw, 1rem)',
-                    width: '100%',
-                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-                  }}
-                >
-                  {loading ? `🚀 ${t('newTest.startingTest')}` : `💾 ${t('newTest.saveScriptAndRunTest')}`}
-                </Button>
-                <div style={{
-                  fontSize: 'clamp(0.7rem, 1.8vw, 0.8rem)',
-                  color: '#6b7280',
-                  textAlign: 'center',
-                }}>
-                  {t('newTest.saveScriptAndRunTestDescription')}
-                </div>
-              </div>
+        <div className={styles.submitBar}>
+          <p className={styles.submitHint}>
+            {saveAsScript
+              ? t('newTest.saveScriptAndRunTestDescription')
+              : t('newTest.startTestDescription')}
+          </p>
 
-              <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
-                <Button
-                  type="button"
-                  onClick={() => handleButtonClick(false)}
-                  disabled={loading}
-                  variant="secondary"
-                  style={{
-                    padding: '1rem 1.5rem',
-                    fontSize: 'clamp(0.875rem, 2.5vw, 1rem)',
-                    width: '100%',
-                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-                  }}
-                >
-                  {loading ? `🚀 ${t('newTest.startingTest')}` : `💾 ${t('newTest.saveScriptOnly')}`}
-                </Button>
-                <div style={{
-                  fontSize: 'clamp(0.7rem, 1.8vw, 0.8rem)',
-                  color: '#6b7280',
-                  textAlign: 'center',
-                }}>
-                  {t('newTest.saveScriptOnlyDescription')}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div style={{width: '100%'}}>
+          <div className={styles.submitActions}>
+            {saveAsScript && (
               <Button
-                type="button"
-                onClick={() => handleButtonClick(true)}
-                disabled={loading}
-                style={{
-                  padding: '1rem 2rem',
-                  fontSize: 'clamp(1rem, 3vw, 1.125rem)',
-                  width: '100%',
-                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-                }}
+                variant="secondary"
+                size="lg"
+                appearance="outline"
+                onClick={() => handleButtonClick(false)}
+                loading={loading}
+                title={t('newTest.saveScriptOnlyDescription')}
               >
-                {loading ? `🚀 ${t('newTest.startingTest')}` : `🚀 ${t('newTest.startTest')}`}
+                💾 {t('newTest.saveScriptOnly')}
               </Button>
-              <div style={{marginTop: '0.75rem', fontSize: 'clamp(0.75rem, 2vw, 0.875rem)', color: '#6b7280'}}>
-                {t('newTest.startTestDescription')}
-              </div>
-            </div>
-          )}
+            )}
+
+            <Button
+              size="lg"
+              onClick={() => handleButtonClick(true)}
+              loading={loading}
+            >
+              {loading
+                ? `🚀 ${t('newTest.startingTest')}`
+                : saveAsScript
+                  ? `💾 ${t('newTest.saveScriptAndRunTest')}`
+                  : `🚀 ${t('newTest.startTest')}`}
+            </Button>
+          </div>
         </div>
       </form>
 
@@ -954,109 +584,70 @@ export const NewTest = () => {
         onLoadTest={handleLoadRecentTest}
       />
 
-      {/* 테스트 이름 입력 모달 */}
-      {showTestNameModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            padding: '2rem',
-            borderRadius: '8px',
-            maxWidth: '500px',
-            width: '90%'
-          }}>
-            <h2 style={{marginTop: 0}}>{t('httpConfig.testName')}</h2>
-            <p style={{margin: '0 0 1rem 0', fontSize: '0.875rem', color: '#6b7280'}}>
-              {t('httpConfig.testNameOptionalInfo')}
-            </p>
-            <div style={{marginBottom: '1.5rem'}}>
-              <input
-                type="text"
-                value={testNameInput}
-                onChange={(e) => setTestNameInput(e.target.value.slice(0, 50))}
-                placeholder={t('httpConfig.testNamePlaceholder')}
-                maxLength={50}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '4px',
-                  fontSize: '1rem'
-                }}
-                autoFocus
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    handleTestNameConfirm();
-                  }
-                }}
-              />
-              <div style={{fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem'}}>
-                {testNameInput?.length || 0}/50 characters
-              </div>
-            </div>
-            <div style={{marginBottom: '1.5rem'}}>
-              <label style={{display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', color: '#374151', fontWeight: 600}}>
-                Scheduled Time
-              </label>
-              <input
-                type="datetime-local"
-                value={testScheduledAtInput}
-                onChange={(e) => setTestScheduledAtInput(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '4px',
-                  fontSize: '1rem'
-                }}
-              />
-              <div style={{fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem'}}>
-                Leave empty to queue immediately.
-              </div>
-            </div>
-            <div style={{display: 'flex', gap: '0.5rem', justifyContent: 'flex-end'}}>
-              <button
-                type="button"
-                onClick={() => setShowTestNameModal(false)}
-                style={{
-                  padding: '0.5rem 1rem',
-                  backgroundColor: '#6b7280',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
-              >
+      {showFolderModal && (
+        <Modal
+          title={t('newTest.createNewFolder')}
+          size="md"
+          closeLabel={t('common.close')}
+          onClose={closeFolderModal}
+          footer={
+            <>
+              <Button variant="gray" appearance="outline" onClick={closeFolderModal} disabled={creatingFolder}>
                 {t('common.cancel')}
-              </button>
-              <button
-                type="button"
-                onClick={handleTestNameConfirm}
-                style={{
-                  padding: '0.5rem 1rem',
-                  backgroundColor: '#3b82f6',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontWeight: 'bold'
-                }}
-              >
-                {t('common.start')}
-              </button>
-            </div>
-          </div>
-        </div>
+              </Button>
+              <Button variant="secondary" onClick={handleCreateNewFolder} loading={creatingFolder}>
+                {t('common.create')}
+              </Button>
+            </>
+          }
+        >
+          <Field label={t('newTest.folderName')} required error={folderModalError ?? undefined}>
+            <input
+              type="text"
+              value={newFolderName}
+              onChange={(e) => {
+                setNewFolderName(e.target.value);
+                setFolderModalError(null);
+              }}
+              placeholder={t('newTest.folderNamePlaceholder')}
+              disabled={creatingFolder}
+              data-autofocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleCreateNewFolder();
+              }}
+            />
+          </Field>
+
+          <Field label={t('newTest.folderDescription')}>
+            <textarea
+              value={newFolderDescription}
+              onChange={(e) => setNewFolderDescription(e.target.value)}
+              placeholder={t('newTest.folderDescriptionPlaceholder')}
+              disabled={creatingFolder}
+              rows={3}
+            />
+          </Field>
+        </Modal>
+      )}
+
+      {showTestNameModal && (
+        <TestNameModal
+          initialName={httpConfig.name || ''}
+          loading={loading}
+          onCancel={() => setShowTestNameModal(false)}
+          onConfirm={handleTestNameConfirm}
+        />
+      )}
+
+      {hasPendingOverwrite && (
+        <ConfirmDialog
+          title={t('newTest.overwriteScriptTitle')}
+          message={t('newTest.overwriteScriptMessage')}
+          confirmLabel={t('newTest.overwriteScriptConfirm')}
+          variant="primary"
+          onConfirm={confirmPendingOverwrite}
+          onCancel={cancelPendingOverwrite}
+        />
       )}
     </div>
   );

@@ -1,0 +1,40 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  color: var(--color-text-inverse);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background-color: currentColor;
+  opacity: 0.85;
+}
+
+/* Pulsing dot signals an in-flight test at a glance. */
+.running .dot,
+.queued .dot {
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.scheduled { background-color: var(--color-accent); }
+.queued { background-color: var(--color-warning); }
+.running { background-color: var(--color-primary); }
+.completed { background-color: var(--color-success); }
+.failed { background-color: var(--color-danger); }
+.stopped { background-color: var(--color-neutral); }
+.cancelled { background-color: var(--slate-500); }
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(0.8); }
+}

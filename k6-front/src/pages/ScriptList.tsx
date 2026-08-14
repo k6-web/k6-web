@@ -3,23 +3,36 @@ import {Link, useNavigate} from 'react-router-dom';
 import {useTranslation} from 'react-i18next';
 import {scriptApi} from '../apis/scriptApi';
 import type {Script} from '../types/script';
-import {TestNameModal} from '../components/common';
+import {
+  Button,
+  ConfirmDialog,
+  EmptyState,
+  ErrorState,
+  LinkButton,
+  PageHeader,
+  SkeletonList,
+  TestNameModal,
+  useToast
+} from '../components/common';
+import styles from '../components/common/EntityCard.module.css';
 
 export const ScriptList = () => {
   const {t} = useTranslation();
   const navigate = useNavigate();
+  const toast = useToast();
+
   const [scripts, setScripts] = useState<Script[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [sortBy] = useState<'createdAt' | 'updatedAt' | 'name'>('updatedAt');
-  const [sortOrder] = useState<'asc' | 'desc'>('desc');
   const [runTargetScriptId, setRunTargetScriptId] = useState<string | null>(null);
   const [runningScript, setRunningScript] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Script | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchScripts = async () => {
     try {
       setLoading(true);
-      const data = await scriptApi.getScripts({sortBy, sortOrder});
+      const data = await scriptApi.getScripts({sortBy: 'updatedAt', sortOrder: 'desc'});
       setScripts(data);
       setError(null);
     } catch (err) {
@@ -31,21 +44,22 @@ export const ScriptList = () => {
 
   useEffect(() => {
     fetchScripts();
-  }, [sortBy, sortOrder]);
+  }, []);
 
-  const handleDelete = async (scriptId: string) => {
-    if (!confirm(t('folderDetail.confirmDeleteScript'))) return;
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
 
     try {
-      await scriptApi.deleteScript(scriptId);
-      fetchScripts();
+      setDeleting(true);
+      await scriptApi.deleteScript(deleteTarget.scriptId);
+      toast.success(t('folderDetail.scriptDeleted'));
+      setDeleteTarget(null);
+      await fetchScripts();
     } catch {
-      alert(t('folderDetail.failedToDeleteScript'));
+      toast.error(t('folderDetail.failedToDeleteScript'));
+    } finally {
+      setDeleting(false);
     }
-  };
-
-  const handleRun = (scriptId: string) => {
-    setRunTargetScriptId(scriptId);
   };
 
   const handleRunConfirm = async (name?: string, scheduledAt?: number) => {
@@ -59,148 +73,110 @@ export const ScriptList = () => {
       });
       navigate(`/tests/${result.testId}`);
     } catch {
-      alert(t('folderDetail.failedToRunScript'));
+      toast.error(t('folderDetail.failedToRunScript'));
     } finally {
       setRunningScript(false);
       setRunTargetScriptId(null);
     }
   };
 
-  if (loading) return <div>{t('common.loading')}</div>;
-  if (error) return <div style={{color: 'red'}}>{t('common.error')}: {error}</div>;
+  const renderContent = () => {
+    if (loading) return <SkeletonList rows={4} label={t('common.loading')}/>;
+    if (error) return <ErrorState message={error} onRetry={fetchScripts}/>;
 
-  return (
-    <div>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '1rem',
-        flexWrap: 'wrap',
-        gap: '1rem'
-      }}>
-        <div>
-          <h1 style={{margin: 0, fontSize: 'clamp(1.5rem, 5vw, 2rem)'}}>{t('nav.scripts')}</h1>
-          <p style={{margin: '0.5rem 0 0 0', color: '#6b7280', fontSize: '0.875rem'}}>
-            {t('scriptList.description')}
-          </p>
-        </div>
-        <div style={{display: 'flex', gap: '0.5rem', flexWrap: 'wrap'}}>
-          <Link
-            to="/new-test?saveScript=true"
-            style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: '#10b981',
-              color: 'white',
-              textDecoration: 'none',
-              borderRadius: '4px',
-              display: 'inline-block',
-              fontSize: 'clamp(0.75rem, 2vw, 0.875rem)',
-              fontWeight: 'bold'
-            }}
-          >
-            + {t('folderDetail.newScript')}
-          </Link>
-        </div>
-      </div>
+    if (scripts.length === 0) {
+      return (
+        <EmptyState
+          icon="📄"
+          title={t('folderDetail.noScripts')}
+          description={t('scriptList.description')}
+          action={
+            <LinkButton to="/new-test?saveScript=true" variant="secondary">
+              {t('folderDetail.createFirstScript')}
+            </LinkButton>
+          }
+        />
+      );
+    }
 
-      {scripts.length === 0 ? (
-        <div style={{
-          backgroundColor: 'white',
-          padding: '3rem',
-          borderRadius: '8px',
-          textAlign: 'center',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-        }}>
-          <p>{t('folderDetail.noScripts')}</p>
-          <Link to="/new-test?saveScript=true" style={{color: '#3b82f6'}}>{t('folderDetail.createFirstScript')}</Link>
-        </div>
-      ) : (
-        <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem'}}>
-          {scripts.map(script => (
-            <div
-              key={script.scriptId}
-              style={{
-                backgroundColor: 'white',
-                padding: '1.5rem',
-                borderRadius: '8px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                cursor: 'pointer',
-                transition: 'box-shadow 0.2s',
-              }}
-              onClick={() => navigate(`/scripts/${script.scriptId}`)}
-              onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)'}
-              onMouseLeave={(e) => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)'}
-            >
-              <h3 style={{margin: '0 0 0.5rem 0', fontSize: '1.125rem'}}>{script.scriptId}</h3>
+    return (
+      <ul className={styles.grid}>
+        {scripts.map(script => (
+          <li key={script.scriptId} className={styles.card}>
+            <div className={styles.cardMain}>
+              <h2 className={`${styles.name} ${styles.mono}`}>
+                <Link to={`/scripts/${script.scriptId}`} className={styles.cardLink}>
+                  {script.scriptId}
+                </Link>
+              </h2>
+
               {script.tags && script.tags.length > 0 && (
-                <div style={{display: 'flex', gap: '0.25rem', flexWrap: 'wrap', marginBottom: '1rem'}}>
+                <div className={styles.tags}>
                   {script.tags.map(tag => (
-                    <span
-                      key={tag}
-                      style={{
-                        backgroundColor: '#dbeafe',
-                        color: '#1e40af',
-                        padding: '0.125rem 0.5rem',
-                        borderRadius: '9999px',
-                        fontSize: '0.75rem'
-                      }}
-                    >
-                      {tag}
-                    </span>
+                    <span key={tag} className={styles.tag}>{tag}</span>
                   ))}
                 </div>
               )}
 
-              <div style={{
-                fontSize: '0.75rem',
-                color: '#9ca3af',
-                marginBottom: '1rem'
-              }}>
-                Updated: {new Date(script.updatedAt).toLocaleString()}
-              </div>
-
-              <div style={{display: 'flex', gap: '0.5rem'}} onClick={(e) => e.stopPropagation()}>
-                <button
-                  onClick={() => handleRun(script.scriptId)}
-                  style={{
-                    flex: 1,
-                    padding: '0.5rem',
-                    backgroundColor: '#3b82f6',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '0.875rem'
-                  }}
-                >
-                  {t('folderDetail.runScript')}
-                </button>
-                <button
-                  onClick={() => handleDelete(script.scriptId)}
-                  style={{
-                    padding: '0.5rem 0.75rem',
-                    backgroundColor: '#ef4444',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '0.875rem'
-                  }}
-                >
-                  {t('common.delete')}
-                </button>
+              <div className={styles.meta}>
+                {t('common.updatedAt')}: {new Date(script.updatedAt).toLocaleString()}
               </div>
             </div>
-          ))}
-        </div>
-      )}
+
+            <div className={styles.actions}>
+              <Button
+                size="sm"
+                onClick={() => setRunTargetScriptId(script.scriptId)}
+              >
+                {t('folderDetail.runScript')}
+              </Button>
+              <Button
+                variant="danger"
+                appearance="outline"
+                size="sm"
+                onClick={() => setDeleteTarget(script)}
+                aria-label={`${t('common.delete')} ${script.scriptId}`}
+              >
+                {t('common.delete')}
+              </Button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    );
+  };
+
+  return (
+    <div>
+      <PageHeader
+        title={t('nav.scripts')}
+        description={t('scriptList.description')}
+        actions={
+          <LinkButton to="/new-test?saveScript=true" variant="secondary">
+            + {t('folderDetail.newScript')}
+          </LinkButton>
+        }
+      />
+
+      {renderContent()}
+
       {runTargetScriptId && (
         <TestNameModal
           initialName={`[${runTargetScriptId}] Test Run`}
           loading={runningScript}
           onCancel={() => setRunTargetScriptId(null)}
           onConfirm={handleRunConfirm}
+        />
+      )}
+
+      {deleteTarget && (
+        <ConfirmDialog
+          title={t('folderDetail.deleteScript')}
+          message={t('folderDetail.confirmDeleteScript')}
+          confirmLabel={t('common.delete')}
+          loading={deleting}
+          onConfirm={handleDelete}
+          onCancel={() => setDeleteTarget(null)}
         />
       )}
     </div>

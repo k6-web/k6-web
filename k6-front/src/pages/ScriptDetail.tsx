@@ -3,11 +3,21 @@ import {Link, useNavigate, useParams, useSearchParams} from 'react-router-dom';
 import {useTranslation} from 'react-i18next';
 import {folderApi} from '../apis/folderApi';
 import {scriptApi} from '../apis/scriptApi';
-import type {Script, TestComparison} from '../types/script';
+import type {Script} from '../types/script';
 import type {Test} from '../types/test';
 import type {K6ScriptTemplate, K6TestConfig} from '../types/k6';
 import {MetricsTrendChart} from '../components/MetricsTrendChart';
-import {Button, TestNameModal} from '../components/common';
+import {ScriptHistoryTable} from '../components/script-detail/ScriptHistoryTable';
+import {
+  Button,
+  ConfirmDialog,
+  EmptyState,
+  ErrorState,
+  Field,
+  SkeletonList,
+  TestNameModal,
+  useToast
+} from '../components/common';
 import {HttpConfigForm, ScriptEditor} from '../components/new-test';
 import {useScriptValidation} from '../hooks/useScriptValidation';
 import {
@@ -19,7 +29,8 @@ import {
   scriptToHttpConfig,
   updateScriptOptionsFromConfig
 } from '../utils/scriptUtils';
-import {formatElapsedDuration} from '../utils/formatUtils';
+import {copyToClipboard} from '../utils/clipboard';
+import styles from './ScriptDetail.module.css';
 
 const DEFAULT_EDIT_CONFIG: K6TestConfig = {
   url: '',
@@ -61,15 +72,18 @@ export const ScriptDetail = () => {
   const [searchParams] = useSearchParams();
   const editParam = searchParams.get('edit');
   const navigate = useNavigate();
+  const toast = useToast();
+
   const [script, setScript] = useState<Script | null>(null);
   const [history, setHistory] = useState<Test[]>([]);
-  const [comparison, setComparison] = useState<TestComparison | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isRunModalOpen, setIsRunModalOpen] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [editScript, setEditScript] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editTags, setEditTags] = useState('');
@@ -81,15 +95,10 @@ export const ScriptDetail = () => {
 
   const initializeEditState = useCallback((scriptData: Script) => {
     const parsed = scriptToHttpConfig(scriptData.script);
-    const nextConfig = {
-      ...DEFAULT_EDIT_CONFIG,
-      ...scriptData.config,
-      ...parsed.config,
-    };
     setEditScript(scriptData.script);
     setEditDescription(scriptData.description || '');
     setEditTags(scriptData.tags?.join(', ') || '');
-    setEditConfig(nextConfig);
+    setEditConfig({...DEFAULT_EDIT_CONFIG, ...scriptData.config, ...parsed.config});
     setIsDynamicEditScript(parsed.isDynamic);
     validate(scriptData.script);
   }, [validate]);
@@ -122,13 +131,9 @@ export const ScriptDetail = () => {
     fetchData();
   }, [scriptId, editParam, initializeEditState]);
 
-  const handleRun = () => {
-    if (!scriptId) return;
-    setIsRunModalOpen(true);
-  };
-
   const handleRunConfirm = async (name?: string, scheduledAt?: number) => {
     if (!scriptId) return;
+
     try {
       setIsRunning(true);
       const result = await scriptApi.runScript(scriptId, {
@@ -137,49 +142,24 @@ export const ScriptDetail = () => {
       });
       navigate(`/tests/${result.testId}`);
     } catch {
-      alert(t('folderDetail.failedToRunScript'));
+      toast.error(t('folderDetail.failedToRunScript'));
     } finally {
       setIsRunning(false);
     }
   };
 
-  const handleShare = () => {
-    const url = window.location.href;
-
-    if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(url).then(() => {
-        alert(t('scriptDetail.copiedToClipboard'));
-      }).catch(() => {
-        fallbackCopy(url);
-      });
+  const handleShare = async () => {
+    const copied = await copyToClipboard(window.location.href);
+    if (copied) {
+      toast.success(t('scriptDetail.copiedToClipboard'));
     } else {
-      fallbackCopy(url);
-    }
-  };
-
-  const fallbackCopy = (text: string) => {
-    try {
-      const textArea = document.createElement('textarea');
-      textArea.value = text;
-      textArea.style.position = 'fixed';
-      textArea.style.opacity = '0';
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textArea);
-      alert(t('scriptDetail.copiedToClipboard'));
-    } catch {
-      alert(t('scriptDetail.failedToShare'));
+      toast.error(t('scriptDetail.failedToShare'));
     }
   };
 
   const handleCopy = () => {
     if (!script) return;
 
-    // 동적 파라미터 체크
-    const isDynamic = hasDynamicParameters(script.script);
-
-    // NewTest 페이지로 이동하면서 스크립트 내용을 state로 전달
     navigate('/new-test', {
       state: {
         copiedScript: {
@@ -188,7 +168,7 @@ export const ScriptDetail = () => {
           description: script.description,
           tags: script.tags,
           folderId: script.folderId,
-          isDynamic,
+          isDynamic: hasDynamicParameters(script.script)
         }
       }
     });
@@ -196,19 +176,16 @@ export const ScriptDetail = () => {
 
   const handleDelete = async () => {
     if (!scriptId || !script) return;
-    if (!confirm(t('scriptDetail.confirmDelete'))) return;
 
     try {
+      setIsDeleting(true);
       await scriptApi.deleteScript(scriptId);
-      alert(t('scriptDetail.scriptDeleted'));
-      // 폴더가 있으면 폴더 페이지로, 없으면 스크립트 목록 페이지로 이동
-      if (script.folderId) {
-        navigate(`/folders/${script.folderId}`);
-      } else {
-        navigate('/scripts');
-      }
+      toast.success(t('scriptDetail.scriptDeleted'));
+      navigate(script.folderId ? `/folders/${script.folderId}` : '/scripts');
     } catch {
-      alert(t('scriptDetail.failedToDelete'));
+      toast.error(t('scriptDetail.failedToDelete'));
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -231,10 +208,7 @@ export const ScriptDetail = () => {
     setEditScript(nextScript);
     const parsed = scriptToHttpConfig(nextScript);
     setIsDynamicEditScript(parsed.isDynamic);
-    setEditConfig(prev => ({
-      ...prev,
-      ...parsed.config,
-    }));
+    setEditConfig(prev => ({...prev, ...parsed.config}));
     validate(nextScript);
   };
 
@@ -278,10 +252,11 @@ export const ScriptDetail = () => {
 
   const handleRemoveHeader = (key: string) => {
     if (isDynamicEditScript) return;
-    const headers = Object.fromEntries(
-      Object.entries(editConfig.headers || {}).filter(([headerName]) => headerName !== key)
-    );
-    handleEditConfigChange({headers});
+    handleEditConfigChange({
+      headers: Object.fromEntries(
+        Object.entries(editConfig.headers || {}).filter(([headerName]) => headerName !== key)
+      )
+    });
   };
 
   const handleConvertCurl = (curlCommand: string) => {
@@ -295,7 +270,7 @@ export const ScriptDetail = () => {
       setIsDynamicEditScript(hasDynamicParameters(nextScript));
       validate(nextScript);
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to convert curl command');
+      toast.error(err instanceof Error ? err.message : 'Failed to convert curl command');
     }
   };
 
@@ -315,7 +290,7 @@ export const ScriptDetail = () => {
       setIsDynamicEditScript(parsed.isDynamic);
       validate(nextScript);
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to convert Postman collection');
+      toast.error(err instanceof Error ? err.message : 'Failed to convert Postman collection');
     }
   };
 
@@ -323,12 +298,12 @@ export const ScriptDetail = () => {
     if (!script || !script.folderId) return;
 
     if (!editScript.trim()) {
-      alert(t('scriptDetail.scriptRequired'));
+      toast.error(t('scriptDetail.scriptRequired'));
       return;
     }
 
     if (!validate(editScript)) {
-      alert(syntaxError || t('scriptEditor.invalidSyntax'));
+      toast.error(syntaxError || t('scriptEditor.invalidSyntax'));
       return;
     }
 
@@ -338,151 +313,77 @@ export const ScriptDetail = () => {
         script: editScript,
         config: script.config,
         description: editDescription.trim(),
-        tags: editTags.split(',').map(tag => tag.trim()).filter(Boolean),
+        tags: editTags.split(',').map(tag => tag.trim()).filter(Boolean)
       });
       setScript(updated);
       setIsEditing(false);
-      alert(t('scriptDetail.scriptUpdated'));
+      toast.success(t('scriptDetail.scriptUpdated'));
     } catch (err) {
       const apiError = err as {response?: {data?: {error?: string}}; message?: string};
-      alert(apiError.response?.data?.error || apiError.message || t('scriptDetail.failedToUpdate'));
+      toast.error(apiError.response?.data?.error || apiError.message || t('scriptDetail.failedToUpdate'));
     } finally {
       setIsSaving(false);
     }
   };
 
-  const extractMetrics = (test: Test) => {
-    const summary = test.summary;
-    if (!summary?.metrics) {
-      return {tps: 0, p90: 0, p95: 0, errorRate: 0, avg: 0};
-    }
-
-    const tps = summary.metrics.http_reqs?.rate || 0;
-    const p90 = summary.metrics.http_req_duration?.['p(90)'] || 0;
-    const p95 = summary.metrics.http_req_duration?.['p(95)'] || 0;
-    const errorRate = summary.metrics.http_req_failed?.value || 0;
-    const avg = summary.metrics.http_req_duration?.avg || 0;
-
-    return {tps, p95, p90, errorRate, avg};
-  };
-
-  if (loading) return <div>{t('common.loading')}</div>;
-  if (error) return <div style={{color: 'red'}}>{t('common.error')}: {error}</div>;
-  if (!script) return <div>{t('testList.noScriptAvailable')}</div>;
+  if (loading) return <SkeletonList rows={6} label={t('common.loading')}/>;
+  if (error) return <ErrorState message={`${t('common.error')}: ${error}`}/>;
+  if (!script) return <EmptyState icon="📄" title={t('testList.noScriptAvailable')}/>;
 
   return (
     <div>
       {script.folderId && (
-        <Link to={`/folders/${script.folderId}`}
-              style={{color: '#3b82f6', textDecoration: 'none', marginBottom: '1rem', display: 'inline-block'}}>
+        <Link to={`/folders/${script.folderId}`} className={styles.back}>
           {t('scriptDetail.backToFolder')}
         </Link>
       )}
 
-      <div style={{
-        backgroundColor: 'white',
-        padding: '1.5rem',
-        borderRadius: '8px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-        marginBottom: '1rem'
-      }}>
-        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem'}}>
+      <div className={styles.panel}>
+        <div className={styles.headerTop}>
           <div>
-            <h1 style={{margin: '0 0 0.5rem 0'}}>{script.scriptId}</h1>
-            <p style={{margin: 0, color: '#6b7280'}}>{script.description || 'No description'}</p>
+            <h1 className={styles.scriptId}>{script.scriptId}</h1>
+            <p className={styles.description}>
+              {script.description || t('folderList.noDescription')}
+            </p>
           </div>
-          <div style={{display: 'flex', gap: '0.5rem', flexWrap: 'wrap'}}>
-            <Button
-              variant="purple"
-              onClick={handleShare}
-              style={{fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'}}
-            >
+
+          <div className={styles.actions}>
+            <Button variant="purple" onClick={handleShare}>
               🔗 {t('scriptDetail.shareScript')}
             </Button>
-            <Button
-              variant="primary"
-              onClick={handleCopy}
-              style={{fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'}}
-            >
+            <Button onClick={handleCopy}>
               📋 {t('scriptDetail.copyScript')}
             </Button>
-            <button
+            <Button
+              variant="gray"
               onClick={startEditing}
               disabled={!script.folderId}
-              style={{
-                padding: '0.5rem 1rem',
-                backgroundColor: script.folderId ? '#2563eb' : '#9ca3af',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: script.folderId ? 'pointer' : 'not-allowed',
-                fontWeight: 'bold',
-                fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'
-              }}
+              title={script.folderId ? undefined : t('scriptDetail.editRequiresFolder')}
             >
               {t('scriptDetail.editScript')}
-            </button>
-            <button
-              onClick={handleRun}
-              disabled={isRunning}
-              style={{
-                padding: '0.5rem 1rem',
-                backgroundColor: isRunning ? '#9ca3af' : '#10b981',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: isRunning ? 'not-allowed' : 'pointer',
-                fontWeight: 'bold',
-                fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'
-              }}
-            >
+            </Button>
+            <Button variant="secondary" onClick={() => setIsRunModalOpen(true)} loading={isRunning}>
               {isRunning ? t('newTest.startingTest') : t('scriptDetail.runTest')}
-            </button>
-            <button
-              onClick={handleDelete}
-              style={{
-                padding: '0.5rem 1rem',
-                backgroundColor: '#ef4444',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontWeight: 'bold',
-                fontSize: 'clamp(0.75rem, 2vw, 0.875rem)'
-              }}
-            >
+            </Button>
+            <Button variant="danger" appearance="outline" onClick={() => setShowDeleteConfirm(true)}>
               🗑️ {t('scriptDetail.deleteScript')}
-            </button>
+            </Button>
           </div>
         </div>
 
         {script.tags && script.tags.length > 0 && (
-          <div style={{display: 'flex', gap: '0.25rem', flexWrap: 'wrap', marginBottom: '1rem'}}>
+          <div className={styles.tags}>
             {script.tags.map(tag => (
-              <span
-                key={tag}
-                style={{
-                  backgroundColor: '#dbeafe',
-                  color: '#1e40af',
-                  padding: '0.25rem 0.75rem',
-                  borderRadius: '9999px',
-                  fontSize: '0.875rem'
-                }}
-              >
-                {tag}
-              </span>
+              <span key={tag} className={styles.tag}>{tag}</span>
             ))}
           </div>
         )}
 
-        <div style={{fontSize: '0.875rem', color: '#9ca3af'}}>
+        <div className={styles.meta}>
           {script.folderId && (
-            <div style={{marginBottom: '0.5rem'}}>
-              <span style={{color: '#6b7280'}}>{t('scriptDetail.folder')}: </span>
-              <Link
-                to={`/folders/${script.folderId}`}
-                style={{color: '#8b5cf6', textDecoration: 'none', fontWeight: '600'}}
-              >
+            <div>
+              <span className={styles.metaLabel}>{t('scriptDetail.folder')}: </span>
+              <Link to={`/folders/${script.folderId}`} className={styles.folderLink}>
                 {script.folderId}
               </Link>
             </div>
@@ -492,101 +393,42 @@ export const ScriptDetail = () => {
         </div>
       </div>
 
-      <div style={{
-        backgroundColor: 'white',
-        padding: '1.5rem',
-        borderRadius: '8px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-        marginBottom: '1rem'
-      }}>
-        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem'}}>
-          <h2>{t('scriptDetail.script')}</h2>
+      <div className={styles.panel}>
+        <div className={styles.panelHeader}>
+          <h2 className={styles.panelTitle}>{t('scriptDetail.script')}</h2>
           {isEditing && (
-            <div style={{display: 'flex', gap: '0.5rem'}}>
-              <button
-                type="button"
-                onClick={cancelEditing}
-                disabled={isSaving}
-                style={{
-                  padding: '0.5rem 1rem',
-                  backgroundColor: '#6b7280',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: isSaving ? 'not-allowed' : 'pointer'
-                }}
-              >
+            <div className={styles.actions}>
+              <Button variant="gray" appearance="outline" onClick={cancelEditing} disabled={isSaving}>
                 {t('common.cancel')}
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveEdit}
-                disabled={isSaving}
-                style={{
-                  padding: '0.5rem 1rem',
-                  backgroundColor: isSaving ? '#9ca3af' : '#2563eb',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: isSaving ? 'not-allowed' : 'pointer',
-                  fontWeight: 'bold'
-                }}
-              >
-                {isSaving ? t('common.loading') : t('common.save')}
-              </button>
+              </Button>
+              <Button onClick={handleSaveEdit} loading={isSaving}>
+                {t('common.save')}
+              </Button>
             </div>
           )}
         </div>
 
         {isEditing ? (
-          <div>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-              gap: '1rem',
-              marginBottom: '1rem'
-            }}>
-              <div>
-                <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
-                  {t('scriptDetail.description')}
-                </label>
+          <>
+            <div className={styles.editFields}>
+              <Field label={t('scriptDetail.description')}>
                 <textarea
                   value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
                   rows={3}
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '4px',
-                    fontSize: '0.875rem'
-                  }}
                 />
-              </div>
-              <div>
-                <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
-                  {t('scriptDetail.tags')}
-                </label>
+              </Field>
+              <Field label={t('scriptDetail.tags')} hint={t('newTest.tagsPlaceholder')}>
                 <input
                   type="text"
                   value={editTags}
                   onChange={(e) => setEditTags(e.target.value)}
                   placeholder={t('newTest.tagsPlaceholder')}
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '4px',
-                    fontSize: '0.875rem'
-                  }}
                 />
-              </div>
+              </Field>
             </div>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 400px), 1fr))',
-              gap: '1.5rem'
-            }}>
+
+            <div className={styles.editPanes}>
               <HttpConfigForm
                 config={editConfig}
                 isDynamic={isDynamicEditScript}
@@ -608,192 +450,30 @@ export const ScriptDetail = () => {
                 onScriptChange={setNextEditScript}
               />
             </div>
-          </div>
+          </>
         ) : (
-          <pre style={{
-            backgroundColor: '#f3f4f6',
-            padding: '1rem',
-            borderRadius: '4px',
-            overflow: 'auto',
-            fontSize: '0.875rem'
-          }}>
-            {script.script}
-          </pre>
+          <pre className={styles.code}>{script.script}</pre>
         )}
       </div>
 
       {history.length > 0 && (
-        <div style={{
-          backgroundColor: 'white',
-          padding: '1.5rem',
-          borderRadius: '8px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          marginBottom: '1rem'
-        }}>
-          <h2 style={{marginBottom: '1rem'}}>{t('metrics.performanceOverTime')}</h2>
+        <div className={styles.panel}>
+          <h2 className={styles.panelTitle}>{t('metrics.performanceOverTime')}</h2>
           <MetricsTrendChart tests={history}/>
         </div>
       )}
 
-      <div style={{
-        backgroundColor: 'white',
-        padding: '1.5rem',
-        borderRadius: '8px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-        marginBottom: '1rem'
-      }}>
-        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem'}}>
-          <h2 style={{margin: 0}}>{t('testList.title')} ({history.length})</h2>
+      <div className={styles.panel}>
+        <div className={styles.panelHeader}>
+          <h2 className={styles.panelTitle}>{t('testList.title')} ({history.length})</h2>
         </div>
 
         {history.length === 0 ? (
-          <p style={{color: '#6b7280'}}>{t('folderDetail.noScripts')}</p>
+          <p className={styles.emptyHistory}>{t('testList.noTests')}</p>
         ) : (
-          <div style={{overflowX: 'auto'}}>
-            <table style={{width: '100%', borderCollapse: 'collapse'}}>
-              <thead>
-              <tr style={{backgroundColor: '#f3f4f6'}}>
-                <th style={{padding: '0.5rem', textAlign: 'left'}}>{t('common.name')} / {t('testDetail.testId')}</th>
-                <th style={{padding: '0.5rem', textAlign: 'left'}}>{t('common.status')}</th>
-                <th style={{padding: '0.5rem', textAlign: 'right'}}>RPS</th>
-                <th style={{padding: '0.5rem', textAlign: 'right'}}>Avg (ms)</th>
-                <th style={{padding: '0.5rem', textAlign: 'right'}}>P90 (ms)</th>
-                <th style={{padding: '0.5rem', textAlign: 'right'}}>P95 (ms)</th>
-                <th style={{padding: '0.5rem', textAlign: 'right'}}>Error %</th>
-                <th style={{padding: '0.5rem', textAlign: 'left'}}>{t('testDetail.startTime')}</th>
-                <th style={{padding: '0.5rem', textAlign: 'left'}}>{t('testDetail.duration')}</th>
-                <th style={{padding: '0.5rem', textAlign: 'left'}}>{t('common.actions')}</th>
-              </tr>
-              </thead>
-              <tbody>
-              {history.map(test => {
-                const metrics = extractMetrics(test);
-                return (
-                  <tr key={test.testId} style={{borderBottom: '1px solid #e5e7eb'}}>
-                    <td style={{padding: '0.5rem'}}>
-                      <Link to={`/tests/${test.testId}`} style={{color: '#3b82f6', textDecoration: 'none'}}>
-                        {test.name ? (
-                          <div>
-                            <div style={{fontWeight: 'bold', marginBottom: '0.25rem'}}>
-                              {test.name}
-                            </div>
-                            <div style={{fontSize: '0.75rem', color: '#6b7280'}}>
-                              {test.testId}
-                            </div>
-                          </div>
-                        ) : (
-                          test.testId
-                        )}
-                      </Link>
-                    </td>
-                    <td style={{padding: '0.5rem'}}>
-                        <span style={{
-                          padding: '0.25rem 0.5rem',
-                          borderRadius: '4px',
-                          fontSize: '0.75rem',
-                          backgroundColor: test.status === 'completed' ? '#d1fae5' : '#fee2e2',
-                          color: test.status === 'completed' ? '#065f46' : '#991b1b'
-                        }}>
-                          {test.status}
-                        </span>
-                    </td>
-                    <td style={{padding: '0.5rem', textAlign: 'right', fontFamily: 'monospace'}}>
-                      {metrics.tps > 0 ? metrics.tps.toFixed(2) : '-'}
-                    </td>
-                    <td style={{padding: '0.5rem', textAlign: 'right', fontFamily: 'monospace'}}>
-                      {metrics.avg > 0 ? metrics.avg.toFixed(2) : '-'}
-                    </td>
-                    <td style={{padding: '0.5rem', textAlign: 'right', fontFamily: 'monospace'}}>
-                      {metrics.p90 > 0 ? metrics.p90.toFixed(2) : '-'}
-                    </td>
-                    <td style={{padding: '0.5rem', textAlign: 'right', fontFamily: 'monospace'}}>
-                      {metrics.p95 > 0 ? metrics.p95.toFixed(2) : '-'}
-                    </td>
-                    <td style={{padding: '0.5rem', textAlign: 'right', fontFamily: 'monospace'}}>
-                      {metrics.errorRate > 0 ? (metrics.errorRate * 100).toFixed(2) : '0.00'}
-                    </td>
-                    <td style={{padding: '0.5rem'}}>{new Date(test.startTime).toLocaleString()}</td>
-                    <td style={{padding: '0.5rem', fontFamily: 'monospace'}}>
-                      {test.endTime && test.startTime ? formatElapsedDuration(test.endTime - test.startTime) : '-'}
-                    </td>
-                    <td style={{padding: '0.5rem'}}>
-                      <Link
-                        to={`/tests/${test.testId}`}
-                        style={{color: '#3b82f6', textDecoration: 'none'}}
-                      >
-                        {t('testList.viewDetails')}
-                      </Link>
-                    </td>
-                  </tr>
-                );
-              })}
-              </tbody>
-            </table>
-          </div>
+          <ScriptHistoryTable history={history}/>
         )}
       </div>
-
-      {comparison && (
-        <div style={{
-          backgroundColor: 'white',
-          padding: '1.5rem',
-          borderRadius: '8px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-        }}>
-          <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem'}}>
-            <h2 style={{margin: 0}}>{t('testDetail.summary')}</h2>
-            <button
-              onClick={() => setComparison(null)}
-              style={{
-                padding: '0.25rem 0.5rem',
-                backgroundColor: '#6b7280',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '0.875rem'
-              }}
-            >
-              {t('common.close')}
-            </button>
-          </div>
-
-          <div style={{marginBottom: '1rem', fontSize: '0.875rem', color: '#6b7280'}}>
-            <div>Baseline: {comparison.baselineTestId} ({new Date(comparison.baselineTime).toLocaleString()})</div>
-            <div>Current: {comparison.currentTestId} ({new Date(comparison.currentTime).toLocaleString()})</div>
-          </div>
-
-          <div style={{display: 'grid', gap: '0.5rem'}}>
-            {comparison.metrics.map(metric => (
-              <div
-                key={metric.metricName}
-                style={{
-                  padding: '1rem',
-                  backgroundColor: '#f9fafb',
-                  borderRadius: '4px',
-                  borderLeft: `4px solid ${metric.improved ? '#10b981' : metric.changePercent < -1 ? '#ef4444' : '#6b7280'}`
-                }}
-              >
-                <div style={{fontWeight: 'bold', marginBottom: '0.25rem'}}>{metric.metricName}</div>
-                <div style={{display: 'flex', gap: '1rem', fontSize: '0.875rem'}}>
-                  <span>Baseline: {metric.baseline.toFixed(2)}</span>
-                  <span>Current: {metric.current.toFixed(2)}</span>
-                  <span style={{
-                    fontWeight: 'bold',
-                    color: metric.improved ? '#10b981' : metric.changePercent < -1 ? '#ef4444' : '#6b7280'
-                  }}>
-                    {metric.changePercent > 0 ? '+' : ''}{metric.changePercent.toFixed(2)}%
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div style={{marginTop: '1rem', padding: '1rem', backgroundColor: '#f3f4f6', borderRadius: '4px'}}>
-            <strong>Summary:</strong> {comparison.summary.improved} improved, {comparison.summary.degraded} degraded, {comparison.summary.unchanged} unchanged
-          </div>
-        </div>
-      )}
 
       {isRunModalOpen && (
         <TestNameModal
@@ -801,6 +481,17 @@ export const ScriptDetail = () => {
           loading={isRunning}
           onCancel={() => setIsRunModalOpen(false)}
           onConfirm={handleRunConfirm}
+        />
+      )}
+
+      {showDeleteConfirm && (
+        <ConfirmDialog
+          title={t('scriptDetail.deleteScript')}
+          message={t('scriptDetail.confirmDelete')}
+          confirmLabel={t('common.delete')}
+          loading={isDeleting}
+          onConfirm={handleDelete}
+          onCancel={() => setShowDeleteConfirm(false)}
         />
       )}
     </div>

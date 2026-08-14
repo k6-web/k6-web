@@ -12,11 +12,13 @@ import {
 import {useTestDetail} from '../hooks/useTestDetail';
 import {useLiveLogs} from '../hooks/useLiveLogs';
 import {useTestActions} from '../hooks/useTestActions';
-import {TestNameModal} from '../components/common';
+import {EmptyState, ErrorState, SkeletonList, TestNameModal, useToast} from '../components/common';
+import styles from './TestDetail.module.css';
 
 export const TestDetail = () => {
   const {t} = useTranslation();
   const {testId} = useParams<{ testId: string }>();
+  const toast = useToast();
   const [showRerunModal, setShowRerunModal] = useState(false);
   const [rerunLoading, setRerunLoading] = useState(false);
   const {testInfo, loading, error} = useTestDetail(testId);
@@ -49,15 +51,15 @@ export const TestDetail = () => {
       await handleRerun(name, scheduledAt);
       setShowRerunModal(false);
     } catch {
-      alert(t('testList.failedToStartTest'));
+      toast.error(t('testList.failedToStartTest'));
     } finally {
       setRerunLoading(false);
     }
   };
 
-  if (loading) return <div>{t('common.loading')}</div>;
-  if (error) return <div style={{color: 'red'}}>{t('common.error')}: {error}</div>;
-  if (!testInfo || !testId) return <div>{t('testList.testNotFound')}</div>;
+  if (loading) return <SkeletonList rows={6} label={t('common.loading')}/>;
+  if (error) return <ErrorState message={`${t('common.error')}: ${error}`}/>;
+  if (!testInfo || !testId) return <EmptyState icon="🔍" title={t('testList.testNotFound')}/>;
 
   // Use live data for running tests, snapshot for completed tests
   const timeSeriesData = testInfo.status === 'running'
@@ -87,8 +89,8 @@ export const TestDetail = () => {
       )}
 
       {testInfo?.summary && (
-        <section>
-          <h2 style={{marginTop: 0, marginBottom: '1rem'}}>{t('testDetail.summaryResult')}</h2>
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>{t('testDetail.summaryResult')}</h2>
           <MetricsGrid summary={testInfo.summary}/>
         </section>
       )}
@@ -110,55 +112,24 @@ export const TestDetail = () => {
       )}
 
       {testInfo.status === 'failed' && testInfo.logs && testInfo.logs.length > 0 && (
-        <div style={{
-          backgroundColor: 'white',
-          padding: '1.5rem',
-          borderRadius: '8px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          marginBottom: '1.5rem'
-        }}>
-          <h2 style={{
-            marginTop: 0,
-            marginBottom: '1rem',
-            color: '#dc2626',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}>
-            ⚠️ {t('testDetail.errorLogs')}
+        <div className={styles.errorPanel}>
+          <h2 className={styles.errorTitle}>
+            <span aria-hidden="true">⚠️</span> {t('testDetail.errorLogs')}
           </h2>
-          <div style={{
-            backgroundColor: '#1f2937',
-            color: '#f3f4f6',
-            padding: '1rem',
-            borderRadius: '4px',
-            maxHeight: '400px',
-            overflow: 'auto',
-            fontFamily: 'Monaco, Consolas, "Courier New", monospace',
-            fontSize: '0.875rem',
-            lineHeight: '1.5'
-          }}>
-            {testInfo.logs.map((log, index) => (
-              <div
-                key={index}
-                style={{
-                  padding: '0.25rem 0',
-                  color: log.type === 'stderr' || log.type === 'error' ? '#fca5a5' : '#d1d5db'
-                }}
-              >
-                <span style={{color: '#9ca3af', marginRight: '0.5rem'}}>
-                  {new Date(log.timestamp).toLocaleTimeString()}
-                </span>
-                <span style={{
-                  color: log.type === 'stderr' || log.type === 'error' ? '#fca5a5' : '#60a5fa',
-                  marginRight: '0.5rem',
-                  fontWeight: 'bold'
-                }}>
-                  [{log.type}]
-                </span>
-                <span>{log.message}</span>
-              </div>
-            ))}
+          <div className={styles.console}>
+            {testInfo.logs.map((log, index) => {
+              const isError = log.type === 'stderr' || log.type === 'error';
+
+              return (
+                <div key={index} className={`${styles.logLine} ${isError ? styles.stderr : ''}`.trim()}>
+                  <span className={styles.timestamp}>
+                    {new Date(log.timestamp).toLocaleTimeString()}
+                  </span>
+                  <span className={styles.logType}>[{log.type}]</span>
+                  <span>{log.message}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

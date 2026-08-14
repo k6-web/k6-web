@@ -1,8 +1,9 @@
 import {useTranslation} from 'react-i18next';
+import {Link} from 'react-router-dom';
 import type {Test} from '../../types/test';
 import {Card} from '../common';
-import {Link} from 'react-router-dom';
 import {formatElapsedDuration} from '../../utils/formatUtils';
+import styles from './TestInfoCard.module.css';
 
 interface TestInfoCardProps {
   test: Test;
@@ -12,95 +13,79 @@ interface TestInfoCardProps {
 
 export const TestInfoCard = ({test, progress = 0, errorCount = 0}: TestInfoCardProps) => {
   const {t} = useTranslation();
+  const isRunning = test.status === 'running';
 
   return (
     <Card title={t('testDetail.info')}>
-      <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem'}}>
+      <div className={styles.grid}>
         <div>
-          <div style={{fontSize: '0.875rem', color: '#666'}}>{t('common.status')}</div>
-          <div style={{
-            fontSize: '1.25rem',
-            fontWeight: 'bold',
-            color: test.status === 'scheduled' ? '#8b5cf6' :
-              test.status === 'queued' ? '#f59e0b' :
-                test.status === 'running' ? '#3b82f6' :
-                  test.status === 'completed' ? '#22c55e' :
-                    test.status === 'failed' ? '#ef4444' : '#6b7280'
-          }}>
+          <div className={styles.label}>{t('common.status')}</div>
+          <div className={`${styles.status} ${styles[test.status] ?? ''}`.trim()}>
             {t(`testDetail.${test.status}`).toUpperCase()}
           </div>
         </div>
 
         {test.scriptId && (
           <div>
-            <div style={{fontSize: '0.875rem', color: '#666'}}>{t('scriptDetail.scriptId')}</div>
-            <Link
-              to={`/scripts/${test.scriptId}`}
-              style={{fontSize: '1rem', color: '#8b5cf6', textDecoration: 'none', fontWeight: '600'}}
-            >
+            <div className={styles.label}>{t('scriptDetail.scriptId')}</div>
+            <Link to={`/scripts/${test.scriptId}`} className={styles.scriptLink}>
               {test.scriptId}
             </Link>
           </div>
         )}
 
-        {test.status === 'running' && progress > 0 && (
+        {isRunning && progress > 0 && (
           <div>
-            <div style={{fontSize: '0.875rem', color: '#666'}}>Progress</div>
-            <div style={{fontSize: '1.25rem', fontWeight: 'bold', color: '#3b82f6'}}>
-              {progress}%
-            </div>
-            <div style={{
-              width: '100%',
-              height: '8px',
-              backgroundColor: '#e5e7eb',
-              borderRadius: '4px',
-              marginTop: '0.5rem',
-              overflow: 'hidden'
-            }}>
-              <div style={{
-                width: `${progress}%`,
-                height: '100%',
-                backgroundColor: '#3b82f6',
-                transition: 'width 0.3s ease'
-              }}/>
+            <div className={styles.label}>{t('testDetail.progress')}</div>
+            <div className={styles.progressValue}>{progress}%</div>
+            <div
+              className={styles.progressTrack}
+              role="progressbar"
+              aria-valuenow={progress}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={t('testDetail.progress')}
+            >
+              <div className={styles.progressBar} style={{width: `${progress}%`}}/>
             </div>
           </div>
         )}
 
-        {test.status === 'running' && errorCount > 0 && (
+        {isRunning && errorCount > 0 && (
           <div>
-            <div style={{fontSize: '0.875rem', color: '#666'}}>{t('common.error')}</div>
-            <div style={{fontSize: '1.25rem', fontWeight: 'bold', color: '#ef4444'}}>
-              {errorCount}
-            </div>
+            <div className={styles.label}>{t('common.error')}</div>
+            <div className={styles.errorCount}>{errorCount}</div>
           </div>
         )}
 
         <div>
-          <div style={{fontSize: '0.875rem', color: '#666'}}>{t('testDetail.startTime')}</div>
-          <div style={{fontSize: '1rem'}}>{new Date(test.startTime).toLocaleString()}</div>
+          <div className={styles.label}>{t('testDetail.startTime')}</div>
+          <div className={styles.value}>{new Date(test.startTime).toLocaleString()}</div>
         </div>
+
         {test.scheduledAt && (
           <div>
-            <div style={{fontSize: '0.875rem', color: '#666'}}>Scheduled Time</div>
-            <div style={{fontSize: '1rem'}}>{new Date(test.scheduledAt).toLocaleString()}</div>
+            <div className={styles.label}>{t('testNameModal.scheduledTime')}</div>
+            <div className={styles.value}>{new Date(test.scheduledAt).toLocaleString()}</div>
           </div>
         )}
+
         {test.queuedAt && (
           <div>
-            <div style={{fontSize: '0.875rem', color: '#666'}}>Queued Time</div>
-            <div style={{fontSize: '1rem'}}>{new Date(test.queuedAt).toLocaleString()}</div>
+            <div className={styles.label}>{t('testDetail.queuedTime')}</div>
+            <div className={styles.value}>{new Date(test.queuedAt).toLocaleString()}</div>
           </div>
         )}
-        {test?.endTime && (
+
+        {test.endTime && (
           <>
             <div>
-              <div style={{fontSize: '0.875rem', color: '#666'}}>{t('testDetail.endTime')}</div>
-              <div style={{fontSize: '1rem'}}>{new Date(test.endTime).toLocaleString()}</div>
+              <div className={styles.label}>{t('testDetail.endTime')}</div>
+              <div className={styles.value}>{new Date(test.endTime).toLocaleString()}</div>
             </div>
             <div>
-              <div style={{fontSize: '0.875rem', color: '#666'}}>{t('testDetail.duration')}</div>
-              <div style={{fontSize: '1rem'}}>{formatElapsedDuration(test.endTime - test.startTime)}</div>
+              <div className={styles.label}>{t('testDetail.duration')}</div>
+              <div className={styles.value}>{formatElapsedDuration(test.endTime - test.startTime)}</div>
             </div>
           </>
         )}

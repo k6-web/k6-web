@@ -24,7 +24,15 @@
     "linkCopied": "Link copied to clipboard!",
     "failedToCopyLink": "Failed to copy link.",
     "expand": "Expand",
-    "collapse": "Collapse"
+    "collapse": "Collapse",
+    "confirm": "Confirm",
+    "retry": "Retry"
+  },
+  "testNameModal": {
+    "scheduleRun": "Schedule Run",
+    "scheduledTime": "Scheduled Time",
+    "scheduledTimeHint": "Leave empty to queue immediately.",
+    "invalidSchedule": "Enter a valid date and time."
   },
   "testList": {
     "title": "Test History",
@@ -57,6 +65,9 @@
     "latencyComparison": "Latency Comparison"
   },
   "newTest": {
+    "overwriteScriptTitle": "Regenerate the script?",
+    "overwriteScriptMessage": "This Quick Start change rebuilds the script body, discarding edits you made in the editor. Options-only fields (VUs, duration, threshold) are always safe.",
+    "overwriteScriptConfirm": "Regenerate",
     "title": "New Test",
     "recentTests": "Load Recent Test Scripts",
     "recentTestsTooltip": "View and load your 5 most recent test scripts to quickly re-run or modify them",
@@ -99,6 +110,14 @@
     "failedToLoadScript": "Failed to load test script"
   },
   "httpConfig": {
+    "stagesHint": "Each row is a hold: the target is reached first, then held for the duration you enter. A 1s transition is added automatically whenever the target changes.",
+    "stageHold": "Hold",
+    "stageRampUp": "Ramp up",
+    "stageRampDown": "Ramp down",
+    "stageSummary": "{{from}} → {{to}} VU for {{seconds}}s",
+    "stagesTotal": "Total {{total}}s — {{hold}}s held + {{transitions}} transition(s)",
+    "importTools": "Import from curl or Postman",
+    "importToolsSummary": "optional",
     "title": "Quick Start",
     "template": "Test Mode",
     "templateDescription": "k6 execution options are generated from the selected mode.",
@@ -139,7 +158,7 @@
     "stageDuration": "Duration (seconds)",
     "stageTarget": "Target VUs",
     "failureThreshold": "Failure Threshold",
-    "failureThresholdDescription": "Max allowed error rate (0.05 = 5%)",
+    "failureThresholdDescription": "Abort the test if the error rate goes above this.",
     "dynamicScriptNote": "Any behavior or logic beyond the options provided in Quick Start can be freely implemented using the script editor (e.g., dynamic parameters).",
     "dynamicScriptLockedFields": "For dynamic scripts, URL, HTTP method, and request headers cannot be changed in Quick Start. Edit those values directly in the script editor.",
     "remove": "Remove"
@@ -162,6 +181,8 @@
     "status": "Status",
     "duration": "Duration",
     "startTime": "Start Time",
+    "progress": "Progress",
+    "queuedTime": "Queued Time",
     "endTime": "End Time",
     "vus": "Virtual Users",
     "iterations": "Iterations",
@@ -171,6 +192,10 @@
     "summaryResult": "Test Result (summary)",
     "logs": "Test Logs",
     "noLogs": "No logs available",
+    "scrollToTop": "Scroll to top",
+    "scrollToBottom": "Scroll to bottom",
+    "enableAutoScroll": "Enable auto-scroll",
+    "disableAutoScroll": "Disable auto-scroll",
     "passed": "Passed",
     "failed": "Failed",
     "scheduled": "Scheduled",
@@ -191,6 +216,9 @@
     "newFolder": "New Folder",
     "infoMessage": "Organize your test scripts into folders for better management.",
     "noFolders": "No folders found.",
+    "noDescription": "No description",
+    "folderCreated": "Folder created successfully",
+    "folderUpdated": "Folder updated successfully",
     "createFirstFolder": "Create your first folder",
     "folderName": "Folder Name",
     "scriptsCount": "Scripts",
@@ -199,7 +227,8 @@
     "deleteFolder": "Delete Folder",
     "confirmDelete": "Are you sure you want to delete this folder?",
     "folderDeleted": "Folder deleted successfully",
-    "failedToDelete": "Failed to delete folder"
+    "failedToDelete": "Failed to delete folder",
+    "failedToUpdate": "Failed to update folder"
   },
   "folderDetail": {
     "backToFolders": "← Back to Folders",
@@ -223,6 +252,7 @@
     "failedToShare": "Failed to share",
     "scriptsTooltip": "Click on scripts to check performance changes through their recent history",
     "runAllScripts": "Run All Scripts",
+    "runAllStarted": "Started running all scripts in this folder.",
     "confirmRunAll": "Run all scripts sequentially?",
     "executionResults": "Execution Results",
     "confirmRunScript": "Are you sure you want to run this script?",
@@ -242,6 +272,7 @@
     "backToFolder": "← Back to Folder",
     "runTest": "Run Test",
     "editScript": "Edit Script",
+    "editRequiresFolder": "Only scripts saved in a folder can be edited.",
     "deleteScript": "Delete Script",
     "shareScript": "Share",
     "copyScript": "Copy Script",
@@ -270,6 +301,8 @@
     "description": "Save frequently used k6 scripts so you can run, edit, and reuse them whenever needed."
   },
   "recentTestsModal": {
+    "scriptPreview": "Script Preview",
+    "tip": "Tip: Click \"Load Script\" to copy a previous test's configuration and script into the editor above.",
     "title": "Recent Tests",
     "loadingTests": "Loading recent tests...",
     "noTests": "No recent tests found.",

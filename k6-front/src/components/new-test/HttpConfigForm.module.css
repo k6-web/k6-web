@@ -1,0 +1,204 @@
+.panel {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-5);
+}
+
+.title {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-xl);
+  font-weight: 700;
+}
+
+.importDivider {
+  height: 1px;
+  margin: var(--space-4) 0;
+  background-color: var(--color-border);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.headerFieldset {
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  border: 0;
+}
+
+.headerFieldset legend {
+  margin-bottom: var(--space-2);
+  padding: 0;
+}
+
+.headerRow {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.headerRow > input {
+  flex: 1;
+  min-width: 140px;
+}
+
+.headerList {
+  display: grid;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
+.headerItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface-muted);
+  font-size: var(--text-sm);
+}
+
+.headerText {
+  min-width: 0;
+  word-break: break-all;
+}
+
+.bodyInput {
+  min-height: 220px;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  white-space: pre;
+  overflow: auto;
+  resize: vertical;
+}
+
+.optionsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+  gap: var(--space-4);
+}
+
+.fullRow {
+  grid-column: 1 / -1;
+}
+
+.stagesHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-2);
+}
+
+.stagesLabel {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.stagesHint {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  line-height: 1.6;
+}
+
+.stages {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.stageRow {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  background-color: var(--color-surface-muted);
+}
+
+.stageMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-2);
+}
+
+.stageIndex {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-full);
+  background-color: var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.stagePhase {
+  padding: 0.1rem var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.stagePhase[data-delta='up'] {
+  background-color: var(--color-primary-subtle);
+  color: var(--color-primary-text);
+}
+
+.stagePhase[data-delta='down'] {
+  background-color: var(--color-warning-subtle);
+  color: var(--color-warning-text);
+}
+
+.stagePhase[data-delta='hold'] {
+  background-color: var(--color-success-subtle);
+  color: var(--color-success-text);
+}
+
+.stageSummary {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.stagesTotal {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  align-items: end;
+}
+
+/* Field carries its own bottom margin; inside a stage row it misaligns. */
+.stage > :global(*) {
+  margin-bottom: 0;
+}
+
+@media (max-width: 560px) {
+  .panel {
+    padding: var(--space-4);
+  }
+
+  .stage {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .stage > :last-child {
+    grid-column: 1 / -1;
+  }
+}

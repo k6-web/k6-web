@@ -1,0 +1,321 @@
+.wrapper {
+  margin-bottom: var(--space-5);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.wideGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--space-4);
+}
+
+.stack {
+  display: grid;
+  gap: var(--space-4);
+}
+
+/* ---------- Request rate card ---------- */
+.rateRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.rateValue {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--color-primary-hover);
+  font-variant-numeric: tabular-nums;
+}
+
+.rateUnit {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-primary-hover);
+}
+
+.rateSub {
+  margin-top: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.iterationRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--text-sm);
+}
+
+.iterationLabel {
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.iterationValue {
+  color: #4f46e5;
+  font-weight: 700;
+  text-align: right;
+}
+
+.iterationTotal {
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+
+/* ---------- Latency block ---------- */
+.latencyBlock {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.latencyTitle {
+  margin-bottom: var(--space-1);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--color-text-secondary);
+}
+
+.latencyValue {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--series-color);
+  font-variant-numeric: tabular-nums;
+}
+
+.latencyUnit {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+}
+
+.latencyRows {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.divided {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+/* ---------- Bar rows ---------- */
+.barRow {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.barHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.barLabel {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.barLabel.strong {
+  font-weight: 800;
+}
+
+.barValue {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--series-color);
+  font-variant-numeric: tabular-nums;
+}
+
+.barTrack {
+  height: 8px;
+  border-radius: var(--radius-full);
+  background-color: #eef2f7;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background-color: var(--series-color);
+  width: var(--fill-width);
+  transition: width var(--transition-base);
+}
+
+/* ---------- Success overview ---------- */
+.successHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.successRate {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--color-success-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.successRate.hasFailures {
+  color: var(--color-danger-hover);
+}
+
+.successCounts {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.failChip {
+  padding: 0.45rem 0.7rem;
+  border-radius: var(--radius-full);
+  background-color: #ecfdf5;
+  color: #047857;
+  font-size: 0.8rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.failChip.hasFailures {
+  background-color: var(--color-danger-subtle);
+  color: #b91c1c;
+}
+
+.successTrack {
+  display: flex;
+  height: 14px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-danger-subtle);
+  overflow: hidden;
+}
+
+.successPass {
+  background-color: #16a34a;
+  width: var(--pass-width);
+}
+
+.successFail {
+  background-color: var(--color-danger);
+  width: var(--fail-width);
+}
+
+/* ---------- Network rows ---------- */
+.networkRow {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.networkLabel {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+}
+
+.networkValue {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--series-color);
+  font-variant-numeric: tabular-nums;
+}
+
+.networkTrack {
+  height: 10px;
+  border-radius: var(--radius-full);
+  background-color: #eef2f7;
+  overflow: hidden;
+}
+
+.networkTotal {
+  font-size: 0.74rem;
+  color: var(--color-text-muted);
+}
+
+/* ---------- Timing breakdown ---------- */
+.timingTotalLabel {
+  margin-bottom: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.timingTotalValue {
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  color: #0284c7;
+  font-variant-numeric: tabular-nums;
+}
+
+.timingBar {
+  display: flex;
+  height: 18px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-border);
+  overflow: hidden;
+}
+
+.timingSegment {
+  background-color: var(--series-color);
+  width: var(--segment-width);
+  min-width: var(--segment-min-width, 0);
+}
+
+.timingLegend {
+  display: grid;
+  gap: 0.625rem;
+}
+
+.timingItem {
+  display: grid;
+  grid-template-columns: minmax(110px, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0.625rem 0;
+  border-top: 1px solid #eef2f7;
+}
+
+.timingName {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.timingDot {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-full);
+  background-color: var(--series-color);
+}
+
+.timingLabel {
+  min-width: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timingValue {
+  color: #0284c7;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.timingPercent {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}

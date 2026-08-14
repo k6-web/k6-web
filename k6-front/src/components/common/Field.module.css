@@ -1,0 +1,51 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.required {
+  margin-left: 2px;
+  color: var(--color-danger);
+}
+
+.control {
+  width: 100%;
+}
+
+.suffixWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.hasSuffix {
+  /* Leave room for the unit so long values never slide under it. */
+  padding-right: 2.25rem;
+}
+
+.suffix {
+  position: absolute;
+  right: var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.hint {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.error {
+  font-size: var(--text-xs);
+  color: var(--color-danger-text);
+}

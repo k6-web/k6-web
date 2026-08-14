@@ -1,0 +1,65 @@
+.section {
+  margin-bottom: var(--space-5);
+}
+
+.sectionTitle {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-xl);
+  font-weight: 700;
+}
+
+.errorPanel {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-5);
+  margin-bottom: var(--space-5);
+}
+
+.errorTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--color-danger-hover);
+}
+
+.console {
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: var(--gray-800);
+  color: var(--gray-100);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  max-height: 400px;
+  overflow: auto;
+}
+
+.logLine {
+  padding: var(--space-1) 0;
+  color: var(--gray-300);
+  word-break: break-word;
+}
+
+.logLine.stderr {
+  color: #fca5a5;
+}
+
+.timestamp {
+  margin-right: var(--space-2);
+  color: var(--gray-400);
+}
+
+.logType {
+  margin-right: var(--space-2);
+  font-weight: 700;
+  color: #60a5fa;
+}
+
+.stderr .logType {
+  color: #fca5a5;
+}

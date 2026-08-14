@@ -1,0 +1,102 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background-color var(--transition-base), color var(--transition-base),
+    border-color var(--transition-base), box-shadow var(--transition-base), transform var(--transition-fast);
+}
+
+.button:not(:disabled):hover {
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+}
+
+.button:not(:disabled):active {
+  transform: scale(0.98);
+}
+
+.button:disabled {
+  opacity: 0.6;
+}
+
+/* ---------- Sizes ---------- */
+.sm {
+  min-height: 32px;
+  padding: 0 var(--space-3);
+  font-size: var(--text-xs);
+}
+
+.md {
+  min-height: 38px;
+  padding: 0 var(--space-4);
+  font-size: var(--text-sm);
+}
+
+.lg {
+  min-height: 46px;
+  padding: 0 var(--space-5);
+  font-size: var(--text-base);
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+/* ---------- Solid variants ---------- */
+.solid {
+  color: var(--color-text-inverse);
+  background-color: var(--variant-color);
+}
+
+.solid:not(:disabled):hover {
+  color: var(--color-text-inverse);
+  background-color: var(--variant-color-hover);
+}
+
+.solid:disabled {
+  background-color: var(--color-disabled);
+}
+
+/* ---------- Outline variant ---------- */
+.outline {
+  color: var(--variant-color);
+  background-color: transparent;
+  border-color: var(--color-border-strong);
+}
+
+.outline:not(:disabled):hover {
+  color: var(--variant-color);
+  border-color: var(--variant-color);
+  background-color: var(--color-surface-muted);
+}
+
+/* ---------- Ghost variant ---------- */
+.ghost {
+  color: var(--variant-color);
+  background-color: transparent;
+}
+
+.ghost:not(:disabled):hover {
+  background-color: var(--color-surface-sunken);
+  box-shadow: none;
+}
+
+/* ---------- Loading spinner ---------- */
+.spinner {
+  width: 0.9em;
+  height: 0.9em;
+  flex: 0 0 auto;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: var(--radius-full);
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

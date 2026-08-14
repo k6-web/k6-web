@@ -1,0 +1,58 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-4);
+}
+
+.fullRow {
+  grid-column: 1 / -1;
+}
+
+.stagesHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-2);
+}
+
+.stagesLabel {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.stages {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  align-items: end;
+}
+
+/* Field already carries bottom margin; inside a stage row it would misalign. */
+.stage > :global(*) {
+  margin-bottom: 0;
+}
+
+.fileName {
+  margin-top: var(--space-1);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-primary-hover);
+  word-break: break-all;
+}
+
+@media (max-width: 560px) {
+  .stage {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .stage > :last-child {
+    grid-column: 1 / -1;
+  }
+}

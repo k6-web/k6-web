@@ -1,6 +1,7 @@
 import {useTranslation} from 'react-i18next';
 import {CartesianGrid, Line, LineChart, ReferenceDot, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
 import {Card} from '../common';
+import styles from './PerformanceChart.module.css';
 import type {TimeSeriesDataPoint} from '../../types/test';
 
 interface PerformanceChartProps {
@@ -118,79 +119,87 @@ export const PerformanceChart = ({data, isLive = false}: PerformanceChartProps) 
 
   const showLatency = !isLive && hasLatencyData(data);
   const showErrorRate = !isLive && hasErrorRateData(data);
+
+  // Snapshots store absolute epoch ms while live points are already elapsed
+  // seconds; normalize both to seconds since the first point so the axis reads
+  // as a duration rather than a raw timestamp.
+  const startTime = data[0].time;
+  const isEpoch = startTime > 1e11;
   const chartData: ChartPoint[] = data.map(d => ({
     ...d,
+    time: isEpoch ? Math.round((d.time - startTime) / 1000) : d.time,
     errorRatePct: d.errorRate !== undefined ? Math.round(d.errorRate * 10000) / 100 : undefined
   }));
-  const seriesConfigs: SeriesConfig[] = [
+  // Each entry carries its own heading so sections never depend on array order.
+  const sections: Array<{config: SeriesConfig; heading: string; yAxisLabel: string}> = [
     {
-      key: 'vus',
-      name: t('testDetail.vus'),
-      color: '#7c3aed',
-      unit: 'VU',
-      format: (value) => value.toFixed(0),
+      config: {
+        key: 'vus',
+        name: t('testDetail.vus'),
+        color: '#7c3aed',
+        unit: 'VU',
+        format: (value) => value.toFixed(0),
+      },
+      heading: t('testDetail.vus'),
+      yAxisLabel: t('testDetail.vus')
     },
     {
-      key: 'tps',
-      name: 'RPS',
-      color: '#059669',
-      unit: 'RPS',
-      format: (value) => Math.round(value).toLocaleString(),
+      config: {
+        key: 'tps',
+        name: 'RPS',
+        color: '#059669',
+        unit: 'RPS',
+        format: (value) => Math.round(value).toLocaleString(),
+      },
+      heading: t('testDetail.requestsPerSecond'),
+      yAxisLabel: 'RPS'
     },
     ...(showLatency ? [{
-      key: 'latencyAvg' as const,
-      name: t('metrics.httpReqDuration'),
-      color: '#2563eb',
-      unit: 'ms',
-      format: (value: number) => value.toFixed(2),
+      config: {
+        key: 'latencyAvg' as const,
+        name: t('metrics.httpReqDuration'),
+        color: '#2563eb',
+        unit: 'ms',
+        format: (value: number) => value.toFixed(2),
+      },
+      heading: `${t('metrics.httpReqDuration')} (ms)`,
+      yAxisLabel: 'ms'
     }] : []),
     ...(showErrorRate ? [{
-      key: 'errorRatePct' as const,
-      name: 'Error Rate',
-      color: '#dc2626',
-      unit: '%',
-      format: (value: number) => value.toFixed(2),
+      config: {
+        key: 'errorRatePct' as const,
+        name: 'Error Rate',
+        color: '#dc2626',
+        unit: '%',
+        format: (value: number) => value.toFixed(2),
+      },
+      heading: 'Error Rate (%)',
+      yAxisLabel: '%'
     }] : []),
   ];
 
   return (
     <Card>
-      <h2 style={{marginTop: 0, marginBottom: '1.5rem'}}>
+      <h2 className={styles.title}>
         {t('testDetail.performanceOverTime')}
         {isLive && (
-          <span style={{marginLeft: '1rem', fontSize: '0.875rem', color: '#3b82f6', fontWeight: 'normal'}}>
+          <span className={styles.live}>
+            <span className={styles.liveDot} aria-hidden="true"/>
             Live
           </span>
         )}
       </h2>
 
-      <div style={{marginBottom: '2rem'}}>
-        <h3 style={{fontSize: '1rem', color: '#666', marginBottom: '1rem'}}>{t('testDetail.vus')}</h3>
-        <TimeSeriesLineChart data={chartData} config={seriesConfigs[0]} yAxisLabel={t('testDetail.vus')}/>
-      </div>
-
-      <div style={{marginBottom: showLatency || showErrorRate ? '2rem' : 0}}>
-        <h3 style={{fontSize: '1rem', color: '#666', marginBottom: '1rem'}}>{t('testDetail.requestsPerSecond')}</h3>
-        <TimeSeriesLineChart data={chartData} config={seriesConfigs[1]} yAxisLabel="RPS"/>
-      </div>
-
-      {showLatency && (
-        <div style={{marginBottom: showErrorRate ? '2rem' : 0}}>
-          <h3 style={{fontSize: '1rem', color: '#666', marginBottom: '1rem'}}>{t('metrics.httpReqDuration')} (ms)</h3>
-          <TimeSeriesLineChart data={chartData} config={seriesConfigs[2]} yAxisLabel="ms"/>
-        </div>
-      )}
-
-      {showErrorRate && (
-        <div>
-          <h3 style={{fontSize: '1rem', color: '#666', marginBottom: '1rem'}}>Error Rate (%)</h3>
+      {sections.map(section => (
+        <div key={section.config.key} className={styles.chartSection}>
+          <h3 className={styles.chartTitle}>{section.heading}</h3>
           <TimeSeriesLineChart
             data={chartData}
-            config={seriesConfigs[showLatency ? 3 : 2]}
-            yAxisLabel="%"
+            config={section.config}
+            yAxisLabel={section.yAxisLabel}
           />
         </div>
-      )}
+      ))}
     </Card>
   );
 };

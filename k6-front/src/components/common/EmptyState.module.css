@@ -1,0 +1,35 @@
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  background-color: var(--color-surface);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  padding: var(--space-7) var(--space-5);
+  text-align: center;
+}
+
+.icon {
+  font-size: 2rem;
+  line-height: 1;
+  opacity: 0.6;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.description {
+  margin: 0;
+  max-width: 42ch;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.action {
+  margin-top: var(--space-2);
+}

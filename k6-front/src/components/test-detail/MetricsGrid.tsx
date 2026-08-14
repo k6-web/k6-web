@@ -1,7 +1,9 @@
+import type {CSSProperties} from 'react';
 import {useTranslation} from 'react-i18next';
 import type {K6Summary} from '../../types/k6';
 import {MetricCard} from './MetricCard';
 import {formatBytes, formatDuration, formatNumber} from '../../utils/formatUtils';
+import styles from './MetricsGrid.module.css';
 
 interface MetricsGridProps {
   summary: K6Summary;
@@ -26,6 +28,10 @@ interface DurationPoint {
   value?: number;
 }
 
+/** Series colors come from data, so they ride in as a CSS custom property. */
+const seriesStyle = (color: string, extra?: CSSProperties): CSSProperties =>
+  ({'--series-color': color, ...extra} as CSSProperties);
+
 const DurationBarRow = ({label, value = 0, max, color, strong = false}: {
   label: string;
   value?: number;
@@ -36,19 +42,16 @@ const DurationBarRow = ({label, value = 0, max, color, strong = false}: {
   const percent = max > 0 ? Math.min((value / max) * 100, 100) : 0;
 
   return (
-    <div style={{display: 'grid', gap: '0.35rem'}}>
-      <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem'}}>
-        <span style={{fontSize: '0.78rem', color: '#4b5563', fontWeight: strong ? 800 : 600}}>{label}</span>
-        <span style={{fontSize: '0.82rem', color, fontWeight: 800}}>{formatTimingValue(value)}</span>
+    <div className={styles.barRow} style={seriesStyle(color)}>
+      <div className={styles.barHeader}>
+        <span className={`${styles.barLabel} ${strong ? styles.strong : ''}`.trim()}>{label}</span>
+        <span className={styles.barValue}>{formatTimingValue(value)}</span>
       </div>
-      <div style={{height: '8px', borderRadius: '999px', backgroundColor: '#eef2f7', overflow: 'hidden'}}>
-        <div style={{
-          width: `${percent}%`,
-          minWidth: value > 0 ? '4px' : 0,
-          height: '100%',
-          borderRadius: '999px',
-          backgroundColor: color
-        }}/>
+      <div className={styles.barTrack}>
+        <div
+          className={styles.barFill}
+          style={{'--fill-width': `${percent}%`, minWidth: value > 0 ? '4px' : 0} as CSSProperties}
+        />
       </div>
     </div>
   );
@@ -59,21 +62,17 @@ const LatencyBlock = ({title, points, color}: {
   points: DurationPoint[];
   color: string;
 }) => {
-  const max = Math.max(1, ...points.map((point) => point.value || 0));
+  const max = Math.max(1, ...points.map(point => point.value || 0));
   const avg = points[0]?.value || 0;
 
   return (
-    <div style={{display: 'grid', gap: '0.85rem'}}>
+    <div className={styles.latencyBlock} style={seriesStyle(color)}>
       <div>
-        <div style={{fontSize: '0.75rem', color: '#374151', fontWeight: 'bold', marginBottom: '0.25rem'}}>
-          {title}
-        </div>
-        <div style={{fontSize: '1.35rem', fontWeight: 800, color}}>
-          {formatTimingValue(avg)}
-        </div>
-        <div style={{fontSize: '0.72rem', color: '#6b7280'}}>avg</div>
+        <div className={styles.latencyTitle}>{title}</div>
+        <div className={styles.latencyValue}>{formatTimingValue(avg)}</div>
+        <div className={styles.latencyUnit}>avg</div>
       </div>
-      <div style={{display: 'grid', gap: '0.65rem'}}>
+      <div className={styles.latencyRows}>
         {points.map((point, index) => (
           <DurationBarRow
             key={point.label}
@@ -96,35 +95,35 @@ const SuccessOverview = ({passRate, failRate, passedChecks, failedChecks, totalC
   failedChecks: number;
   totalChecks: number;
   failedLabel: string;
-}) => (
-  <div style={{display: 'grid', gap: '1rem'}}>
-    <div style={{display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '1rem'}}>
-      <div>
-        <div style={{fontSize: '2rem', fontWeight: 800, color: failedChecks > 0 ? '#dc2626' : '#16a34a'}}>
-          {passRate.toFixed(1)}%
+}) => {
+  const hasFailures = failedChecks > 0;
+
+  return (
+    <div className={styles.stack}>
+      <div className={styles.successHeader}>
+        <div>
+          <div className={`${styles.successRate} ${hasFailures ? styles.hasFailures : ''}`.trim()}>
+            {passRate.toFixed(1)}%
+          </div>
+          <div className={styles.successCounts}>
+            {formatNumber(passedChecks)} / {formatNumber(totalChecks)}
+          </div>
         </div>
-        <div style={{fontSize: '0.75rem', color: '#6b7280'}}>
-          {formatNumber(passedChecks)} / {formatNumber(totalChecks)}
+        <div className={`${styles.failChip} ${hasFailures ? styles.hasFailures : ''}`.trim()}>
+          {formatNumber(failedChecks)} {failedLabel}
         </div>
       </div>
-      <div style={{
-        padding: '0.45rem 0.7rem',
-        borderRadius: '999px',
-        backgroundColor: failedChecks > 0 ? '#fef2f2' : '#ecfdf5',
-        color: failedChecks > 0 ? '#b91c1c' : '#047857',
-        fontWeight: 800,
-        fontSize: '0.8rem',
-        whiteSpace: 'nowrap'
-      }}>
-        {formatNumber(failedChecks)} {failedLabel}
+      <div
+        className={styles.successTrack}
+        role="img"
+        aria-label={`${passRate.toFixed(1)}% pass, ${failRate.toFixed(1)}% fail`}
+      >
+        <div className={styles.successPass} style={{'--pass-width': `${passRate}%`} as CSSProperties}/>
+        <div className={styles.successFail} style={{'--fail-width': `${failRate}%`} as CSSProperties}/>
       </div>
     </div>
-    <div style={{height: '14px', display: 'flex', overflow: 'hidden', borderRadius: '999px', backgroundColor: '#fee2e2'}}>
-      <div style={{width: `${passRate}%`, backgroundColor: '#16a34a'}}/>
-      <div style={{width: `${failRate}%`, backgroundColor: '#ef4444'}}/>
-    </div>
-  </div>
-);
+  );
+};
 
 const NetworkRow = ({label, rate, total, max, color}: {
   label: string;
@@ -137,21 +136,18 @@ const NetworkRow = ({label, rate, total, max, color}: {
   const percent = max > 0 ? Math.min((value / max) * 100, 100) : 0;
 
   return (
-    <div style={{display: 'grid', gap: '0.45rem'}}>
-      <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem'}}>
-        <span style={{fontSize: '0.82rem', color: '#374151', fontWeight: 700}}>{label}</span>
-        <span style={{fontSize: '0.95rem', color, fontWeight: 800}}>{formatBytes(rate)}/s</span>
+    <div className={styles.networkRow} style={seriesStyle(color)}>
+      <div className={styles.barHeader}>
+        <span className={styles.networkLabel}>{label}</span>
+        <span className={styles.networkValue}>{formatBytes(rate)}/s</span>
       </div>
-      <div style={{height: '10px', borderRadius: '999px', backgroundColor: '#eef2f7', overflow: 'hidden'}}>
-        <div style={{
-          width: `${percent}%`,
-          minWidth: value > 0 ? '4px' : 0,
-          height: '100%',
-          borderRadius: '999px',
-          backgroundColor: color
-        }}/>
+      <div className={styles.networkTrack}>
+        <div
+          className={styles.barFill}
+          style={{'--fill-width': `${percent}%`, minWidth: value > 0 ? '4px' : 0} as CSSProperties}
+        />
       </div>
-      <div style={{fontSize: '0.74rem', color: '#6b7280'}}>{formatBytes(total)}</div>
+      <div className={styles.networkTotal}>{formatBytes(total)}</div>
     </div>
   );
 };
@@ -165,89 +161,43 @@ const TimingBreakdown = ({items, totalLabel}: {
   const minimumVisiblePercent = 2;
 
   return (
-    <div style={{display: 'grid', gap: '1rem'}}>
-      <div style={{
-        display: 'flex',
-        alignItems: 'flex-start',
-        justifyContent: 'space-between',
-        gap: '1rem',
-        flexWrap: 'wrap'
-      }}>
-        <div>
-          <div style={{fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.25rem'}}>
-            {totalLabel}
-          </div>
-          <div style={{fontSize: '1.5rem', fontWeight: 'bold', color: '#0284c7'}}>
-            {formatTimingValue(total)}
-          </div>
-        </div>
+    <div className={styles.stack}>
+      <div>
+        <div className={styles.timingTotalLabel}>{totalLabel}</div>
+        <div className={styles.timingTotalValue}>{formatTimingValue(total)}</div>
       </div>
 
-      <div style={{
-        display: 'flex',
-        height: '18px',
-        overflow: 'hidden',
-        borderRadius: '999px',
-        backgroundColor: '#e5e7eb'
-      }}>
-        {items.map((item) => {
+      <div className={styles.timingBar}>
+        {items.map(item => {
           const rawPercent = total > 0 ? (item.value / total) * 100 : 0;
           const width = rawPercent > 0 ? Math.max(rawPercent, minimumVisiblePercent) : 0;
+
           return (
             <div
               key={item.key}
+              className={styles.timingSegment}
               title={`${item.label}: ${formatTimingValue(item.value)} (${rawPercent.toFixed(1)}%)`}
-              style={{
-                width: `${width}%`,
-                minWidth: rawPercent > 0 ? '3px' : 0,
-                backgroundColor: item.color
-              }}
+              style={seriesStyle(item.color, {
+                '--segment-width': `${width}%`,
+                '--segment-min-width': rawPercent > 0 ? '3px' : '0'
+              } as CSSProperties)}
             />
           );
         })}
       </div>
 
-      <div style={{display: 'grid', gap: '0.625rem'}}>
-        {sortedItems.map((item) => {
+      <div className={styles.timingLegend}>
+        {sortedItems.map(item => {
           const percent = total > 0 ? (item.value / total) * 100 : 0;
+
           return (
-            <div
-              key={item.key}
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'minmax(110px, 1fr) auto auto',
-                alignItems: 'center',
-                gap: '0.75rem',
-                padding: '0.625rem 0',
-                borderTop: '1px solid #eef2f7'
-              }}
-            >
-              <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0}}>
-                <span style={{
-                  width: '10px',
-                  height: '10px',
-                  flex: '0 0 auto',
-                  borderRadius: '999px',
-                  backgroundColor: item.color
-                }}/>
-                <span style={{
-                  minWidth: 0,
-                  color: '#374151',
-                  fontSize: '0.875rem',
-                  fontWeight: 600,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
-                }}>
-                  {item.label}
-                </span>
+            <div key={item.key} className={styles.timingItem} style={seriesStyle(item.color)}>
+              <div className={styles.timingName}>
+                <span className={styles.timingDot} aria-hidden="true"/>
+                <span className={styles.timingLabel}>{item.label}</span>
               </div>
-              <span style={{color: '#0284c7', fontWeight: 800}}>
-                {formatTimingValue(item.value)}
-              </span>
-              <span style={{color: '#6b7280', fontSize: '0.8rem', textAlign: 'right'}}>
-                {percent.toFixed(1)}%
-              </span>
+              <span className={styles.timingValue}>{formatTimingValue(item.value)}</span>
+              <span className={styles.timingPercent}>{percent.toFixed(1)}%</span>
             </div>
           );
         })}
@@ -271,96 +221,50 @@ export const MetricsGrid = ({summary}: MetricsGridProps) => {
   const sentRate = summary.metrics.data_sent?.rate;
   const receivedRate = summary.metrics.data_received?.rate;
   const maxNetworkRate = Math.max(sentRate || 0, receivedRate || 0, 1);
+
   const timingItems: TimingBreakdownItem[] = [
-    {
-      key: 'blocked',
-      label: t('metrics.blocked'),
-      value: summary.metrics.http_req_blocked?.avg || 0,
-      color: '#94a3b8'
-    },
-    {
-      key: 'connecting',
-      label: t('metrics.connecting'),
-      value: summary.metrics.http_req_connecting?.avg || 0,
-      color: '#38bdf8'
-    },
-    {
-      key: 'tls',
-      label: t('metrics.tlsHandshaking'),
-      value: summary.metrics.http_req_tls_handshaking?.avg || 0,
-      color: '#818cf8'
-    },
-    {
-      key: 'sending',
-      label: t('metrics.sending'),
-      value: summary.metrics.http_req_sending?.avg || 0,
-      color: '#22c55e'
-    },
-    {
-      key: 'waiting',
-      label: t('metrics.waiting'),
-      value: summary.metrics.http_req_waiting?.avg || 0,
-      color: '#f59e0b'
-    },
-    {
-      key: 'receiving',
-      label: t('metrics.receiving'),
-      value: summary.metrics.http_req_receiving?.avg || 0,
-      color: '#ef4444'
-    }
+    {key: 'blocked', label: t('metrics.blocked'), value: summary.metrics.http_req_blocked?.avg || 0, color: '#94a3b8'},
+    {key: 'connecting', label: t('metrics.connecting'), value: summary.metrics.http_req_connecting?.avg || 0, color: '#38bdf8'},
+    {key: 'tls', label: t('metrics.tlsHandshaking'), value: summary.metrics.http_req_tls_handshaking?.avg || 0, color: '#818cf8'},
+    {key: 'sending', label: t('metrics.sending'), value: summary.metrics.http_req_sending?.avg || 0, color: '#22c55e'},
+    {key: 'waiting', label: t('metrics.waiting'), value: summary.metrics.http_req_waiting?.avg || 0, color: '#f59e0b'},
+    {key: 'receiving', label: t('metrics.receiving'), value: summary.metrics.http_req_receiving?.avg || 0, color: '#ef4444'}
   ];
 
   return (
-    <div style={{marginBottom: '1.5rem'}}>
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-        gap: '1rem',
-        marginBottom: '1rem'
-      }}>
-        <MetricCard
-          title={t('metrics.requestRate')}
-          value=""
-          color="#2563eb"
-        >
-          <div style={{display: 'grid', gap: '1rem'}}>
+    <div className={styles.wrapper}>
+      <div className={styles.grid}>
+        <MetricCard title={t('metrics.requestRate')} value="" color="#2563eb">
+          <div className={styles.stack}>
             <div>
-              <div style={{display: 'flex', alignItems: 'baseline', gap: '0.5rem'}}>
-                <span style={{fontSize: '2rem', fontWeight: 'bold', color: '#2563eb'}}>
-                  {formatRate(requestRate)}
-                </span>
-                <span style={{fontSize: '0.875rem', color: '#2563eb', fontWeight: 'bold'}}>RPS</span>
+              <div className={styles.rateRow}>
+                <span className={styles.rateValue}>{formatRate(requestRate)}</span>
+                <span className={styles.rateUnit}>RPS</span>
               </div>
-              <div style={{fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem'}}>
-                {requestCount !== undefined ? t('metrics.totalRequests', {formattedCount: formatNumber(requestCount)}) : 'N/A'}
+              <div className={styles.rateSub}>
+                {requestCount !== undefined
+                  ? t('metrics.totalRequests', {formattedCount: formatNumber(requestCount)})
+                  : 'N/A'}
               </div>
             </div>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr auto',
-              alignItems: 'center',
-              gap: '0.75rem',
-              borderTop: '1px solid #e5e7eb',
-              paddingTop: '0.875rem',
-              fontSize: '0.875rem'
-            }}>
-              <span style={{color: '#374151', fontWeight: '600'}}>{t('metrics.iterations')}</span>
-              <span style={{color: '#4f46e5', fontWeight: '700', textAlign: 'right'}}>
+
+            <div className={styles.iterationRow}>
+              <span className={styles.iterationLabel}>{t('metrics.iterations')}</span>
+              <span className={styles.iterationValue}>
                 {formatRate(iterationRate)}/s
                 {iterationCount !== undefined && (
-                  <span style={{color: '#6b7280', fontWeight: 'normal'}}> · {t('metrics.totalIterations', {formattedCount: formatNumber(iterationCount)})}</span>
+                  <span className={styles.iterationTotal}>
+                    {' · '}
+                    {t('metrics.totalIterations', {formattedCount: formatNumber(iterationCount)})}
+                  </span>
                 )}
               </span>
             </div>
           </div>
         </MetricCard>
 
-        <MetricCard
-          title={t('metrics.latencyAndIteration')}
-          value=""
-          color="#7c3aed"
-        >
-          <div style={{display: 'grid', gap: '1rem'}}>
+        <MetricCard title={t('metrics.latencyAndIteration')} value="" color="#7c3aed">
+          <div className={styles.stack}>
             <LatencyBlock
               title={t('metrics.httpReqDuration')}
               color="#7c3aed"
@@ -370,7 +274,7 @@ export const MetricsGrid = ({summary}: MetricsGridProps) => {
                 {label: t('metrics.p95'), value: summary.metrics.http_req_duration?.['p(95)']}
               ]}
             />
-            <div style={{borderTop: '1px solid #e5e7eb', paddingTop: '1rem'}}>
+            <div className={styles.divided}>
               <LatencyBlock
                 title={t('metrics.iterationDuration')}
                 color="#0f766e"
@@ -399,12 +303,8 @@ export const MetricsGrid = ({summary}: MetricsGridProps) => {
           />
         </MetricCard>
 
-        <MetricCard
-          title={t('metrics.networkBandwidth')}
-          value=""
-          color="#f59e0b"
-        >
-          <div style={{display: 'grid', gap: '1rem'}}>
+        <MetricCard title={t('metrics.networkBandwidth')} value="" color="#f59e0b">
+          <div className={styles.stack}>
             <NetworkRow
               label={`↑ ${t('metrics.dataSent')}`}
               total={summary.metrics.data_sent?.count}
@@ -423,20 +323,9 @@ export const MetricsGrid = ({summary}: MetricsGridProps) => {
         </MetricCard>
       </div>
 
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-        gap: '1rem'
-      }}>
-        <MetricCard
-          title={t('metrics.httpTimingBreakdown')}
-          value=""
-          color="#0ea5e9"
-        >
-          <TimingBreakdown
-            items={timingItems}
-            totalLabel={t('metrics.totalAvg')}
-          />
+      <div className={styles.wideGrid}>
+        <MetricCard title={t('metrics.httpTimingBreakdown')} value="" color="#0ea5e9">
+          <TimingBreakdown items={timingItems} totalLabel={t('metrics.totalAvg')}/>
         </MetricCard>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import type {TestStatus} from '../../types/test';
+import styles from './StatusBadge.module.css';
 
 interface StatusBadgeProps {
   status: TestStatus;
@@ -6,41 +7,11 @@ interface StatusBadgeProps {
 }
 
 export const StatusBadge = ({status, className = ''}: StatusBadgeProps) => {
-  const getStatusColor = () => {
-    switch (status) {
-      case 'scheduled':
-        return {bg: '#8b5cf6', text: 'white'};
-      case 'queued':
-        return {bg: '#f59e0b', text: 'white'};
-      case 'running':
-        return {bg: '#3b82f6', text: 'white'};
-      case 'completed':
-        return {bg: '#22c55e', text: 'white'};
-      case 'failed':
-        return {bg: '#ef4444', text: 'white'};
-      case 'stopped':
-        return {bg: '#6b7280', text: 'white'};
-      case 'cancelled':
-        return {bg: '#64748b', text: 'white'};
-      default:
-        return {bg: '#6b7280', text: 'white'};
-    }
-  };
-
-  const colors = getStatusColor();
+  const variantClass = styles[status] ?? styles.stopped;
 
   return (
-    <span
-      className={className}
-      style={{
-        padding: '0.25rem 0.75rem',
-        borderRadius: '9999px',
-        backgroundColor: colors.bg,
-        color: colors.text,
-        fontSize: '0.875rem',
-        fontWeight: '500'
-      }}
-    >
+    <span className={`${styles.badge} ${variantClass} ${className}`.trim()}>
+      <span className={styles.dot} aria-hidden="true"/>
       {status}
     </span>
   );

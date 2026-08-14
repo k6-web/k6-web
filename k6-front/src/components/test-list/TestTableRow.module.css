@@ -1,0 +1,79 @@
+.row {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.row.selected {
+  background-color: var(--color-primary-subtle);
+}
+
+.row td {
+  padding: var(--space-3) var(--space-4);
+  vertical-align: middle;
+}
+
+.selectCell {
+  text-align: center;
+}
+
+.checkbox {
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+  accent-color: var(--color-primary);
+}
+
+.checkbox:disabled {
+  cursor: not-allowed;
+}
+
+.nameLink {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.nameLink:hover {
+  text-decoration: underline;
+}
+
+.testId {
+  margin-top: var(--space-1);
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+}
+
+.scriptLink {
+  color: var(--color-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.scriptLink:hover {
+  text-decoration: underline;
+}
+
+.empty {
+  color: var(--color-text-subtle);
+}
+
+.metric {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.rps { color: var(--color-primary); }
+.latency { color: var(--color-accent); }
+.success { color: var(--color-success); }
+.duration { color: var(--color-warning); }
+
+.time {
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: center;
+}

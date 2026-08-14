@@ -3,6 +3,7 @@ import {Bar, BarChart, CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip
 import type {Test} from '../../types/test';
 import type {K6Summary} from '../../types/k6';
 import {formatBytes, formatDuration, formatNumber} from '../../utils/formatUtils';
+import styles from './TestSummaryComparison.module.css';
 
 type MetricDirection = 'higher' | 'lower' | 'neutral';
 
@@ -128,14 +129,6 @@ const getLatencyChartData = (tests: Test[], series: ChartSeries[], t: (key: stri
   });
 };
 
-const chartPanelStyle = {
-  minHeight: '280px',
-  padding: '1rem',
-  border: '1px solid #e5e7eb',
-  borderRadius: '8px',
-  backgroundColor: '#ffffff'
-};
-
 export const TestSummaryComparison = ({tests}: TestSummaryComparisonProps) => {
   const {t} = useTranslation();
   const chartData = getChartData(tests);
@@ -206,49 +199,24 @@ export const TestSummaryComparison = ({tests}: TestSummaryComparisonProps) => {
   }
 
   return (
-    <div style={{
-      backgroundColor: 'white',
-      borderRadius: '8px',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-      marginBottom: '1rem',
-      overflow: 'auto'
-    }}>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        gap: '1rem',
-        padding: '1rem',
-        borderBottom: '1px solid #e5e7eb'
-      }}>
+    <div className={styles.panel}>
+      <div className={styles.header}>
         <div>
-          <h2 style={{margin: 0, fontSize: '1.125rem'}}>{t('testList.summaryComparison')}</h2>
-          <p style={{margin: '0.25rem 0 0', color: '#6b7280', fontSize: '0.875rem'}}>
-            {t('testList.comparisonHint')}
-          </p>
+          <h2 className={styles.title}>{t('testList.summaryComparison')}</h2>
+          <p className={styles.hint}>{t('testList.comparisonHint')}</p>
         </div>
-        <div style={{display: 'flex', gap: '0.5rem', fontSize: '0.75rem', color: '#6b7280'}}>
-          <span style={{padding: '0.25rem 0.5rem', backgroundColor: '#ecfdf5', color: '#047857', borderRadius: '4px'}}>
-            {t('testList.bestValue')}
-          </span>
-          <span style={{padding: '0.25rem 0.5rem', backgroundColor: '#fef2f2', color: '#b91c1c', borderRadius: '4px'}}>
-            {t('testList.worstValue')}
-          </span>
+        <div className={styles.legend}>
+          <span className={styles.legendBest}>{t('testList.bestValue')}</span>
+          <span className={styles.legendWorst}>{t('testList.worstValue')}</span>
         </div>
       </div>
 
-      <div style={{display: 'grid', gap: '1rem', padding: '1rem', borderBottom: '1px solid #e5e7eb'}}>
-        <h3 style={{margin: 0, fontSize: '1rem', color: '#111827'}}>{t('testList.visualComparison')}</h3>
+      <div className={styles.charts}>
+        <h3 className={styles.chartsTitle}>{t('testList.visualComparison')}</h3>
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '1rem'
-        }}>
-          <div style={chartPanelStyle}>
-            <h4 style={{margin: '0 0 1rem', fontSize: '0.925rem', color: '#374151'}}>
-              {t('testList.rpsComparison')}
-            </h4>
+        <div className={styles.chartRow}>
+          <div className={styles.chartPanel}>
+            <h4 className={styles.chartTitle}>{t('testList.rpsComparison')}</h4>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={chartData} margin={{top: 12, right: 16, left: 0, bottom: 0}}>
                 <CartesianGrid stroke="#e5e7eb" vertical={false}/>
@@ -268,10 +236,8 @@ export const TestSummaryComparison = ({tests}: TestSummaryComparisonProps) => {
             </ResponsiveContainer>
           </div>
 
-          <div style={chartPanelStyle}>
-            <h4 style={{margin: '0 0 1rem', fontSize: '0.925rem', color: '#374151'}}>
-              {t('testList.failureRateComparison')}
-            </h4>
+          <div className={styles.chartPanel}>
+            <h4 className={styles.chartTitle}>{t('testList.failureRateComparison')}</h4>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={chartData} margin={{top: 12, right: 16, left: 0, bottom: 0}}>
                 <CartesianGrid stroke="#e5e7eb" vertical={false}/>
@@ -292,10 +258,8 @@ export const TestSummaryComparison = ({tests}: TestSummaryComparisonProps) => {
           </div>
         </div>
 
-        <div style={chartPanelStyle}>
-          <h4 style={{margin: '0 0 1rem', fontSize: '0.925rem', color: '#374151'}}>
-            {t('testList.latencyComparison')}
-          </h4>
+        <div className={styles.chartPanel}>
+          <h4 className={styles.chartTitle}>{t('testList.latencyComparison')}</h4>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={latencyChartData} margin={{top: 12, right: 16, left: 0, bottom: 0}}>
               <CartesianGrid stroke="#e5e7eb" vertical={false}/>
@@ -323,20 +287,17 @@ export const TestSummaryComparison = ({tests}: TestSummaryComparisonProps) => {
         </div>
       </div>
 
-      <table style={{width: '100%', borderCollapse: 'collapse', minWidth: `${Math.max(760, tests.length * 180 + 220)}px`}}>
-        <thead style={{backgroundColor: '#f9fafb'}}>
+      <table
+        className={styles.table}
+        style={{minWidth: `${Math.max(760, tests.length * 180 + 220)}px`}}
+      >
+        <thead>
           <tr>
-            <th style={{padding: '0.875rem 1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb', width: '220px'}}>
-              {t('testDetail.metrics')}
-            </th>
+            <th scope="col" className={styles.metricColumn}>{t('testDetail.metrics')}</th>
             {tests.map(test => (
-              <th key={test.testId} style={{padding: '0.875rem 1rem', textAlign: 'left', borderBottom: '1px solid #e5e7eb'}}>
-                <div style={{fontWeight: 700, color: '#111827', maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
-                  {getTestName(test)}
-                </div>
-                <div style={{fontSize: '0.75rem', color: '#6b7280', fontWeight: 400}}>
-                  {new Date(test.startTime).toLocaleString()}
-                </div>
+              <th key={test.testId} scope="col">
+                <div className={styles.testName}>{getTestName(test)}</div>
+                <div className={styles.testTime}>{new Date(test.startTime).toLocaleString()}</div>
               </th>
             ))}
           </tr>
@@ -347,35 +308,16 @@ export const TestSummaryComparison = ({tests}: TestSummaryComparisonProps) => {
 
             return (
               <tr key={row.key}>
-                <td style={{padding: '0.875rem 1rem', borderBottom: '1px solid #e5e7eb', fontWeight: 600, color: '#374151'}}>
-                  {row.label}
-                </td>
+                <th scope="row" className={styles.rowLabel}>{row.label}</th>
                 {tests.map((test, index) => {
-                  const value = values[index];
-                  const comparableClass = getComparableClass(value, values, row.direction);
-                  const backgroundColor = comparableClass === 'best'
-                    ? '#ecfdf5'
-                    : comparableClass === 'worst'
-                      ? '#fef2f2'
-                      : 'white';
-                  const color = comparableClass === 'best'
-                    ? '#047857'
-                    : comparableClass === 'worst'
-                      ? '#b91c1c'
-                      : '#111827';
+                  const comparableClass = getComparableClass(values[index], values, row.direction);
 
                   return (
                     <td
                       key={`${test.testId}-${row.key}`}
-                      style={{
-                        padding: '0.875rem 1rem',
-                        borderBottom: '1px solid #e5e7eb',
-                        backgroundColor,
-                        color,
-                        fontWeight: comparableClass ? 700 : 500
-                      }}
+                      className={comparableClass ? styles[comparableClass] : undefined}
                     >
-                      {test.summary ? row.format(test.summary, value) : 'N/A'}
+                      {test.summary ? row.format(test.summary, values[index]) : 'N/A'}
                     </td>
                   );
                 })}

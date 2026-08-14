@@ -1,0 +1,68 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
+}
+
+.label {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.value {
+  font-size: var(--text-base);
+  color: var(--color-text);
+}
+
+.status {
+  font-size: var(--text-xl);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.scheduled { color: var(--color-accent); }
+.queued { color: var(--color-warning); }
+.running { color: var(--color-primary); }
+.completed { color: var(--color-success); }
+.failed { color: var(--color-danger); }
+.stopped, .cancelled { color: var(--color-neutral); }
+
+.scriptLink {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.scriptLink:hover {
+  text-decoration: underline;
+}
+
+.progressValue {
+  font-size: var(--text-xl);
+  font-weight: 800;
+  color: var(--color-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.progressTrack {
+  width: 100%;
+  height: 8px;
+  margin-top: var(--space-2);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-border);
+  overflow: hidden;
+}
+
+.progressBar {
+  height: 100%;
+  background-color: var(--color-primary);
+  transition: width 0.3s ease;
+}
+
+.errorCount {
+  font-size: var(--text-xl);
+  font-weight: 800;
+  color: var(--color-danger);
+  font-variant-numeric: tabular-nums;
+}

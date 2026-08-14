@@ -1,16 +1,30 @@
-import {useEffect, useState} from 'react';
-import {Link, useNavigate} from 'react-router-dom';
+import {useCallback, useEffect, useRef, useState} from 'react';
+import {useNavigate} from 'react-router-dom';
 import {useTranslation} from 'react-i18next';
 import {k6Api} from '../apis/testApi.ts';
 import type {Test} from '../types/test.ts';
 import {TestSummaryComparison, TestTable} from '../components/test-list';
-import {Button, InfoBox, TestNameModal} from '../components/common';
+import {
+  Button,
+  EmptyState,
+  ErrorState,
+  InfoBox,
+  LinkButton,
+  PageHeader,
+  SkeletonList,
+  TestNameModal,
+  useToast
+} from '../components/common';
+import styles from './TestList.module.css';
 
 const MAX_COMPARISON_TESTS = 5;
+const PAGE_SIZE = 30;
 
 export const TestList = () => {
   const {t} = useTranslation();
   const navigate = useNavigate();
+  const toast = useToast();
+
   const [allTests, setAllTests] = useState<Test[]>([]);
   const [nextCursor, setNextCursor] = useState<number | null>(null);
   const [hasMore, setHasMore] = useState(false);
@@ -21,7 +35,7 @@ export const TestList = () => {
   const [rerunLoading, setRerunLoading] = useState(false);
   const [selectedTestIds, setSelectedTestIds] = useState<string[]>([]);
 
-  const fetchTests = async (cursor: number | null = null, append = false) => {
+  const fetchTests = useCallback(async (cursor: number | null = null, append = false) => {
     try {
       if (append) {
         setLoadingMore(true);
@@ -29,14 +43,9 @@ export const TestList = () => {
         setLoading(true);
       }
 
-      const data = await k6Api.getTests(cursor, 30);
+      const data = await k6Api.getTests(cursor, PAGE_SIZE);
 
-      if (append) {
-        setAllTests(prev => [...prev, ...data.tests]);
-      } else {
-        setAllTests(data.tests);
-      }
-
+      setAllTests(prev => (append ? [...prev, ...data.tests] : data.tests));
       setNextCursor(data.pagination.nextCursor);
       setHasMore(data.pagination.hasMore);
       setError(null);
@@ -46,38 +55,41 @@ export const TestList = () => {
       setLoading(false);
       setLoadingMore(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchTests();
-  }, []);
+  }, [fetchTests]);
 
   useEffect(() => {
     setSelectedTestIds(prev => prev.filter(testId => allTests.some(test => test.testId === testId)));
   }, [allTests]);
 
+  // A sentinel keeps infinite scroll off the scroll event and avoids stale reads.
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    const handleScroll = () => {
-      if (loadingMore || !hasMore) return;
+    const sentinel = sentinelRef.current;
+    if (!sentinel || !hasMore || loadingMore || loading) return;
 
-      const scrollTop = window.scrollY;
-      const windowHeight = window.innerHeight;
-      const documentHeight = document.documentElement.scrollHeight;
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0]?.isIntersecting) {
+          fetchTests(nextCursor, true);
+        }
+      },
+      {rootMargin: '200px'}
+    );
 
-      if (scrollTop + windowHeight >= documentHeight * 0.8) {
-        fetchTests(nextCursor, true);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [nextCursor, hasMore, loadingMore]);
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMore, loadingMore, loading, nextCursor, fetchTests]);
 
   const handleRerun = (testId: string) => {
-    const test = allTests.find(t => t.testId === testId);
+    const test = allTests.find(current => current.testId === testId);
 
     if (!test) {
-      alert(t('testList.testNotFound'));
+      toast.error(t('testList.testNotFound'));
       return;
     }
 
@@ -90,19 +102,21 @@ export const TestList = () => {
     try {
       setRerunLoading(true);
       const test = await k6Api.getTest(rerunTarget.testId);
-      if (test?.script) {
-        const result = await k6Api.runTest(test.script, {
-          name: name || test.name || test.config?.name,
-          config: test.config,
-          ...(test.scriptId && {scriptId: test.scriptId}),
-          ...(scheduledAt && {scheduledAt})
-        });
-        navigate(`/tests/${result.testId}`);
-      } else {
-        alert(t('testList.noScriptAvailable'));
+
+      if (!test?.script) {
+        toast.error(t('testList.noScriptAvailable'));
+        return;
       }
+
+      const result = await k6Api.runTest(test.script, {
+        name: name || test.name || test.config?.name,
+        config: test.config,
+        ...(test.scriptId && {scriptId: test.scriptId}),
+        ...(scheduledAt && {scheduledAt})
+      });
+      navigate(`/tests/${result.testId}`);
     } catch {
-      alert(t('testList.failedToStartTest'));
+      toast.error(t('testList.failedToStartTest'));
     } finally {
       setRerunLoading(false);
     }
@@ -127,61 +141,59 @@ export const TestList = () => {
     .map(testId => allTests.find(test => test.testId === testId))
     .filter((test): test is Test => Boolean(test));
 
-  if (loading) return <div>{t('common.loading')}</div>;
-  if (error) return <div style={{color: 'red'}}>{t('common.error')}: {error}</div>;
+  if (loading) {
+    return (
+      <div>
+        <PageHeader title={t('testList.title')}/>
+        <SkeletonList rows={6} label={t('common.loading')}/>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div>
+        <PageHeader title={t('testList.title')}/>
+        <ErrorState message={`${t('common.error')}: ${error}`} onRetry={() => fetchTests()}/>
+      </div>
+    );
+  }
 
   return (
     <div>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '1rem',
-        flexWrap: 'wrap',
-        gap: '1rem'
-      }}>
-        <h1 style={{margin: 0, fontSize: 'clamp(1.5rem, 5vw, 2rem)'}}>{t('testList.title')}</h1>
-      </div>
+      <PageHeader
+        title={t('testList.title')}
+        actions={
+          <LinkButton to="/new-test" variant="secondary">
+            + {t('nav.newTest')}
+          </LinkButton>
+        }
+      />
 
-      <InfoBox variant="info">
-        {t('testList.infoMessage')}
-      </InfoBox>
+      <InfoBox variant="info">{t('testList.infoMessage')}</InfoBox>
 
-      {!allTests || allTests.length === 0 ? (
-        <div style={{
-          backgroundColor: 'white',
-          padding: '3rem',
-          borderRadius: '8px',
-          textAlign: 'center',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-        }}>
-          <p>{t('testList.noTests')}</p>
-          <Link to="/new-test" style={{color: '#3b82f6'}}>{t('testList.createFirstTest')}</Link>
-        </div>
+      {allTests.length === 0 ? (
+        <EmptyState
+          icon="🧪"
+          title={t('testList.noTests')}
+          action={
+            <LinkButton to="/new-test" variant="secondary">
+              {t('testList.createFirstTest')}
+            </LinkButton>
+          }
+        />
       ) : (
         <>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: '1rem',
-            flexWrap: 'wrap',
-            backgroundColor: 'white',
-            borderRadius: '8px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-            padding: '1rem',
-            marginBottom: '1rem'
-          }}>
+          <div className={styles.compareBar}>
             <div>
-              <div style={{fontWeight: 700, color: '#111827'}}>
-                {t('testList.compareTests')}
-              </div>
-              <div style={{fontSize: '0.875rem', color: '#6b7280', marginTop: '0.25rem'}}>
+              <div className={styles.compareTitle}>{t('testList.compareTests')}</div>
+              <div className={styles.compareHint}>
                 {t('testList.selectedCount', {count: selectedTestIds.length, max: MAX_COMPARISON_TESTS})}
               </div>
             </div>
             <Button
               variant="gray"
+              appearance="outline"
               disabled={selectedTestIds.length === 0}
               onClick={() => setSelectedTestIds([])}
             >
@@ -201,38 +213,13 @@ export const TestList = () => {
             isSelectionLimitReached={selectedTestIds.length >= MAX_COMPARISON_TESTS}
           />
 
-          {loadingMore && (
-            <div style={{
-              textAlign: 'center',
-              padding: '2rem',
-              color: '#6b7280',
-              fontSize: '0.875rem'
-            }}>
-              {t('testList.loadingMore')}
-            </div>
-          )}
+          <div ref={sentinelRef} aria-hidden="true"/>
 
-          {!loadingMore && hasMore && (
-            <div style={{
-              textAlign: 'center',
-              padding: '2rem',
-              color: '#6b7280',
-              fontSize: '0.875rem'
-            }}>
-              {t('testList.scrollToLoadMore')}
-            </div>
-          )}
-
-          {!hasMore && allTests.length > 0 && (
-            <div style={{
-              textAlign: 'center',
-              padding: '2rem',
-              color: '#6b7280',
-              fontSize: '0.875rem'
-            }}>
-              {t('testList.allLoaded')}
-            </div>
-          )}
+          <div className={styles.listStatus} role="status" aria-live="polite">
+            {loadingMore && t('testList.loadingMore')}
+            {!loadingMore && hasMore && t('testList.scrollToLoadMore')}
+            {!hasMore && t('testList.allLoaded')}
+          </div>
         </>
       )}
 

@@ -1,6 +1,7 @@
-import {useState} from 'react';
+import {useState, type CSSProperties} from 'react';
 import {CartesianGrid, Line, LineChart, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
 import type {Test} from '../types/test';
+import styles from './MetricsTrendChart.module.css';
 
 interface MetricsTrendChartProps {
   tests: Test[];
@@ -137,7 +138,7 @@ export const MetricsTrendChart = ({tests}: MetricsTrendChartProps) => {
 
   if (completedTests.length === 0) {
     return (
-      <div style={{padding: '2rem', textAlign: 'center', color: '#6b7280'}}>
+      <div className={styles.empty}>
         No completed tests to display chart
       </div>
     );
@@ -148,64 +149,42 @@ export const MetricsTrendChart = ({tests}: MetricsTrendChartProps) => {
     && selectedRange.minPoint.value === selectedRange.maxPoint.value;
 
   return (
-    <div style={{display: 'grid', gap: '1rem'}}>
-      <div style={{
-        display: 'flex',
-        gap: '0.375rem',
-        flexWrap: 'wrap',
-        padding: '0.25rem',
-        backgroundColor: '#f3f4f6',
-        borderRadius: '8px',
-        width: 'fit-content',
-        maxWidth: '100%'
-      }}>
+    <div className={styles.wrapper}>
+      <div className={styles.tabs} role="group">
         {(Object.keys(metricConfig) as MetricType[]).map(metric => (
           <button
             key={metric}
+            type="button"
             onClick={() => setSelectedMetric(metric)}
             aria-pressed={selectedMetric === metric}
-            style={{
-              minWidth: '72px',
-              padding: '0.5rem 0.75rem',
-              backgroundColor: selectedMetric === metric ? 'white' : 'transparent',
-              color: selectedMetric === metric ? metricConfig[metric].color : '#4b5563',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '0.875rem',
-              fontWeight: selectedMetric === metric ? 800 : 600,
-              boxShadow: selectedMetric === metric ? '0 1px 2px rgba(15, 23, 42, 0.12)' : 'none'
-            }}
+            className={`${styles.tab} ${selectedMetric === metric ? styles.active : ''}`.trim()}
+            style={{'--tab-color': metricConfig[metric].color} as CSSProperties}
           >
             {metricConfig[metric].shortLabel}
           </button>
         ))}
       </div>
 
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-        gap: '0.75rem'
-      }}>
+      <div className={styles.ranges}>
         {rangeMetricKeys.map(metric => {
           const range = getRange(metric);
           const rangeConfig = metricConfig[metric];
+
           return (
-            <div key={metric} style={{
-              padding: '0.75rem 0',
-              borderTop: `3px solid ${rangeConfig.color}`,
-              display: 'grid',
-              gap: '0.35rem'
-            }}>
-              <div style={{fontSize: '0.75rem', color: '#6b7280', fontWeight: 800}}>{rangeConfig.label}</div>
-              <div style={{display: 'flex', justifyContent: 'space-between', gap: '0.75rem'}}>
+            <div
+              key={metric}
+              className={styles.rangeCard}
+              style={{'--series-color': rangeConfig.color} as CSSProperties}
+            >
+              <div className={styles.rangeLabel}>{rangeConfig.label}</div>
+              <div className={styles.rangeRow}>
                 <div>
-                  <div style={{fontSize: '0.68rem', color: '#6b7280', fontWeight: 700}}>Min</div>
-                  <div style={{fontSize: '1rem', fontWeight: 850, color: '#111827'}}>{range.minLabel}</div>
+                  <div className={styles.rangeKey}>Min</div>
+                  <div className={styles.rangeValue}>{range.minLabel}</div>
                 </div>
-                <div style={{textAlign: 'right'}}>
-                  <div style={{fontSize: '0.68rem', color: '#6b7280', fontWeight: 700}}>Max</div>
-                  <div style={{fontSize: '1rem', fontWeight: 850, color: '#111827'}}>{range.maxLabel}</div>
+                <div className={styles.rangeAlignEnd}>
+                  <div className={styles.rangeKey}>Max</div>
+                  <div className={styles.rangeValue}>{range.maxLabel}</div>
                 </div>
               </div>
             </div>
@@ -273,33 +252,15 @@ export const MetricsTrendChart = ({tests}: MetricsTrendChartProps) => {
               if (active && payload && payload.length) {
                 const data = payload[0].payload;
                 return (
-                  <div
-                    style={{
-                      backgroundColor: 'white',
-                      padding: '0.875rem',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      boxShadow: '0 12px 24px rgba(15, 23, 42, 0.14)',
-                      minWidth: '220px'
-                    }}
-                  >
-                    <div style={{display: 'flex', justifyContent: 'space-between', gap: '1rem', marginBottom: '0.5rem'}}>
-                      <div style={{fontWeight: 800, color: '#111827'}}>{data.name}</div>
-                      <div style={{fontSize: '0.8rem', color: '#6b7280'}}>{data.dateLabel} {data.timeLabel}</div>
+                  <div className={styles.tooltip} style={{'--series-color': config.color} as CSSProperties}>
+                    <div className={styles.tooltipHeader}>
+                      <div className={styles.tooltipName}>{data.name}</div>
+                      <div className={styles.tooltipTime}>{data.dateLabel} {data.timeLabel}</div>
                     </div>
-                    <div style={{fontSize: '0.8rem', color: '#6b7280', marginBottom: '0.5rem'}}>
-                      {data.testName || data.testId}
-                    </div>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'baseline',
-                      justifyContent: 'space-between',
-                      gap: '1rem',
-                      paddingTop: '0.5rem',
-                      borderTop: '1px solid #eef2f7'
-                    }}>
-                      <span style={{fontSize: '0.85rem', color: '#374151', fontWeight: 700}}>{config.label}</span>
-                      <span style={{fontWeight: 900, color: config.color}}>
+                    <div className={styles.tooltipSub}>{data.testName || data.testId}</div>
+                    <div className={styles.tooltipValueRow}>
+                      <span className={styles.tooltipLabel}>{config.label}</span>
+                      <span className={styles.tooltipValue}>
                         {data.displayValue} {config.unit}
                       </span>
                     </div>

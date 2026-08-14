@@ -1,6 +1,18 @@
 import {useTranslation} from 'react-i18next';
 import {useState} from 'react';
 import type {K6ScriptTemplate, K6TestConfig} from '../../types/k6';
+import {RAMP_TRANSITION_SECONDS} from '../../utils/scriptUtils';
+import {Button, Collapsible, Field, InfoBox, useToast} from '../common';
+import styles from './HttpConfigForm.module.css';
+
+const DEFAULT_STAGES = [
+  {duration: 30, target: 10},
+  {duration: 60, target: 10},
+  {duration: 30, target: 0}
+];
+
+const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
+const BODY_METHODS = ['POST', 'PUT', 'PATCH'];
 
 interface HttpConfigFormProps {
   config: K6TestConfig;
@@ -32,183 +44,109 @@ export const HttpConfigForm = ({
   onRemoveHeader
 }: HttpConfigFormProps) => {
   const {t} = useTranslation();
+  const toast = useToast();
   const [curlCommand, setCurlCommand] = useState('');
-  const dynamicControlStyle = isDynamic ? {
-    backgroundColor: '#f3f4f6',
-    cursor: 'not-allowed',
-    color: '#6b7280'
-  } : {};
-  const stages = config.stages && config.stages.length > 0 ? config.stages : [
-    {duration: 30, target: 10},
-    {duration: 60, target: 10},
-    {duration: 30, target: 0}
-  ];
+
+  const stages = config.stages && config.stages.length > 0 ? config.stages : DEFAULT_STAGES;
+  const isConstantTps = config.template === 'constant-tps';
+  const isRampUp = config.template === 'ramp-up';
+  const isConstantVus = !isConstantTps && !isRampUp;
+
+  const totalHoldSeconds = stages.reduce((total, stage) => total + (stage.duration || 0), 0);
+  // A transition stage is generated whenever the target actually changes.
+  const transitionCount = stages.reduce((count, stage, index) => {
+    const previousTarget = index === 0 ? 0 : stages[index - 1].target;
+    return stage.target === previousTarget ? count : count + 1;
+  }, 0);
+
   const updateStage = (index: number, changes: Partial<(typeof stages)[number]>) => {
     onConfigChange({
       stages: stages.map((stage, stageIndex) => stageIndex === index ? {...stage, ...changes} : stage)
     });
   };
-  const addStage = () => {
-    const lastTarget = stages[stages.length - 1]?.target ?? 10;
-    onConfigChange({stages: [...stages, {duration: 30, target: lastTarget}]});
-  };
-  const removeStage = (index: number) => {
-    if (stages.length <= 1) return;
-    onConfigChange({stages: stages.filter((_, stageIndex) => stageIndex !== index)});
-  };
+
+  const numberField = (
+    label: string,
+    value: number | undefined,
+    onChange: (value: number) => void,
+    extra?: {min?: number; max?: number; step?: number; required?: boolean; hint?: string; suffix?: string}
+  ) => (
+    <Field label={label} required={extra?.required} hint={extra?.hint} suffix={extra?.suffix}>
+      <input
+        type="number"
+        required={extra?.required}
+        min={extra?.min ?? 1}
+        max={extra?.max}
+        step={extra?.step}
+        value={value}
+        onChange={(e) => onChange(Number.parseInt(e.target.value))}
+      />
+    </Field>
+  );
 
   return (
-    <div style={{
-      backgroundColor: 'white',
-      padding: '1.5rem',
-      borderRadius: '8px',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-    }}>
-      <h2 style={{marginTop: 0, marginBottom: '1rem'}}>{t('httpConfig.title')}</h2>
+    <div className={styles.panel}>
+      <h2 className={styles.title}>{t('httpConfig.title')}</h2>
 
-      {isDynamic ? (
-        <div style={{
-          backgroundColor: '#fef3c7',
-          border: '1px solid #fcd34d',
-          borderRadius: '4px',
-          padding: '0.75rem',
-          marginBottom: '1.5rem',
-          fontSize: '0.875rem',
-          color: '#92400e'
-        }}>
-          {t('httpConfig.dynamicScriptLockedFields')}
-        </div>
-      ) : (
-        <div style={{
-          backgroundColor: '#eff6ff',
-          border: '1px solid #bfdbfe',
-          borderRadius: '4px',
-          padding: '0.75rem',
-          marginBottom: '1.5rem',
-          fontSize: '0.875rem',
-          color: '#1e40af'
-        }}>
-          {t('httpConfig.dynamicScriptNote')}
-        </div>
-      )}
+      <InfoBox variant={isDynamic ? 'warning' : 'info'}>
+        {isDynamic ? t('httpConfig.dynamicScriptLockedFields') : t('httpConfig.dynamicScriptNote')}
+      </InfoBox>
 
-      <div style={{
-        border: '1px solid #e5e7eb',
-        borderRadius: '4px',
-        padding: '1rem',
-        marginBottom: '1rem',
-        backgroundColor: '#f9fafb'
-      }}>
-        <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
-          {t('httpConfig.curlImport')}
-        </label>
-        <textarea
-          value={curlCommand}
-          disabled={isDynamic}
-          onChange={(e) => setCurlCommand(e.target.value)}
-          placeholder={t('httpConfig.curlPlaceholder')}
-          rows={4}
-          style={{
-            width: '100%',
-            padding: '0.5rem',
-            border: '1px solid #d1d5db',
-            borderRadius: '4px',
-            fontSize: '0.875rem',
-            fontFamily: 'monospace',
-            marginBottom: '0.5rem',
-            ...dynamicControlStyle
-          }}
-        />
-        <button
-          type="button"
+      <Collapsible title={t('httpConfig.importTools')} summary={t('httpConfig.importToolsSummary')}>
+        <Field label={t('httpConfig.curlImport')}>
+          <textarea
+            value={curlCommand}
+            disabled={isDynamic}
+            onChange={(e) => setCurlCommand(e.target.value)}
+            placeholder={t('httpConfig.curlPlaceholder')}
+            rows={4}
+            className={styles.mono}
+          />
+        </Field>
+        <Button
+          variant="purple"
+          size="sm"
           onClick={() => onConvertCurl(curlCommand)}
           disabled={isDynamic || !curlCommand.trim()}
-          style={{
-            padding: '0.5rem 0.75rem',
-            backgroundColor: !isDynamic && curlCommand.trim() ? '#6366f1' : '#9ca3af',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: !isDynamic && curlCommand.trim() ? 'pointer' : 'not-allowed',
-            fontSize: '0.875rem',
-            fontWeight: 'bold'
-          }}
         >
           {t('httpConfig.convertCurl')}
-        </button>
-      </div>
+        </Button>
 
-      <div style={{
-        border: '1px solid #e5e7eb',
-        borderRadius: '4px',
-        padding: '1rem',
-        marginBottom: '1rem',
-        backgroundColor: '#f9fafb'
-      }}>
-        <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
-          {t('httpConfig.postmanImport')}
-        </label>
-        <input
-          type="file"
-          accept=".json,application/json"
-          disabled={isDynamic}
-          onChange={async (e) => {
-            const file = e.target.files?.[0];
-            if (!file) return;
-            try {
-              onImportPostman(JSON.parse(await file.text()));
-            } catch {
-              alert(t('httpConfig.invalidPostmanFile'));
-            } finally {
-              e.target.value = '';
-            }
-          }}
-          style={{
-            width: '100%',
-            padding: '0.5rem',
-            border: '1px solid #d1d5db',
-            borderRadius: '4px',
-            backgroundColor: isDynamic ? '#f3f4f6' : 'white',
-            cursor: isDynamic ? 'not-allowed' : 'pointer',
-            color: isDynamic ? '#6b7280' : '#000'
-          }}
-        />
-        <div style={{fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem'}}>
-          {t('httpConfig.postmanDescription')}
-        </div>
-      </div>
+        <div className={styles.importDivider}/>
 
-      <div style={{marginBottom: '1rem'}}>
-        <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
-          {t('httpConfig.template')}
-        </label>
+        <Field label={t('httpConfig.postmanImport')} hint={t('httpConfig.postmanDescription')}>
+          <input
+            type="file"
+            accept=".json,application/json"
+            disabled={isDynamic}
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+
+              try {
+                onImportPostman(JSON.parse(await file.text()));
+              } catch {
+                toast.error(t('httpConfig.invalidPostmanFile'));
+              } finally {
+                e.target.value = '';
+              }
+            }}
+          />
+        </Field>
+      </Collapsible>
+
+      <Field label={t('httpConfig.template')} hint={t('httpConfig.templateDescription')}>
         <select
           value={config.template || 'constant-vus'}
           onChange={(e) => onTemplateChange(e.target.value as K6ScriptTemplate)}
-          style={{
-            width: '100%',
-            padding: '0.5rem',
-            border: '1px solid #d1d5db',
-            borderRadius: '4px',
-            fontSize: '1rem',
-            backgroundColor: 'white',
-            cursor: 'pointer',
-            color: '#000'
-          }}
         >
           <option value="constant-vus">{t('httpConfig.templateConstantVus')}</option>
           <option value="constant-tps">{t('httpConfig.templateConstantTps')}</option>
           <option value="ramp-up">{t('httpConfig.templateRampUp')}</option>
         </select>
-        <div style={{fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem'}}>
-          {t('httpConfig.templateDescription')}
-        </div>
-      </div>
+      </Field>
 
-      <div style={{marginBottom: '1rem'}}>
-        <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
-          {t('httpConfig.url')} *
-        </label>
+      <Field label={t('httpConfig.url')} required>
         <input
           type="url"
           required
@@ -216,436 +154,189 @@ export const HttpConfigForm = ({
           disabled={isDynamic}
           onChange={(e) => onConfigChange({url: e.target.value})}
           placeholder={t('httpConfig.urlPlaceholder')}
-          style={{
-            width: '100%',
-            padding: '0.5rem',
-            border: '1px solid #d1d5db',
-            borderRadius: '4px',
-            fontSize: '1rem',
-            backgroundColor: isDynamic ? '#f3f4f6' : 'white',
-            cursor: isDynamic ? 'not-allowed' : 'text',
-            color: isDynamic ? '#6b7280' : '#000'
-          }}
         />
-      </div>
+      </Field>
 
-      <div style={{marginBottom: '1rem'}}>
-        <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
-          {t('httpConfig.method')}
-        </label>
+      <Field label={t('httpConfig.method')}>
         <select
           value={config.method}
           disabled={isDynamic}
           onChange={(e) => onConfigChange({method: e.target.value})}
-          style={{
-            width: '100%',
-            padding: '0.5rem',
-            border: '1px solid #d1d5db',
-            borderRadius: '4px',
-            fontSize: '1rem',
-            backgroundColor: isDynamic ? '#f3f4f6' : 'white',
-            cursor: isDynamic ? 'not-allowed' : 'pointer',
-            color: isDynamic ? '#6b7280' : '#000'
-          }}
         >
-          <option value="GET">GET</option>
-          <option value="POST">POST</option>
-          <option value="PUT">PUT</option>
-          <option value="PATCH">PATCH</option>
-          <option value="DELETE">DELETE</option>
-          <option value="HEAD">HEAD</option>
-          <option value="OPTIONS">OPTIONS</option>
+          {HTTP_METHODS.map(method => (
+            <option key={method} value={method}>{method}</option>
+          ))}
         </select>
-      </div>
+      </Field>
 
-      <div style={{marginBottom: '1rem'}}>
-        <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
-          {t('httpConfig.headers')}
-        </label>
-        <div style={{display: 'flex', gap: '0.5rem', marginBottom: '0.5rem'}}>
+      <fieldset className={styles.headerFieldset}>
+        <legend className={styles.stagesLabel}>{t('httpConfig.headers')}</legend>
+
+        <div className={styles.headerRow}>
           <input
             type="text"
             placeholder={t('httpConfig.headerKeyPlaceholder')}
+            aria-label={t('httpConfig.headerKey')}
             value={headerKey}
             disabled={isDynamic}
             onChange={(e) => onHeaderKeyChange(e.target.value)}
-            style={{
-              flex: 1,
-              padding: '0.5rem',
-              border: '1px solid #d1d5db',
-              borderRadius: '4px',
-              backgroundColor: isDynamic ? '#f3f4f6' : 'white',
-              cursor: isDynamic ? 'not-allowed' : 'text',
-              color: isDynamic ? '#6b7280' : '#000'
-            }}
           />
           <input
             type="text"
             placeholder={t('httpConfig.headerValuePlaceholder')}
+            aria-label={t('httpConfig.headerValue')}
             value={headerValue}
             disabled={isDynamic}
             onChange={(e) => onHeaderValueChange(e.target.value)}
-            style={{
-              flex: 1,
-              padding: '0.5rem',
-              border: '1px solid #d1d5db',
-              borderRadius: '4px',
-              backgroundColor: isDynamic ? '#f3f4f6' : 'white',
-              cursor: isDynamic ? 'not-allowed' : 'text',
-              color: isDynamic ? '#6b7280' : '#000'
-            }}
           />
-          <button
-            type="button"
-            disabled={isDynamic}
-            onClick={onAddHeader}
-            style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: isDynamic ? '#9ca3af' : '#10b981',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: isDynamic ? 'not-allowed' : 'pointer'
-            }}
-          >
+          <Button variant="secondary" disabled={isDynamic} onClick={onAddHeader}>
             {t('httpConfig.addHeader')}
-          </button>
+          </Button>
         </div>
+
         {config.headers && Object.keys(config.headers).length > 0 && (
-          <div style={{marginTop: '0.5rem'}}>
+          <div className={styles.headerList}>
             {Object.entries(config.headers).map(([key, value]) => (
-              <div
-                key={key}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '0.5rem',
-                  backgroundColor: '#f9fafb',
-                  borderRadius: '4px',
-                  marginBottom: '0.25rem'
-                }}
-              >
-                <span style={{fontSize: '0.875rem'}}>
+              <div key={key} className={styles.headerItem}>
+                <span className={styles.headerText}>
                   <strong>{key}:</strong> {value}
                 </span>
-                <button
-                  type="button"
+                <Button
+                  variant="danger"
+                  appearance="outline"
+                  size="sm"
                   disabled={isDynamic}
                   onClick={() => onRemoveHeader(key)}
-                  style={{
-                    padding: '0.25rem 0.5rem',
-                    backgroundColor: isDynamic ? '#9ca3af' : '#ef4444',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: isDynamic ? 'not-allowed' : 'pointer',
-                    fontSize: '0.75rem'
-                  }}
+                  aria-label={`${t('httpConfig.remove')} ${key}`}
                 >
                   {t('httpConfig.remove')}
-                </button>
+                </Button>
               </div>
             ))}
           </div>
         )}
-      </div>
+      </fieldset>
 
-      {['POST', 'PUT', 'PATCH'].includes(config.method) && (
-        <div style={{marginBottom: '1rem'}}>
-          <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
-            {t('httpConfig.requestBody')}
-          </label>
+      {BODY_METHODS.includes(config.method) && (
+        <Field label={t('httpConfig.requestBody')}>
           <textarea
             value={config.body as string}
             disabled={isDynamic}
             onChange={(e) => onConfigChange({body: e.target.value})}
             placeholder={t('httpConfig.requestBodyPlaceholder')}
             rows={10}
-            style={{
-              width: '100%',
-              boxSizing: 'border-box',
-              minHeight: '220px',
-              padding: '0.5rem',
-              border: '1px solid #d1d5db',
-              borderRadius: '4px',
-              fontSize: '0.875rem',
-              fontFamily: 'monospace',
-              lineHeight: 1.5,
-              overflow: 'auto',
-              resize: 'vertical',
-              whiteSpace: 'pre',
-              backgroundColor: isDynamic ? '#f3f4f6' : 'white',
-              cursor: isDynamic ? 'not-allowed' : 'text',
-              color: isDynamic ? '#6b7280' : '#000'
-            }}
+            className={styles.bodyInput}
           />
-        </div>
+        </Field>
       )}
 
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))',
-        gap: '1rem'
-      }}>
-        {config.template !== 'constant-tps' && config.template !== 'ramp-up' && (
-          <div>
-            <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
-              {t('httpConfig.vusers')} *
-            </label>
-            <input
-              type="number"
-              required
-              min="1"
-              value={config.vusers}
-              onChange={(e) => onConfigChange({vusers: Number.parseInt(e.target.value)})}
-              style={{
-                width: '100%',
-                padding: '0.5rem',
-                border: '1px solid #d1d5db',
-                borderRadius: '4px',
-                backgroundColor: 'white',
-                cursor: 'text',
-                color: '#000'
-              }}
-            />
-          </div>
-        )}
-        {config.template !== 'ramp-up' && config.template !== 'constant-tps' && (
-          <div>
-            <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
-              {t('httpConfig.duration')} *
-            </label>
-            <input
-              type="number"
-              required
-              min="1"
-              value={config.duration}
-              onChange={(e) => onConfigChange({duration: Number.parseInt(e.target.value)})}
-              style={{
-                width: '100%',
-                padding: '0.5rem',
-                border: '1px solid #d1d5db',
-                borderRadius: '4px',
-                backgroundColor: 'white',
-                cursor: 'text',
-                color: '#000'
-              }}
-            />
-          </div>
-        )}
-        {config.template === 'constant-tps' && (
+      <div className={styles.optionsGrid}>
+        {isConstantVus && (
           <>
-            <div>
-              <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
-                {t('httpConfig.targetTps')} *
-              </label>
-              <input
-                type="number"
-                required
-                min="1"
-                value={config.targetTps || 1}
-                onChange={(e) => onConfigChange({targetTps: Number.parseInt(e.target.value)})}
-                style={{
-                  width: '100%',
-                  padding: '0.5rem',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '4px',
-                  backgroundColor: 'white',
-                  cursor: 'text',
-                  color: '#000'
-                }}
-              />
-            </div>
-            <div>
-              <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
-                {t('httpConfig.duration')} *
-              </label>
-              <input
-                type="number"
-                required
-                min="1"
-                value={config.duration}
-                onChange={(e) => onConfigChange({duration: Number.parseInt(e.target.value)})}
-                style={{
-                  width: '100%',
-                  padding: '0.5rem',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '4px',
-                  backgroundColor: 'white',
-                  cursor: 'text',
-                  color: '#000'
-                }}
-              />
-            </div>
-            <div>
-              <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
-                {t('httpConfig.preAllocatedVUs')} *
-              </label>
-              <input
-                type="number"
-                required
-                min="1"
-                value={config.preAllocatedVUs || 1}
-                onChange={(e) => onConfigChange({preAllocatedVUs: Number.parseInt(e.target.value)})}
-                style={{
-                  width: '100%',
-                  padding: '0.5rem',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '4px',
-                  backgroundColor: 'white',
-                  cursor: 'text',
-                  color: '#000'
-                }}
-              />
-            </div>
-            <div>
-              <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
-                {t('httpConfig.maxVUs')} *
-              </label>
-              <input
-                type="number"
-                required
-                min={config.preAllocatedVUs || 1}
-                value={config.maxVUs || config.preAllocatedVUs || 1}
-                onChange={(e) => onConfigChange({maxVUs: Number.parseInt(e.target.value)})}
-                style={{
-                  width: '100%',
-                  padding: '0.5rem',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '4px',
-                  backgroundColor: 'white',
-                  cursor: 'text',
-                  color: '#000'
-                }}
-              />
-            </div>
+            {numberField(t('httpConfig.vusers'), config.vusers, v => onConfigChange({vusers: v}), {required: true})}
+            {numberField(t('httpConfig.duration'), config.duration, v => onConfigChange({duration: v}), {required: true})}
           </>
         )}
-        {config.template === 'ramp-up' && (
-          <div style={{gridColumn: '1 / -1'}}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              gap: '1rem',
-              marginBottom: '0.5rem'
-            }}>
-              <label style={{fontWeight: 'bold'}}>
-                {t('httpConfig.stages')}
-              </label>
-              <button
-                type="button"
-                onClick={addStage}
-                style={{
-                  padding: '0.375rem 0.75rem',
-                  backgroundColor: '#10b981',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem'
-                }}
+
+        {isConstantTps && (
+          <>
+            {numberField(t('httpConfig.targetTps'), config.targetTps || 1, v => onConfigChange({targetTps: v}), {required: true})}
+            {numberField(t('httpConfig.duration'), config.duration, v => onConfigChange({duration: v}), {required: true})}
+            {numberField(t('httpConfig.preAllocatedVUs'), config.preAllocatedVUs || 1, v => onConfigChange({preAllocatedVUs: v}), {required: true})}
+            {numberField(
+              t('httpConfig.maxVUs'),
+              config.maxVUs || config.preAllocatedVUs || 1,
+              v => onConfigChange({maxVUs: v}),
+              {required: true, min: config.preAllocatedVUs || 1}
+            )}
+          </>
+        )}
+
+        {isRampUp && (
+          <div className={styles.fullRow}>
+            <div className={styles.stagesHeader}>
+              <span className={styles.stagesLabel}>{t('httpConfig.stages')}</span>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => onConfigChange({
+                  stages: [...stages, {duration: 30, target: stages[stages.length - 1]?.target ?? 10}]
+                })}
               >
                 {t('httpConfig.addStage')}
-              </button>
+              </Button>
             </div>
-            <div style={{display: 'grid', gap: '0.5rem'}}>
-              {stages.map((stage, index) => (
-                <div
-                  key={index}
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) auto',
-                    gap: '0.5rem',
-                    alignItems: 'end'
-                  }}
-                >
-                  <div>
-                    <label style={{display: 'block', marginBottom: '0.25rem', fontSize: '0.75rem', color: '#4b5563'}}>
-                      {t('httpConfig.stageDuration')}
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={stage.duration}
-                      onChange={(e) => updateStage(index, {duration: Number.parseInt(e.target.value)})}
-                      style={{
-                        width: '100%',
-                        padding: '0.5rem',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '4px',
-                        backgroundColor: 'white',
-                        cursor: 'text',
-                        color: '#000'
-                      }}
-                    />
+
+            <p className={styles.stagesHint}>{t('httpConfig.stagesHint')}</p>
+
+            <div className={styles.stages}>
+              {stages.map((stage, index) => {
+                const previousTarget = index === 0 ? 0 : stages[index - 1].target;
+                const delta = stage.target - previousTarget;
+                const phase = delta > 0
+                  ? t('httpConfig.stageRampUp')
+                  : delta < 0
+                    ? t('httpConfig.stageRampDown')
+                    : t('httpConfig.stageHold');
+
+                return (
+                  <div key={index} className={styles.stageRow}>
+                    <div className={styles.stageMeta}>
+                      <span className={styles.stageIndex}>{index + 1}</span>
+                      <span className={styles.stagePhase} data-delta={delta === 0 ? 'hold' : delta > 0 ? 'up' : 'down'}>
+                        {phase}
+                      </span>
+                      <span className={styles.stageSummary}>
+                        {t('httpConfig.stageSummary', {
+                          from: previousTarget,
+                          to: stage.target,
+                          seconds: stage.duration
+                        })}
+                      </span>
+                    </div>
+
+                    <div className={styles.stage}>
+                      {numberField(t('httpConfig.stageDuration'), stage.duration, v => updateStage(index, {duration: v}))}
+                      {numberField(t('httpConfig.stageTarget'), stage.target, v => updateStage(index, {target: v}), {min: 0})}
+                      <Button
+                        variant="danger"
+                        appearance="outline"
+                        disabled={stages.length <= 1}
+                        onClick={() => onConfigChange({
+                          stages: stages.filter((_, stageIndex) => stageIndex !== index)
+                        })}
+                        aria-label={`${t('httpConfig.remove')} ${index + 1}`}
+                      >
+                        {t('httpConfig.remove')}
+                      </Button>
+                    </div>
                   </div>
-                  <div>
-                    <label style={{display: 'block', marginBottom: '0.25rem', fontSize: '0.75rem', color: '#4b5563'}}>
-                      {t('httpConfig.stageTarget')}
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={stage.target}
-                      onChange={(e) => updateStage(index, {target: Number.parseInt(e.target.value)})}
-                      style={{
-                        width: '100%',
-                        padding: '0.5rem',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '4px',
-                        backgroundColor: 'white',
-                        cursor: 'text',
-                        color: '#000'
-                      }}
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    disabled={stages.length <= 1}
-                    onClick={() => removeStage(index)}
-                    style={{
-                      padding: '0.5rem 0.75rem',
-                      backgroundColor: stages.length <= 1 ? '#9ca3af' : '#ef4444',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: stages.length <= 1 ? 'not-allowed' : 'pointer'
-                    }}
-                  >
-                    {t('httpConfig.remove')}
-                  </button>
-                </div>
-              ))}
+                );
+              })}
+            </div>
+
+            <div className={styles.stagesTotal}>
+              {t('httpConfig.stagesTotal', {
+                hold: totalHoldSeconds,
+                transitions: transitionCount,
+                total: totalHoldSeconds + transitionCount * RAMP_TRANSITION_SECONDS
+              })}
             </div>
           </div>
         )}
-        <div>
-          <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
-            {t('httpConfig.failureThreshold')}
-          </label>
-          <input
-            type="number"
-            min="0"
-            max="100"
-            step="1"
-            value={((config.failureThreshold ?? 0.05) * 100).toFixed(0)}
-            onChange={(e) => onConfigChange({failureThreshold: Number.parseInt(e.target.value) / 100})}
-            style={{
-              width: '100%',
-              padding: '0.5rem',
-              border: '1px solid #d1d5db',
-              borderRadius: '4px',
-              backgroundColor: 'white',
-              cursor: 'text',
-              color: '#000'
-            }}
-          />
-          <div style={{fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem'}}>
-            {t('httpConfig.failureThresholdDescription')}
-          </div>
-        </div>
+
+        {numberField(
+          t('httpConfig.failureThreshold'),
+          Number(((config.failureThreshold ?? 0.05) * 100).toFixed(0)),
+          v => onConfigChange({failureThreshold: v / 100}),
+          {
+            min: 0,
+            max: 100,
+            step: 1,
+            suffix: '%',
+            hint: t('httpConfig.failureThresholdDescription')
+          }
+        )}
       </div>
     </div>
   );
