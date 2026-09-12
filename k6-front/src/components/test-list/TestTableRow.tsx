@@ -114,7 +114,7 @@ export const TestTableRow = ({
           </LinkButton>
           {onRerun && test.status !== 'running' && (
             <Button
-              variant="secondary"
+              appearance="outline"
               size="sm"
               onClick={() => onRerun(test.testId)}
               disabled={!canRerun}

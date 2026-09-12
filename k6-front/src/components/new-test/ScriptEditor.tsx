@@ -75,7 +75,7 @@ export const ScriptEditor = ({script, syntaxError, onScriptChange, embedded = fa
 
         {syntaxError && (
           <div id={errorId} className={styles.syntaxError} role="alert">
-            <span className={styles.icon} aria-hidden="true">⚠️</span>
+            <span className={styles.icon} aria-hidden="true">⚠</span>
             <div>
               <strong>{t('scriptEditor.syntaxError')}:</strong> {syntaxError}
             </div>
@@ -83,7 +83,6 @@ export const ScriptEditor = ({script, syntaxError, onScriptChange, embedded = fa
         )}
 
         <div className={styles.guide}>
-          <span className={styles.icon} aria-hidden="true">📖</span>
           <a
             href="https://grafana.com/docs/k6/latest/using-k6/"
             target="_blank"

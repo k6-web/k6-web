@@ -131,11 +131,10 @@ export const FolderList = () => {
     if (folders.length === 0) {
       return (
         <EmptyState
-          icon="📁"
           title={t('folderList.noFolders')}
           description={t('folderList.infoMessage')}
           action={
-            <Button variant="secondary" onClick={openCreate}>
+            <Button onClick={openCreate}>
               {t('folderList.createFirstFolder')}
             </Button>
           }
@@ -149,7 +148,6 @@ export const FolderList = () => {
           <li key={folder.folderId} className={styles.card}>
             <div className={styles.cardMain}>
               <h2 className={styles.name}>
-                <span aria-hidden="true">📁</span>
                 <Link to={`/folders/${folder.folderId}`} className={styles.cardLink}>
                   {folder.name}
                 </Link>
@@ -194,7 +192,7 @@ export const FolderList = () => {
         title={t('folderList.title')}
         description={t('scriptList.description')}
         actions={
-          <Button variant="secondary" onClick={openCreate}>
+          <Button onClick={openCreate}>
             + {t('folderList.newFolder')}
           </Button>
         }
@@ -215,7 +213,7 @@ export const FolderList = () => {
               <Button variant="gray" appearance="outline" onClick={closeForm} disabled={saving}>
                 {t('common.cancel')}
               </Button>
-              <Button variant="secondary" onClick={handleSubmit} loading={saving}>
+              <Button onClick={handleSubmit} loading={saving}>
                 {formTarget === 'create' ? t('common.create') : t('common.save')}
               </Button>
             </>

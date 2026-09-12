@@ -1,4 +1,4 @@
-import {useState, type CSSProperties} from 'react';
+import {useState} from 'react';
 import {CartesianGrid, Line, LineChart, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
 import type {Test} from '../types/test';
 import styles from './MetricsTrendChart.module.css';
@@ -20,7 +20,7 @@ const metricConfig: Record<MetricType, {
   tps: {
     label: 'RPS',
     shortLabel: 'RPS',
-    color: '#2563eb',
+    color: 'var(--color-primary)',
     unit: 'req/s',
     format: (val: number) => val.toFixed(2),
     higherIsBetter: true,
@@ -28,7 +28,7 @@ const metricConfig: Record<MetricType, {
   avg: {
     label: 'Avg Response Time',
     shortLabel: 'Avg',
-    color: '#7c3aed',
+    color: 'var(--color-primary)',
     unit: 'ms',
     format: (val: number) => val.toFixed(2),
     higherIsBetter: false,
@@ -36,7 +36,7 @@ const metricConfig: Record<MetricType, {
   p90: {
     label: 'P90 Response Time',
     shortLabel: 'P90',
-    color: '#d97706',
+    color: 'var(--color-primary)',
     unit: 'ms',
     format: (val: number) => val.toFixed(2),
     higherIsBetter: false,
@@ -44,7 +44,7 @@ const metricConfig: Record<MetricType, {
   p95: {
     label: 'P95 Response Time',
     shortLabel: 'P95',
-    color: '#059669',
+    color: 'var(--color-primary)',
     unit: 'ms',
     format: (val: number) => val.toFixed(2),
     higherIsBetter: false,
@@ -52,7 +52,7 @@ const metricConfig: Record<MetricType, {
   vus: {
     label: 'VUser',
     shortLabel: 'VUser',
-    color: '#0891b2',
+    color: 'var(--color-primary)',
     unit: 'VU',
     format: (val: number) => val.toFixed(0),
     higherIsBetter: true,
@@ -60,7 +60,7 @@ const metricConfig: Record<MetricType, {
   errorRate: {
     label: 'Error Rate',
     shortLabel: 'Error',
-    color: '#dc2626',
+    color: 'var(--color-danger)',
     unit: '%',
     format: (val: number) => (val * 100).toFixed(2),
     higherIsBetter: false,
@@ -158,7 +158,6 @@ export const MetricsTrendChart = ({tests}: MetricsTrendChartProps) => {
             onClick={() => setSelectedMetric(metric)}
             aria-pressed={selectedMetric === metric}
             className={`${styles.tab} ${selectedMetric === metric ? styles.active : ''}`.trim()}
-            style={{'--tab-color': metricConfig[metric].color} as CSSProperties}
           >
             {metricConfig[metric].shortLabel}
           </button>
@@ -171,11 +170,7 @@ export const MetricsTrendChart = ({tests}: MetricsTrendChartProps) => {
           const rangeConfig = metricConfig[metric];
 
           return (
-            <div
-              key={metric}
-              className={styles.rangeCard}
-              style={{'--series-color': rangeConfig.color} as CSSProperties}
-            >
+            <div key={metric} className={styles.rangeCard}>
               <div className={styles.rangeLabel}>{rangeConfig.label}</div>
               <div className={styles.rangeRow}>
                 <div>
@@ -194,12 +189,12 @@ export const MetricsTrendChart = ({tests}: MetricsTrendChartProps) => {
 
       <ResponsiveContainer width="100%" height={340}>
         <LineChart data={chartData} margin={{top: 14, right: 18, left: 0, bottom: 8}}>
-          <CartesianGrid stroke="#e5e7eb" vertical={false}/>
+          <CartesianGrid stroke="var(--color-border)" vertical={false}/>
           <XAxis
             dataKey="name"
             tickLine={false}
-            axisLine={{stroke: '#d1d5db'}}
-            tick={{fill: '#6b7280', fontSize: 12}}
+            axisLine={{stroke: 'var(--color-border-strong)'}}
+            tick={{fill: 'var(--color-text-muted)', fontSize: 12}}
             interval="preserveStartEnd"
             minTickGap={18}
           />
@@ -207,25 +202,25 @@ export const MetricsTrendChart = ({tests}: MetricsTrendChartProps) => {
             width={yAxisWidth}
             tickLine={false}
             axisLine={false}
-            tick={{fill: '#6b7280', fontSize: 12}}
+            tick={{fill: 'var(--color-text-muted)', fontSize: 12}}
             tickFormatter={(value) => config.format(Number(value))}
           />
           <ReferenceLine
             y={averageValue}
-            stroke="#94a3b8"
+            stroke="var(--color-text-subtle)"
             strokeDasharray="4 4"
-            label={{value: `Avg ${config.format(averageValue)}`, fill: '#64748b', fontSize: 12, position: 'insideTopRight'}}
+            label={{value: `Avg ${config.format(averageValue)}`, fill: 'var(--color-text-muted)', fontSize: 12, position: 'insideTopRight'}}
           />
           <ReferenceDot
             x={selectedRange.minPoint.name}
             y={selectedRange.minPoint.value}
             r={5}
             fill="#ffffff"
-            stroke="#111827"
+            stroke="var(--color-text)"
             strokeWidth={2}
             label={{
               value: selectedRangeIsFlat ? `Min/Max ${selectedRange.minLabel}` : `Min ${selectedRange.minLabel}`,
-              fill: '#111827',
+              fill: 'var(--color-text)',
               fontSize: 12,
               position: 'bottom'
             }}
@@ -252,7 +247,7 @@ export const MetricsTrendChart = ({tests}: MetricsTrendChartProps) => {
               if (active && payload && payload.length) {
                 const data = payload[0].payload;
                 return (
-                  <div className={styles.tooltip} style={{'--series-color': config.color} as CSSProperties}>
+                  <div className={styles.tooltip}>
                     <div className={styles.tooltipHeader}>
                       <div className={styles.tooltipName}>{data.name}</div>
                       <div className={styles.tooltipTime}>{data.dateLabel} {data.timeLabel}</div>

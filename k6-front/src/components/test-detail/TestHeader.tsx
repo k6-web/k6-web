@@ -52,22 +52,20 @@ export const TestHeader = ({
           </Button>
         ) : (
           <>
-            <Button variant="purple" onClick={onCopyLink}>
+            <Button appearance="outline" onClick={onCopyLink}>
               Share
             </Button>
             <Button
-              variant="success"
               onClick={onRerun}
               disabled={!canRerun}
               title={canRerun ? t('testList.rerun') : t('testList.noScriptAvailable')}
             >
               {t('testList.rerun')}
             </Button>
-            <Button onClick={onCopyScript}>
+            <Button appearance="outline" onClick={onCopyScript}>
               {t('testDetail.openAsNewTest')}
             </Button>
             <Button
-              variant="gray"
               appearance="outline"
               onClick={onEditScript}
               disabled={!canEditScript}

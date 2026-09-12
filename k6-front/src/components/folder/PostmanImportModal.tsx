@@ -149,7 +149,7 @@ export const PostmanImportModal = ({importing, onClose, onSubmit, onInvalidFile}
             <div className={styles.stagesHeader}>
               <span className={styles.stagesLabel}>{t('httpConfig.stages')}</span>
               <Button
-                variant="secondary"
+                appearance="outline"
                 size="sm"
                 onClick={() => setConfig({
                   ...config,

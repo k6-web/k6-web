@@ -22,7 +22,6 @@ export const ScriptTable = ({scripts, onRun}: ScriptTableProps) => {
         <table className={styles.table}>
           <thead>
             <tr>
-              <th scope="col" className={styles.iconCell}><span className="sr-only">{t('common.name')}</span></th>
               <th scope="col">{t('scriptDetail.scriptId')}</th>
               <th scope="col">{t('common.description')}</th>
               <th scope="col">{t('common.tags')}</th>
@@ -33,7 +32,6 @@ export const ScriptTable = ({scripts, onRun}: ScriptTableProps) => {
           <tbody>
             {scripts.map(script => (
               <tr key={script.scriptId}>
-                <td className={styles.iconCell} aria-hidden="true">📄</td>
                 <td>
                   <Link to={`/scripts/${script.scriptId}`} className={styles.scriptLink}>
                     {script.scriptId}
@@ -58,12 +56,12 @@ export const ScriptTable = ({scripts, onRun}: ScriptTableProps) => {
                 </td>
                 <td>
                   <div className={styles.actions}>
-                    <LinkButton to={`/scripts/${script.scriptId}`} variant="purple" size="sm">
+                    <LinkButton to={`/scripts/${script.scriptId}`} appearance="outline" size="sm">
                       {t('scriptDetail.viewDetails')}
                     </LinkButton>
                     <LinkButton
                       to={`/scripts/${script.scriptId}?edit=true`}
-                      variant="gray"
+                      appearance="outline"
                       size="sm"
                     >
                       {t('folderDetail.editScript')}

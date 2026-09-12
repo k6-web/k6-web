@@ -1,17 +1,20 @@
-import type {CSSProperties, ReactNode} from 'react';
+import type {ReactNode} from 'react';
 import styles from './MetricCard.module.css';
+
+/** Only cards that report a pass/fail outcome carry color; the rest stay neutral. */
+type Tone = 'neutral' | 'success' | 'danger';
 
 interface MetricCardProps {
   title: string;
   value: string | number;
   subtitle?: string;
-  color: string;
+  tone?: Tone;
   children?: ReactNode;
 }
 
-export const MetricCard = ({title, value, subtitle, color, children}: MetricCardProps) => {
+export const MetricCard = ({title, value, subtitle, tone = 'neutral', children}: MetricCardProps) => {
   return (
-    <div className={styles.card} style={{'--accent-color': color} as CSSProperties}>
+    <div className={`${styles.card} ${styles[tone]}`}>
       <div className={styles.title}>{title}</div>
       {children || (
         <>

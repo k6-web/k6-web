@@ -1,16 +1,13 @@
 import type {CSSProperties, ReactNode} from 'react';
 import styles from './Button.module.css';
 
-type Variant = 'primary' | 'secondary' | 'danger' | 'success' | 'purple' | 'gray';
+type Variant = 'primary' | 'danger' | 'gray';
 type Appearance = 'solid' | 'outline' | 'ghost';
 type Size = 'sm' | 'md' | 'lg';
 
 const VARIANT_COLORS: Record<Variant, {base: string; hover: string}> = {
   primary: {base: 'var(--color-primary)', hover: 'var(--color-primary-hover)'},
-  secondary: {base: 'var(--color-success-strong)', hover: 'var(--color-success-text)'},
   danger: {base: 'var(--color-danger)', hover: 'var(--color-danger-hover)'},
-  success: {base: 'var(--color-success)', hover: 'var(--color-success-strong)'},
-  purple: {base: 'var(--color-accent)', hover: 'var(--color-accent-hover)'},
   gray: {base: 'var(--color-neutral)', hover: 'var(--color-neutral-hover)'}
 };
 

@@ -76,7 +76,7 @@ export const LiveLogsPanel = ({
             ⬇
           </Button>
           <Button
-            variant={autoScroll ? 'secondary' : 'gray'}
+            variant={autoScroll ? 'primary' : 'gray'}
             appearance={autoScroll ? 'solid' : 'outline'}
             size="sm"
             onClick={onToggleAutoScroll}

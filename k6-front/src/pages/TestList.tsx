@@ -164,7 +164,7 @@ export const TestList = () => {
       <PageHeader
         title={t('testList.title')}
         actions={
-          <LinkButton to="/new-test" variant="secondary">
+          <LinkButton to="/new-test">
             + {t('nav.newTest')}
           </LinkButton>
         }
@@ -174,10 +174,9 @@ export const TestList = () => {
 
       {allTests.length === 0 ? (
         <EmptyState
-          icon="🧪"
           title={t('testList.noTests')}
           action={
-            <LinkButton to="/new-test" variant="secondary">
+            <LinkButton to="/new-test">
               {t('testList.createFirstTest')}
             </LinkButton>
           }

@@ -37,7 +37,7 @@ export const RecentTestsModal = ({show, tests, loading, onClose, onLoadTest}: Re
           {t('recentTestsModal.loadingTests')}
         </div>
       ) : tests.length === 0 ? (
-        <EmptyState icon="🧪" title={t('recentTestsModal.noTests')}/>
+        <EmptyState title={t('recentTestsModal.noTests')}/>
       ) : (
         <ul className={styles.list}>
           {tests.map(test => (

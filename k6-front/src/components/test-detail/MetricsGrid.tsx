@@ -15,7 +15,6 @@ interface TimingBreakdownItem {
   key: string;
   label: string;
   value: number;
-  color: string;
 }
 
 const formatTimingValue = (value: number) => {
@@ -28,21 +27,28 @@ interface DurationPoint {
   value?: number;
 }
 
-/** Series colors come from data, so they ride in as a CSS custom property. */
-const seriesStyle = (color: string, extra?: CSSProperties): CSSProperties =>
-  ({'--series-color': color, ...extra} as CSSProperties);
+/**
+ * Bars are ranked by size, not hue: the widest segment gets the darkest ink so
+ * the eye lands on the dominant phase. Shades ride in as a custom property.
+ */
+const SERIES_SHADES = ['var(--gray-700)', 'var(--gray-500)', 'var(--gray-400)', 'var(--gray-300)'];
 
-const DurationBarRow = ({label, value = 0, max, color, strong = false}: {
+const shadeFor = (rank: number) => SERIES_SHADES[Math.min(rank, SERIES_SHADES.length - 1)];
+
+const seriesStyle = (shade: string, extra?: CSSProperties): CSSProperties =>
+  ({'--series-color': shade, ...extra} as CSSProperties);
+
+const DurationBarRow = ({label, value = 0, max, rank, strong = false}: {
   label: string;
   value?: number;
   max: number;
-  color: string;
+  rank: number;
   strong?: boolean;
 }) => {
   const percent = max > 0 ? Math.min((value / max) * 100, 100) : 0;
 
   return (
-    <div className={styles.barRow} style={seriesStyle(color)}>
+    <div className={styles.barRow} style={seriesStyle(shadeFor(rank))}>
       <div className={styles.barHeader}>
         <span className={`${styles.barLabel} ${strong ? styles.strong : ''}`.trim()}>{label}</span>
         <span className={styles.barValue}>{formatTimingValue(value)}</span>
@@ -57,16 +63,15 @@ const DurationBarRow = ({label, value = 0, max, color, strong = false}: {
   );
 };
 
-const LatencyBlock = ({title, points, color}: {
+const LatencyBlock = ({title, points}: {
   title: string;
   points: DurationPoint[];
-  color: string;
 }) => {
   const max = Math.max(1, ...points.map(point => point.value || 0));
   const avg = points[0]?.value || 0;
 
   return (
-    <div className={styles.latencyBlock} style={seriesStyle(color)}>
+    <div className={styles.latencyBlock}>
       <div>
         <div className={styles.latencyTitle}>{title}</div>
         <div className={styles.latencyValue}>{formatTimingValue(avg)}</div>
@@ -79,7 +84,7 @@ const LatencyBlock = ({title, points, color}: {
             label={point.label}
             value={point.value}
             max={max}
-            color={color}
+            rank={index}
             strong={index === 0}
           />
         ))}
@@ -125,18 +130,18 @@ const SuccessOverview = ({passRate, failRate, passedChecks, failedChecks, totalC
   );
 };
 
-const NetworkRow = ({label, rate, total, max, color}: {
+const NetworkRow = ({label, rate, total, max, rank}: {
   label: string;
   rate?: number;
   total?: number;
   max: number;
-  color: string;
+  rank: number;
 }) => {
   const value = rate || 0;
   const percent = max > 0 ? Math.min((value / max) * 100, 100) : 0;
 
   return (
-    <div className={styles.networkRow} style={seriesStyle(color)}>
+    <div className={styles.networkRow} style={seriesStyle(shadeFor(rank))}>
       <div className={styles.barHeader}>
         <span className={styles.networkLabel}>{label}</span>
         <span className={styles.networkValue}>{formatBytes(rate)}/s</span>
@@ -160,6 +165,12 @@ const TimingBreakdown = ({items, totalLabel}: {
   const sortedItems = [...items].sort((a, b) => b.value - a.value);
   const minimumVisiblePercent = 2;
 
+  // The dominant phase is the answer people came for, so it alone gets the accent.
+  const shades = new Map(sortedItems.map((item, rank) => [
+    item.key,
+    rank === 0 ? 'var(--color-primary)' : shadeFor(rank)
+  ]));
+
   return (
     <div className={styles.stack}>
       <div>
@@ -177,7 +188,7 @@ const TimingBreakdown = ({items, totalLabel}: {
               key={item.key}
               className={styles.timingSegment}
               title={`${item.label}: ${formatTimingValue(item.value)} (${rawPercent.toFixed(1)}%)`}
-              style={seriesStyle(item.color, {
+              style={seriesStyle(shades.get(item.key) ?? shadeFor(0), {
                 '--segment-width': `${width}%`,
                 '--segment-min-width': rawPercent > 0 ? '3px' : '0'
               } as CSSProperties)}
@@ -191,7 +202,7 @@ const TimingBreakdown = ({items, totalLabel}: {
           const percent = total > 0 ? (item.value / total) * 100 : 0;
 
           return (
-            <div key={item.key} className={styles.timingItem} style={seriesStyle(item.color)}>
+            <div key={item.key} className={styles.timingItem} style={seriesStyle(shades.get(item.key) ?? shadeFor(0))}>
               <div className={styles.timingName}>
                 <span className={styles.timingDot} aria-hidden="true"/>
                 <span className={styles.timingLabel}>{item.label}</span>
@@ -223,18 +234,18 @@ export const MetricsGrid = ({summary}: MetricsGridProps) => {
   const maxNetworkRate = Math.max(sentRate || 0, receivedRate || 0, 1);
 
   const timingItems: TimingBreakdownItem[] = [
-    {key: 'blocked', label: t('metrics.blocked'), value: summary.metrics.http_req_blocked?.avg || 0, color: '#94a3b8'},
-    {key: 'connecting', label: t('metrics.connecting'), value: summary.metrics.http_req_connecting?.avg || 0, color: '#38bdf8'},
-    {key: 'tls', label: t('metrics.tlsHandshaking'), value: summary.metrics.http_req_tls_handshaking?.avg || 0, color: '#818cf8'},
-    {key: 'sending', label: t('metrics.sending'), value: summary.metrics.http_req_sending?.avg || 0, color: '#22c55e'},
-    {key: 'waiting', label: t('metrics.waiting'), value: summary.metrics.http_req_waiting?.avg || 0, color: '#f59e0b'},
-    {key: 'receiving', label: t('metrics.receiving'), value: summary.metrics.http_req_receiving?.avg || 0, color: '#ef4444'}
+    {key: 'blocked', label: t('metrics.blocked'), value: summary.metrics.http_req_blocked?.avg || 0},
+    {key: 'connecting', label: t('metrics.connecting'), value: summary.metrics.http_req_connecting?.avg || 0},
+    {key: 'tls', label: t('metrics.tlsHandshaking'), value: summary.metrics.http_req_tls_handshaking?.avg || 0},
+    {key: 'sending', label: t('metrics.sending'), value: summary.metrics.http_req_sending?.avg || 0},
+    {key: 'waiting', label: t('metrics.waiting'), value: summary.metrics.http_req_waiting?.avg || 0},
+    {key: 'receiving', label: t('metrics.receiving'), value: summary.metrics.http_req_receiving?.avg || 0}
   ];
 
   return (
     <div className={styles.wrapper}>
       <div className={styles.grid}>
-        <MetricCard title={t('metrics.requestRate')} value="" color="#2563eb">
+        <MetricCard title={t('metrics.requestRate')} value="">
           <div className={styles.stack}>
             <div>
               <div className={styles.rateRow}>
@@ -263,11 +274,10 @@ export const MetricsGrid = ({summary}: MetricsGridProps) => {
           </div>
         </MetricCard>
 
-        <MetricCard title={t('metrics.latencyAndIteration')} value="" color="#7c3aed">
+        <MetricCard title={t('metrics.latencyAndIteration')} value="">
           <div className={styles.stack}>
             <LatencyBlock
               title={t('metrics.httpReqDuration')}
-              color="#7c3aed"
               points={[
                 {label: t('metrics.avg'), value: summary.metrics.http_req_duration?.avg},
                 {label: t('metrics.p90'), value: summary.metrics.http_req_duration?.['p(90)']},
@@ -277,7 +287,6 @@ export const MetricsGrid = ({summary}: MetricsGridProps) => {
             <div className={styles.divided}>
               <LatencyBlock
                 title={t('metrics.iterationDuration')}
-                color="#0f766e"
                 points={[
                   {label: t('metrics.avg'), value: summary.metrics.iteration_duration?.avg},
                   {label: t('metrics.p90'), value: summary.metrics.iteration_duration?.['p(90)']},
@@ -291,7 +300,7 @@ export const MetricsGrid = ({summary}: MetricsGridProps) => {
         <MetricCard
           title={t('metrics.successRate')}
           value=""
-          color={failedChecks > 0 ? '#ef4444' : '#16a34a'}
+          tone={failedChecks > 0 ? 'danger' : 'success'}
         >
           <SuccessOverview
             passRate={passRate}
@@ -303,28 +312,28 @@ export const MetricsGrid = ({summary}: MetricsGridProps) => {
           />
         </MetricCard>
 
-        <MetricCard title={t('metrics.networkBandwidth')} value="" color="#f59e0b">
+        <MetricCard title={t('metrics.networkBandwidth')} value="">
           <div className={styles.stack}>
             <NetworkRow
               label={`↑ ${t('metrics.dataSent')}`}
               total={summary.metrics.data_sent?.count}
               rate={sentRate}
               max={maxNetworkRate}
-              color="#f59e0b"
+              rank={0}
             />
             <NetworkRow
               label={`↓ ${t('metrics.dataReceived')}`}
               total={summary.metrics.data_received?.count}
               rate={receivedRate}
               max={maxNetworkRate}
-              color="#0284c7"
+              rank={1}
             />
           </div>
         </MetricCard>
       </div>
 
       <div className={styles.wideGrid}>
-        <MetricCard title={t('metrics.httpTimingBreakdown')} value="" color="#0ea5e9">
+        <MetricCard title={t('metrics.httpTimingBreakdown')} value="">
           <TimingBreakdown items={timingItems} totalLabel={t('metrics.totalAvg')}/>
         </MetricCard>
       </div>

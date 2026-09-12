@@ -41,9 +41,6 @@
   --amber-500: #f59e0b;
   --amber-800: #92400e;
 
-  --purple-500: #8b5cf6;
-  --purple-600: #7c3aed;
-
   --slate-500: #64748b;
   --slate-900: #0f172a;
 
@@ -80,9 +77,6 @@
   --color-warning: var(--amber-500);
   --color-warning-subtle: var(--amber-50);
   --color-warning-text: var(--amber-800);
-
-  --color-accent: var(--purple-500);
-  --color-accent-hover: var(--purple-600);
 
   --color-neutral: var(--gray-500);
   --color-neutral-hover: var(--gray-600);

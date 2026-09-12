@@ -440,14 +440,14 @@ export const NewTest = () => {
         title={t('newTest.title')}
         actions={
           <Button
-            variant="purple"
+            appearance="outline"
             onClick={() => {
               setShowRecentTests(true);
               fetchRecentTests();
             }}
             title={t('newTest.recentTestsTooltip')}
           >
-            📋 {t('newTest.recentTests')}
+            {t('newTest.recentTests')}
           </Button>
         }
       />
@@ -486,7 +486,7 @@ export const NewTest = () => {
               onChange={(e) => setSaveAsScript(e.target.checked)}
               className={styles.checkbox}
             />
-            <span>💾 {t('newTest.saveAsScript')}</span>
+            <span>{t('newTest.saveAsScript')}</span>
           </label>
           <p className={styles.toggleHint}>{t('newTest.saveAsScriptDescription')}</p>
 
@@ -502,7 +502,7 @@ export const NewTest = () => {
                       </option>
                     ))}
                   </select>
-                  <Button variant="secondary" onClick={() => setShowFolderModal(true)}>
+                  <Button appearance="outline" onClick={() => setShowFolderModal(true)}>
                     {t('newTest.newFolder')}
                   </Button>
                 </div>
@@ -550,14 +550,13 @@ export const NewTest = () => {
           <div className={styles.submitActions}>
             {saveAsScript && (
               <Button
-                variant="secondary"
                 size="lg"
                 appearance="outline"
                 onClick={() => handleButtonClick(false)}
                 loading={loading}
                 title={t('newTest.saveScriptOnlyDescription')}
               >
-                💾 {t('newTest.saveScriptOnly')}
+                {t('newTest.saveScriptOnly')}
               </Button>
             )}
 
@@ -567,10 +566,10 @@ export const NewTest = () => {
               loading={loading}
             >
               {loading
-                ? `🚀 ${t('newTest.startingTest')}`
+                ? t('newTest.startingTest')
                 : saveAsScript
-                  ? `💾 ${t('newTest.saveScriptAndRunTest')}`
-                  : `🚀 ${t('newTest.startTest')}`}
+                  ? t('newTest.saveScriptAndRunTest')
+                  : t('newTest.startTest')}
             </Button>
           </div>
         </div>
@@ -595,7 +594,7 @@ export const NewTest = () => {
               <Button variant="gray" appearance="outline" onClick={closeFolderModal} disabled={creatingFolder}>
                 {t('common.cancel')}
               </Button>
-              <Button variant="secondary" onClick={handleCreateNewFolder} loading={creatingFolder}>
+              <Button onClick={handleCreateNewFolder} loading={creatingFolder}>
                 {t('common.create')}
               </Button>
             </>

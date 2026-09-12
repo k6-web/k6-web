@@ -59,19 +59,19 @@ const TimeSeriesLineChart = ({data, config, yAxisLabel}: {
   return (
     <ResponsiveContainer width="100%" height={220}>
       <LineChart data={data} margin={chartMargin}>
-        <CartesianGrid stroke="#e5e7eb" vertical={false}/>
+        <CartesianGrid stroke="var(--color-border)" vertical={false}/>
         <XAxis
           dataKey="time"
           label={timeLabel()}
           tickLine={false}
-          axisLine={{stroke: '#d1d5db'}}
-          tick={{fill: '#6b7280', fontSize: 12}}
+          axisLine={{stroke: 'var(--color-border-strong)'}}
+          tick={{fill: 'var(--color-text-muted)', fontSize: 12}}
         />
         <YAxis
           label={{value: yAxisLabel, angle: -90, position: 'insideLeft'}}
           tickLine={false}
           axisLine={false}
-          tick={{fill: '#6b7280', fontSize: 12}}
+          tick={{fill: 'var(--color-text-muted)', fontSize: 12}}
         />
         {stats && (
           <ReferenceDot
@@ -94,7 +94,7 @@ const TimeSeriesLineChart = ({data, config, yAxisLabel}: {
           labelFormatter={(label) => `Time: ${label}s`}
           contentStyle={{
             borderRadius: '8px',
-            border: '1px solid #e5e7eb',
+            border: '1px solid var(--color-border)',
             boxShadow: '0 12px 24px rgba(15, 23, 42, 0.14)'
           }}
         />
@@ -136,7 +136,7 @@ export const PerformanceChart = ({data, isLive = false}: PerformanceChartProps) 
       config: {
         key: 'vus',
         name: t('testDetail.vus'),
-        color: '#7c3aed',
+        color: 'var(--color-primary)',
         unit: 'VU',
         format: (value) => value.toFixed(0),
       },
@@ -147,7 +147,7 @@ export const PerformanceChart = ({data, isLive = false}: PerformanceChartProps) 
       config: {
         key: 'tps',
         name: 'RPS',
-        color: '#059669',
+        color: 'var(--color-primary)',
         unit: 'RPS',
         format: (value) => Math.round(value).toLocaleString(),
       },
@@ -158,7 +158,7 @@ export const PerformanceChart = ({data, isLive = false}: PerformanceChartProps) 
       config: {
         key: 'latencyAvg' as const,
         name: t('metrics.httpReqDuration'),
-        color: '#2563eb',
+        color: 'var(--color-primary)',
         unit: 'ms',
         format: (value: number) => value.toFixed(2),
       },
@@ -169,7 +169,7 @@ export const PerformanceChart = ({data, isLive = false}: PerformanceChartProps) 
       config: {
         key: 'errorRatePct' as const,
         name: 'Error Rate',
-        color: '#dc2626',
+        color: 'var(--color-danger)',
         unit: '%',
         format: (value: number) => value.toFixed(2),
       },

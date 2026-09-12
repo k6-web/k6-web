@@ -158,7 +158,7 @@ export const FolderDetail = () => {
   }
 
   if (!folderData) {
-    return <EmptyState icon="📁" title={t('folderList.noFolders')}/>;
+    return <EmptyState title={t('folderList.noFolders')}/>;
   }
 
   const {folder, scripts, scriptCount} = folderData;
@@ -181,15 +181,15 @@ export const FolderDetail = () => {
         }
         actions={
           <>
-            <LinkButton to={`/new-test?saveScript=true&folderId=${folderId}`} variant="secondary">
+            <LinkButton to={`/new-test?saveScript=true&folderId=${folderId}`}>
               + {t('folderDetail.newScript')}
             </LinkButton>
-            <Button onClick={() => setShowImportModal(true)}>
+            <Button appearance="outline" onClick={() => setShowImportModal(true)}>
               {t('folderDetail.importPostman')}
             </Button>
             {scripts.length > 0 && (
               <Button
-                variant="purple"
+                appearance="outline"
                 onClick={() => setShowRunAllModal(true)}
                 loading={isRunningAll}
               >
@@ -202,10 +202,9 @@ export const FolderDetail = () => {
 
       {scripts.length === 0 ? (
         <EmptyState
-          icon="📄"
           title={t('folderDetail.noScripts')}
           action={
-            <LinkButton to={`/new-test?saveScript=true&folderId=${folderId}`} variant="secondary">
+            <LinkButton to={`/new-test?saveScript=true&folderId=${folderId}`}>
               {t('folderDetail.createFirstScript')}
             </LinkButton>
           }

@@ -59,7 +59,7 @@ export const TestDetail = () => {
 
   if (loading) return <SkeletonList rows={6} label={t('common.loading')}/>;
   if (error) return <ErrorState message={`${t('common.error')}: ${error}`}/>;
-  if (!testInfo || !testId) return <EmptyState icon="🔍" title={t('testList.testNotFound')}/>;
+  if (!testInfo || !testId) return <EmptyState title={t('testList.testNotFound')}/>;
 
   // Use live data for running tests, snapshot for completed tests
   const timeSeriesData = testInfo.status === 'running'
@@ -114,7 +114,7 @@ export const TestDetail = () => {
       {testInfo.status === 'failed' && testInfo.logs && testInfo.logs.length > 0 && (
         <div className={styles.errorPanel}>
           <h2 className={styles.errorTitle}>
-            <span aria-hidden="true">⚠️</span> {t('testDetail.errorLogs')}
+            {t('testDetail.errorLogs')}
           </h2>
           <div className={styles.console}>
             {testInfo.logs.map((log, index) => {

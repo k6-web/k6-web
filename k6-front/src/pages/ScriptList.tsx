@@ -87,11 +87,10 @@ export const ScriptList = () => {
     if (scripts.length === 0) {
       return (
         <EmptyState
-          icon="📄"
           title={t('folderDetail.noScripts')}
           description={t('scriptList.description')}
           action={
-            <LinkButton to="/new-test?saveScript=true" variant="secondary">
+            <LinkButton to="/new-test?saveScript=true">
               {t('folderDetail.createFirstScript')}
             </LinkButton>
           }
@@ -152,7 +151,7 @@ export const ScriptList = () => {
         title={t('nav.scripts')}
         description={t('scriptList.description')}
         actions={
-          <LinkButton to="/new-test?saveScript=true" variant="secondary">
+          <LinkButton to="/new-test?saveScript=true">
             + {t('folderDetail.newScript')}
           </LinkButton>
         }

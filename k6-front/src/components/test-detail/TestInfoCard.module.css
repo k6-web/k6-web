@@ -20,7 +20,7 @@
   letter-spacing: 0.02em;
 }
 
-.scheduled { color: var(--color-accent); }
+.scheduled { color: var(--color-text-secondary); }
 .queued { color: var(--color-warning); }
 .running { color: var(--color-primary); }
 .completed { color: var(--color-success); }
@@ -30,7 +30,7 @@
 .scriptLink {
   font-size: var(--text-base);
   font-weight: 600;
-  color: var(--color-accent);
+  color: var(--color-primary);
   text-decoration: none;
 }
 

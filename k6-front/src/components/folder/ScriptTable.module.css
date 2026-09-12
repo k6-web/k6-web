@@ -46,11 +46,6 @@
   background-color: var(--color-surface-muted);
 }
 
-.iconCell {
-  width: 40px;
-  font-size: var(--text-xl);
-}
-
 .actionsCell {
   width: 320px;
 }

@@ -328,7 +328,7 @@ export const ScriptDetail = () => {
 
   if (loading) return <SkeletonList rows={6} label={t('common.loading')}/>;
   if (error) return <ErrorState message={`${t('common.error')}: ${error}`}/>;
-  if (!script) return <EmptyState icon="📄" title={t('testList.noScriptAvailable')}/>;
+  if (!script) return <EmptyState title={t('testList.noScriptAvailable')}/>;
 
   return (
     <div>
@@ -348,11 +348,11 @@ export const ScriptDetail = () => {
           </div>
 
           <div className={styles.actions}>
-            <Button variant="purple" onClick={handleShare}>
-              🔗 {t('scriptDetail.shareScript')}
+            <Button appearance="outline" onClick={handleShare}>
+              {t('scriptDetail.shareScript')}
             </Button>
             <Button onClick={handleCopy}>
-              📋 {t('scriptDetail.copyScript')}
+              {t('scriptDetail.copyScript')}
             </Button>
             <Button
               variant="gray"
@@ -362,11 +362,11 @@ export const ScriptDetail = () => {
             >
               {t('scriptDetail.editScript')}
             </Button>
-            <Button variant="secondary" onClick={() => setIsRunModalOpen(true)} loading={isRunning}>
+            <Button onClick={() => setIsRunModalOpen(true)} loading={isRunning}>
               {isRunning ? t('newTest.startingTest') : t('scriptDetail.runTest')}
             </Button>
             <Button variant="danger" appearance="outline" onClick={() => setShowDeleteConfirm(true)}>
-              🗑️ {t('scriptDetail.deleteScript')}
+              {t('scriptDetail.deleteScript')}
             </Button>
           </div>
         </div>

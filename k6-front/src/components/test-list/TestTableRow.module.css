@@ -44,7 +44,7 @@
 }
 
 .scriptLink {
-  color: var(--color-accent);
+  color: var(--color-primary);
   font-weight: 600;
   text-decoration: none;
 }
@@ -62,10 +62,8 @@
   font-variant-numeric: tabular-nums;
 }
 
-.rps { color: var(--color-primary); }
-.latency { color: var(--color-accent); }
-.success { color: var(--color-success); }
-.duration { color: var(--color-warning); }
+/* Column headers already name each metric; color would only add noise. */
+.rps, .latency, .success, .duration { color: var(--color-text); }
 
 .time {
   color: var(--color-text-secondary);

@@ -87,22 +87,13 @@
 }
 
 .guide {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
   margin-top: var(--space-3);
-  padding: var(--space-3);
-  border: 1px solid var(--blue-200);
-  border-radius: var(--radius-md);
-  background-color: var(--color-primary-subtle);
   font-size: var(--text-sm);
-  color: var(--color-primary-text);
 }
 
 .guideLink {
-  color: var(--color-primary-hover);
+  color: var(--color-primary);
   font-weight: 500;
-  text-decoration: underline;
 }
 
 .icon {

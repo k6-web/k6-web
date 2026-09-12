@@ -104,7 +104,7 @@ export const HttpConfigForm = ({
           />
         </Field>
         <Button
-          variant="purple"
+          appearance="outline"
           size="sm"
           onClick={() => onConvertCurl(curlCommand)}
           disabled={isDynamic || !curlCommand.trim()}
@@ -189,7 +189,7 @@ export const HttpConfigForm = ({
             disabled={isDynamic}
             onChange={(e) => onHeaderValueChange(e.target.value)}
           />
-          <Button variant="secondary" disabled={isDynamic} onClick={onAddHeader}>
+          <Button appearance="outline" disabled={isDynamic} onClick={onAddHeader}>
             {t('httpConfig.addHeader')}
           </Button>
         </div>
@@ -257,7 +257,7 @@ export const HttpConfigForm = ({
             <div className={styles.stagesHeader}>
               <span className={styles.stagesLabel}>{t('httpConfig.stages')}</span>
               <Button
-                variant="secondary"
+                appearance="outline"
                 size="sm"
                 onClick={() => onConfigChange({
                   stages: [...stages, {duration: 30, target: stages[stages.length - 1]?.target ?? 10}]

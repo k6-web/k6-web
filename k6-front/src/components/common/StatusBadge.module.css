@@ -26,7 +26,7 @@
   animation: pulse 1.4s ease-in-out infinite;
 }
 
-.scheduled { background-color: var(--color-accent); }
+.scheduled { background-color: var(--color-neutral-hover); }
 .queued { background-color: var(--color-warning); }
 .running { background-color: var(--color-primary); }
 .completed { background-color: var(--color-success); }

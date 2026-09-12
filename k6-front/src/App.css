@@ -15,11 +15,9 @@
   top: 0;
   z-index: var(--z-sticky);
   color: #fff;
-  background:
-    linear-gradient(135deg, rgba(10, 20, 38, 0.98), rgba(24, 42, 68, 0.98)),
-    var(--gray-900);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: var(--shadow-lg);
+  background: var(--gray-900);
+  border-bottom: 1px solid var(--gray-800);
+  box-shadow: var(--shadow-sm);
 }
 
 .topbar__nav {
@@ -94,8 +92,7 @@
   place-items: center;
   border-radius: var(--radius-lg);
   color: var(--slate-900);
-  background: linear-gradient(135deg, #f8fafc 0%, var(--green-200) 100%);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45), 0 8px 18px rgba(16, 185, 129, 0.22);
+  background: var(--green-200);
   font-size: 0.95rem;
   font-weight: 800;
 }
@@ -139,7 +136,7 @@
   text-decoration: none;
   font-size: 0.92rem;
   font-weight: 700;
-  transition: color var(--transition-base), background-color var(--transition-base), box-shadow var(--transition-base);
+  transition: color var(--transition-base), background-color var(--transition-base);
 }
 
 .topbar__link:hover {
@@ -151,7 +148,6 @@
 .topbar__link--active {
   color: var(--slate-900);
   background: #fff;
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
 }
 
 .topbar__link--active:hover {
