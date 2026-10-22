@@ -1,0 +1,22 @@
+{
+  "name": "k6-web",
+  "displayName": "k6-web",
+  "version": "0.1.0",
+  "description": "Create, run, and analyze k6-web load tests in natural language.",
+  "author": {
+    "name": "k6-web"
+  },
+  "homepage": "https://github.com/k6-web/k6-web",
+  "repository": "https://github.com/k6-web/k6-web",
+  "license": "Apache-2.0",
+  "keywords": ["k6", "load-test", "performance", "k6-web"],
+  "skills": "./skills/",
+  "userConfig": {
+    "agent_url": {
+      "type": "string",
+      "title": "k6-agent API URL (not the web UI URL)",
+      "description": "k6-agent API server URL, e.g. http://localhost:3000. This is not the k6-front web UI. <url>/health must return {\"status\":\"ok\"}.",
+      "required": true
+    }
+  }
+}

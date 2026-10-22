@@ -1,0 +1,26 @@
+{
+  "name": "k6-web",
+  "version": "0.1.0",
+  "description": "Create, run, and analyze k6-web load tests in natural language.",
+  "author": {
+    "name": "k6-web"
+  },
+  "homepage": "https://github.com/k6-web/k6-web",
+  "repository": "https://github.com/k6-web/k6-web",
+  "license": "Apache-2.0",
+  "keywords": ["k6", "load-test", "performance", "k6-web"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "k6-web",
+    "shortDescription": "Create, run, and analyze k6-web load tests",
+    "longDescription": "Generate k6 scripts from natural language, register them in k6-web folders, run them on k6-agent, and summarize performance trends across runs.",
+    "developerName": "k6-web",
+    "category": "Developer Tools",
+    "websiteURL": "https://github.com/k6-web/k6-web",
+    "defaultPrompt": [
+      "List my k6-web folders",
+      "Create a 3-minute load test with 100 VUs for POST https://api.example.com/pay",
+      "Run payment-load and summarize the result"
+    ]
+  }
+}

@@ -6,6 +6,7 @@ This repository has two Node.js/TypeScript packages:
 
 - `k6-agent/`: Express backend for running and managing k6 tests. Source lives in `src/`, grouped by `domains/` and shared utilities under `shared/`.
 - `k6-front/`: Vite + React frontend. Source lives in `src/`, with pages in `src/pages/`, UI in `src/components/`, API clients in `src/apis/`, hooks in `src/hooks/`, and translations in `src/i18n/locales/`.
+- `plugins/k6-web/`: Claude Code and Codex plugin. Both manifests (`.claude-plugin/`, `.codex-plugin/`) share the skills in `skills/`; marketplaces live in `.claude-plugin/marketplace.json` and `.agents/plugins/marketplace.json`. Update the skills when the k6-agent API changes.
 - `docs/`: README screenshots and visual documentation assets.
 
 Backend tests are colocated in `__tests__/` folders or `*.test.ts` files under `k6-agent/src/`.
@@ -52,4 +53,4 @@ Pull requests should include a concise description, test results (`npm test`, `n
 
 ## Security & Configuration Tips
 
-Do not commit `.env` files or local k6 data. Document new environment variables in `README.md`; current keys include `PORT`, `K6_BASE_PATH`, `MAX_RESULT_FILES`, and `VITE_API_URL`.
+Do not commit `.env` files or local k6 data. Document new environment variables in `README.md`; current keys include `PORT`, `K6_BASE_PATH`, `MAX_RESULT_FILES`, `VITE_API_URL`, and `K6_AGENT_URL` (plugin).

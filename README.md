@@ -147,6 +147,23 @@ npm start
 | `VITE_API_URL`          | K6 Agent API URL | `http://localhost:3000` |                               |
 | `VITE_DEFAULT_LANGUAGE` | Default Language | `en`                    | `en` (English), `ko` (Korean) |
 
+### k6-web plugin (Codex)
+
+| Variable       | Description                                                   |
+|----------------|---------------------------------------------------------------|
+| `K6_AGENT_URL` | k6-agent API URL. Claude Code uses the plugin setting instead |
+
+## Claude Code / Codex Plugin
+
+Create, run, and analyze load tests in natural language from Claude Code or Codex.
+
+```
+/plugin marketplace add k6-web/k6-web
+/plugin install k6-web@k6-web
+```
+
+See [plugins/k6-web](plugins/k6-web/README.md) for Codex setup and all commands.
+
 ## Requirements
 
 - Node.js (>= 20)

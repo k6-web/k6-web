@@ -1,0 +1,15 @@
+{
+  "name": "k6-web",
+  "owner": {
+    "name": "k6-web"
+  },
+  "description": "Plugin marketplace for k6-web",
+  "plugins": [
+    {
+      "name": "k6-web",
+      "source": "./plugins/k6-web",
+      "description": "Create, run, and analyze k6-web load tests in natural language.",
+      "version": "0.1.0"
+    }
+  ]
+}

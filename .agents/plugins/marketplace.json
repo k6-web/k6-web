@@ -1,0 +1,19 @@
+{
+  "name": "k6-web",
+  "interface": {
+    "displayName": "k6-web"
+  },
+  "plugins": [
+    {
+      "name": "k6-web",
+      "source": {
+        "source": "local",
+        "path": "./plugins/k6-web"
+      },
+      "policy": {
+        "installation": "AVAILABLE"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}
