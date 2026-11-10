@@ -139,6 +139,7 @@ See [plugins/k6-web](plugins/k6-web/README.md) for Codex setup and all commands.
 ## Requirements
 
 - Node.js (>= 20)
+- Frontend development/build: Node.js 20.19+, 22.13+, or 24+ (Vite/Rolldown and ESLint requirements; Node.js 21 and 23 are unsupported).
 - k6 (required when running K6 Agent from source)
 
 ## License
