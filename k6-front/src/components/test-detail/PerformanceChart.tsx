@@ -90,7 +90,7 @@ const TimeSeriesLineChart = ({data, config, yAxisLabel}: {
           />
         )}
         <Tooltip
-          formatter={(value: number) => [`${config.format(value)} ${config.unit}`, config.name]}
+          formatter={(value) => [`${config.format(Number(value))} ${config.unit}`, config.name]}
           labelFormatter={(label) => `Time: ${label}s`}
           contentStyle={{
             borderRadius: '8px',

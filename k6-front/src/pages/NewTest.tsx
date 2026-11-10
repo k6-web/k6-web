@@ -151,6 +151,7 @@ export const NewTest = () => {
       } = state.copiedScript;
 
       setScript(copiedScriptContent);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- syncs state from fetch/navigation on change
       setSaveAsScript(shouldSaveAsScript ?? true);
 
       setIsDynamicScript(isDynamic ?? hasDynamicParameters(copiedScriptContent));

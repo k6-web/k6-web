@@ -72,6 +72,7 @@ export const FolderDetail = () => {
   }, [folderId, fetchFolderTests]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncs state from fetch/navigation on change
     fetchFolderData();
   }, [fetchFolderData]);
 
@@ -83,6 +84,7 @@ export const FolderDetail = () => {
     if (!folderData || folderData.scripts.length === 0) return;
 
     runAllHandled.current = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncs state from fetch/navigation on change
     setShowRunAllModal(true);
   }, [location.search, folderData]);
 

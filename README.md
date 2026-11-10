@@ -99,34 +99,6 @@ docker run -p 5173:5173 \
   ghcr.io/k6-web/k6-web:latest
 ```
 
-### Build from Source
-
-#### 1. K6 Web
-
-```shell
-git clone https://github.com/k6-web/k6-web
-cd k6-web/k6-front
-
-# Change Environment Variables if needed (.env)
-
-npm install
-npm run build
-npm start
-```
-
-#### 2. K6 Agent
-
-```shell
-git clone https://github.com/k6-web/k6-web
-cd k6-web/k6-agent
-
-# Change Environment Variables if needed (.env)
-
-npm install
-npm run build
-npm start
-```
-
 ## Configuration
 
 ### k6-web-agent

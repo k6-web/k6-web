@@ -18,7 +18,8 @@ export function validateQuery(schema: Joi.ObjectSchema): RequestHandler {
       });
       return;
     }
-    req.query = value;
+    // Express 5 exposes req.query as a getter, so shadow it with the validated value.
+    Object.defineProperty(req, 'query', {value, writable: true, enumerable: true, configurable: true});
     next();
   };
 }

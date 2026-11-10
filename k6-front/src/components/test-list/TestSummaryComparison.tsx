@@ -223,7 +223,7 @@ export const TestSummaryComparison = ({tests}: TestSummaryComparisonProps) => {
                 <XAxis dataKey="name" tick={{fill: '#6b7280', fontSize: 12}} tickLine={false}/>
                 <YAxis tick={{fill: '#6b7280', fontSize: 12}} tickLine={false} axisLine={false}/>
                 <Tooltip
-                  formatter={(value: number) => [`${formatRate(value)} RPS`, 'RPS']}
+                  formatter={(value) => [`${formatRate(Number(value))} RPS`, 'RPS']}
                   labelFormatter={(_, payload) => payload?.[0]?.payload?.testId || ''}
                   contentStyle={{borderRadius: '8px', border: '1px solid #e5e7eb'}}
                 />
@@ -244,7 +244,7 @@ export const TestSummaryComparison = ({tests}: TestSummaryComparisonProps) => {
                 <XAxis dataKey="name" tick={{fill: '#6b7280', fontSize: 12}} tickLine={false}/>
                 <YAxis tick={{fill: '#6b7280', fontSize: 12}} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}%`}/>
                 <Tooltip
-                  formatter={(value: number) => [`${value.toFixed(2)}%`, t('metrics.httpReqFailed')]}
+                  formatter={(value) => [`${Number(value).toFixed(2)}%`, t('metrics.httpReqFailed')]}
                   labelFormatter={(_, payload) => payload?.[0]?.payload?.testId || ''}
                   contentStyle={{borderRadius: '8px', border: '1px solid #e5e7eb'}}
                 />
@@ -266,9 +266,9 @@ export const TestSummaryComparison = ({tests}: TestSummaryComparisonProps) => {
               <XAxis dataKey="metric" tick={{fill: '#6b7280', fontSize: 12}} tickLine={false}/>
               <YAxis tick={{fill: '#6b7280', fontSize: 12}} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}ms`}/>
               <Tooltip
-                formatter={(value: number, name: string) => {
+                formatter={(value, name) => {
                   const series = chartSeries.find(current => current.key === name);
-                  return [formatDuration(value), series?.name || name];
+                  return [formatDuration(Number(value)), series?.name || name];
                 }}
                 contentStyle={{borderRadius: '8px', border: '1px solid #e5e7eb'}}
               />

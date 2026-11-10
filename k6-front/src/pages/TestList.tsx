@@ -58,10 +58,12 @@ export const TestList = () => {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncs state from fetch/navigation on change
     fetchTests();
   }, [fetchTests]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncs state from fetch/navigation on change
     setSelectedTestIds(prev => prev.filter(testId => allTests.some(test => test.testId === testId)));
   }, [allTests]);
 

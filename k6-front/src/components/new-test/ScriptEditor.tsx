@@ -1,10 +1,13 @@
 import {useTranslation} from 'react-i18next';
 import {useEffect, useId, useRef} from 'react';
-import Editor from 'react-simple-code-editor';
+import EditorModule from 'react-simple-code-editor';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-javascript';
 import 'prismjs/themes/prism.css';
 import styles from './ScriptEditor.module.css';
+
+// The package is CJS-only; Vite 8 follows Node interop and hands back `module.exports` as the default import.
+const Editor = (EditorModule as unknown as {default?: typeof EditorModule}).default ?? EditorModule;
 
 interface ScriptEditorProps {
   script: string;

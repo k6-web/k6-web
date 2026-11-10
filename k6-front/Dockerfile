@@ -1,5 +1,5 @@
 # k6-front Dockerfile
-FROM node:24-alpine as builder
+FROM node:26-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
